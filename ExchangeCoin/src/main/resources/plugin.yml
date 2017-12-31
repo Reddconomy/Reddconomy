@@ -1,0 +1,10 @@
+name: ExchangeCoin
+main: net.blockstreet.coin.Exchange
+version: 0.0.1
+author: Soxasora
+commands:
+  rsend:
+    description: Send Reddcoins to players.
+    usage: /rsend [player] [amount]
+    permission: ExchangeCoin.rsend
+    permission-message: You don't have <permission>
