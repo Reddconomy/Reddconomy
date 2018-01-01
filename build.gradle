@@ -28,5 +28,7 @@ dependencies {
     // testCompile dependency to testCompile 'org.testng:testng:6.8.1' and add
     // 'test.useTestNG()' to your build script.
     testCompile 'junit:junit:4.12'
+    	compile group: 'io.netty', name: 'netty', version: '3.6.5.Final'
+    
 compile group: 'com.github.briandilley.jsonrpc4j', name: 'jsonrpc4j', version: '1.5.2'
 }
