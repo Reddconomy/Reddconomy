@@ -1,0 +1,13 @@
+Contract addresses
+
+r€XXXXX < internal
+XXXXXXXXXXXXXX < blockchain     
+
+docker run --name=reddconomy_paygate -d -v /srv/reddconomy_testnet:/data --read-only --restart always reddconomy_paygate:amd64
+
+docker run -it -v /srv/reddconomy_testnet:/data --read-only  --rm reddconomy_paygate:amd64
+
+docker run --name=reddconomy_paygate -d -p 45443:45443 -v /srv/reddconomy_testnet:/data --read-only  --rm reddconomy_paygate:amd64
+
+/opt/reddc
+
