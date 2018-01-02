@@ -19,7 +19,7 @@ import utils.HashUtils;
  * @author Riccardo Balbo
  */
 
-public abstract class SQLLiteDatabase implements Database {
+public  class SQLLiteDatabase implements Database {
 	protected Connection CONNECTION;
 
 	/**
