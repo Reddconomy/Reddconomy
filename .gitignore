@@ -10,4 +10,5 @@ gradlew.bat
 *.log
 *.conf
 *.dll
+.DS_Store
 
