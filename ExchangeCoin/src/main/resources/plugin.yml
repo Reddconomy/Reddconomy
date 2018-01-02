@@ -3,8 +3,8 @@ main: net.blockstreet.coin.Exchange
 version: 0.0.1
 author: Soxasora
 commands:
-  rsend:
-    description: Send Reddcoins to players.
-    usage: /rsend [player] [amount]
-    permission: ExchangeCoin.rsend
+  deposit:
+    description: Show deposit address.
+    usage: /deposit
+    permission: ExchangeCoin.deposit
     permission-message: You don't have <permission>
