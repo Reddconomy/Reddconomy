@@ -1,5 +1,3 @@
-
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -30,11 +28,19 @@ public class HTTPTest implements HttpHandler{
 	} 
 
 	@Override
-	public void handleHttpRequest(HttpRequest request, HttpResponse response, HttpControl control) throws Exception {
+	public void handleHttpRequest(HttpRequest request, HttpResponse response, HttpControl control) throws Throwable {
 		System.out.println("Request: "+request.uri());
-		response.status(200);
-		response.header("Content-type","text/plain");
-		response.content("Hello world");
-		response.end();
+
+			response.status(200);
+			response.header("Content-type","text/plain");
+			response.content(Reddconomy.addr());
+			response.end();
+		/*} else {
+			response.status(200);
+			response.header("Content-type","text/plain");
+			response.content("Hello world");
+			response.end();
+		}*/
 	}
 }
+
