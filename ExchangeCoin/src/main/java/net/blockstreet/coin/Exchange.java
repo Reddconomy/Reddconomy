@@ -55,13 +55,6 @@ public class Exchange extends JavaPlugin implements Listener {
 		  URL url = new URL(urlString);
 		  HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		 
-		  // By default it is GET request
-		  con.setRequestMethod("GET");
-		 
-		  int responseCode = con.getResponseCode();
-		  System.out.println("Sending get request : "+ url);
-		  System.out.println("Response code : "+ responseCode);
-		 
 		  // Reading response from input Stream
 		  BufferedReader in = new BufferedReader(
 		          new InputStreamReader(con.getInputStream()));
