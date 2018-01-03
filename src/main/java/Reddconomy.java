@@ -237,10 +237,14 @@ public class Reddconomy implements HttpHandler{
 						response.end();
 						break;
 					}
-					/*case "send":{
+					case "newcontract":{
 						Map<String,Object> resp_obj=new HashMap<String,Object>();
 						try {
-							// Do stuff
+							Map<String,Object> data=new HashMap<String,Object>();
+							String wallet_id=_GET.get("wallid").toString();
+							long ammount = Long.parseLong(_GET.get("ammount").toString());
+							String contractId = _DATABASE.createContract(wallet_id, ammount);
+							data.put("contractId", contractId);
 							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
 							resp_obj.put("data",data); // Aggiungo i dati della risposta 
 						}catch(Throwable e){
@@ -258,7 +262,57 @@ public class Reddconomy implements HttpHandler{
 						response.content(resp_json);
 						response.end();
 						break;						
-					}*/
+					}
+					case "acceptcontract":{
+						Map<String,Object> resp_obj=new HashMap<String,Object>();
+						try {
+							Map<String,Object> data=new HashMap<String,Object>();
+							String wallet_id=_GET.get("wallid").toString();
+							String contractId =_GET.get("contractid").toString();
+							_DATABASE.acceptContract(contractId, wallet_id);
+							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
+							//resp_obj.put("data",data); // Aggiungo i dati della risposta 
+						}catch(Throwable e){
+							String error=e.toString();
+							resp_obj.put("status",500);
+							resp_obj.put("error",error);
+							e.printStackTrace();
+						}
+	
+						// Converto risposta in json
+						String resp_json=_JSON.toJson(resp_obj);
+	
+						response.status(200);
+						response.header("Content-type","application/json");
+						response.content(resp_json);
+						response.end();
+						break;							
+					}
+					case "contractinfo":{
+						Map<String,Object> resp_obj=new HashMap<String,Object>();
+						try {
+							Map<String,Object> data=new HashMap<String,Object>();
+							String contractId =_GET.get("contractid").toString();
+							Map contract = _DATABASE.getContract(contractId);
+							
+							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
+							//resp_obj.put("data",data); // Aggiungo i dati della risposta 
+						}catch(Throwable e){
+							String error=e.toString();
+							resp_obj.put("status",500);
+							resp_obj.put("error",error);
+							e.printStackTrace();
+						}
+	
+						// Converto risposta in json
+						String resp_json=_JSON.toJson(resp_obj);
+	
+						response.status(200);
+						response.header("Content-type","application/json");
+						response.content(resp_json);
+						response.end();
+						break;							
+					}
 					default:{
 						response.status(401);
 						response.header("Content-type","application/json");
