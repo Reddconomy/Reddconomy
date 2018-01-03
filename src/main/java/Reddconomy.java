@@ -213,6 +213,52 @@ public class Reddconomy implements HttpHandler{
 						response.end();
 						break;
 					}
+					case "balance":{
+						Map<String,Object> resp_obj=new HashMap<String,Object>();
+						try {
+							String wallet_id=_GET.get("wallid").toString();
+							Map wallet=_DATABASE.getWallet(wallet_id);
+							Map<String,Object> data=wallet;
+							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
+							resp_obj.put("data",data); // Aggiungo i dati della risposta 
+						}catch(Throwable e){
+							String error=e.toString();
+							resp_obj.put("status",500);
+							resp_obj.put("error",error);
+							e.printStackTrace();
+						}
+	
+						// Converto risposta in json
+						String resp_json=_JSON.toJson(resp_obj);
+	
+						response.status(200);
+						response.header("Content-type","application/json");
+						response.content(resp_json);
+						response.end();
+						break;
+					}
+					/*case "send":{
+						Map<String,Object> resp_obj=new HashMap<String,Object>();
+						try {
+							// Do stuff
+							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
+							resp_obj.put("data",data); // Aggiungo i dati della risposta 
+						}catch(Throwable e){
+							String error=e.toString();
+							resp_obj.put("status",500);
+							resp_obj.put("error",error);
+							e.printStackTrace();
+						}
+	
+						// Converto risposta in json
+						String resp_json=_JSON.toJson(resp_obj);
+	
+						response.status(200);
+						response.header("Content-type","application/json");
+						response.content(resp_json);
+						response.end();
+						break;						
+					}*/
 					default:{
 						response.status(401);
 						response.header("Content-type","application/json");
