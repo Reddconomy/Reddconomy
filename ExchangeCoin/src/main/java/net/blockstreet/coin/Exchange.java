@@ -72,33 +72,32 @@ public class Exchange extends JavaPlugin implements Listener {
 	}
 	
 
-	 private String getAddrDeposit(long balance, UUID pUUID) throws Exception {
+	 private String getAddrDeposit(long balance, String pUUID) throws Exception {
 		 
 		  String action = "deposit&wallid=" + pUUID + "&balance=" + balance;
 		  Map data=(Map)apiCall(action).get("data");
 		  return (String)data.get("addr");
 	 }
 	 
-	 private String createContract(long ammount, UUID pUUID) throws Exception
+	 private String createContract(long ammount, String pUUID) throws Exception
 	 {
 		 String action = "newcontract&wallid=" + pUUID + "&ammount=" + ammount;
 		 Map data=(Map)apiCall(action).get("data");
 		 return (String)data.get("contractId");
 	 }
 	 
-	 private String acceptContract(String contractId, UUID pUUID) throws Exception
+	 private void acceptContract(String contractId, String pUUID) throws Exception
 	 {
 		 String action = "acceptcontract&wallid=" + pUUID + "&contractid=" + contractId;
-		 Map status=(Map)apiCall(action).get("status");
-		 return (String)status.get("status");
+		 apiCall(action);
 	 }
 	 
-	 private long getBalance(UUID pUUID) throws Exception {
+	 private double getBalance(String pUUID) throws Exception {
 		 
 		  String action = "balance&wallid=" + pUUID;
 		  Map data=(Map)apiCall(action).get("data");
 		  Number balance=(Number)data.get("balance");
-		  return balance.longValue();
+		  return (balance.longValue())/100000000.0;
 	 }
 	 
 	// This does commands.
@@ -110,8 +109,13 @@ public class Exchange extends JavaPlugin implements Listener {
 		    sender.sendMessage("You must be a player!");
 		    return false;
 	    }
-	    	
-	    UUID pUUID = ((Player) sender).getUniqueId();
+	    String pUUID = null;
+	    if ((getServer().getOnlineMode())==true)
+	    {
+	    	pUUID = (((Player) sender).getUniqueId()).toString();
+	    } else {
+	    	pUUID = sender.getName();
+	    }
 	    	
 		if (cmd.getName().equalsIgnoreCase("deposit"))
 		{
@@ -151,7 +155,7 @@ public class Exchange extends JavaPlugin implements Listener {
 	    {		    	
 			if (args.length==2)
 		    	{
-		    		if (args[0]=="new")
+		    		if (args[0].equalsIgnoreCase("new"))
 		    		{
 		    			long ammount = (long)(Double.parseDouble(args[1])*100000000L);
 		    			try {
@@ -162,26 +166,20 @@ public class Exchange extends JavaPlugin implements Listener {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-		    		} else if (args[0] == "accept") {
+		    		} else if (args[0].equalsIgnoreCase("accept")) {
 		    			String contractId = args[1];
 		    			try {
-							String status = acceptContract(contractId, pUUID);
-							if (status=="200")
-							{
-								sender.sendMessage("Contract accepted.");
-							} else {
-								sender.sendMessage("Error.");
-							}
+		    				acceptContract(contractId, pUUID);
+							sender.sendMessage("Contract accepted.");
+							sender.sendMessage("You now have: " + getBalance(pUUID) + " RDD");
 						} catch (Exception e) {
 							sender.sendMessage("Cannot accept contract. Are you sure that you haven't already accepted?");
 							sender.sendMessage("Otherwise, call and admin for more info.");
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-		    			sender.sendMessage("Contract accepted.");
-		    			sender.sendMessage("Contract");
-		    		} else if (args[0] == "info") {
-		    			String contractId = args[1];
+		    		/*} else if (args[0].equalsIgnoreCase("info")) {
+		    			String contractId = args[1];*/
 		    		}
 				return true;
 			} else {
