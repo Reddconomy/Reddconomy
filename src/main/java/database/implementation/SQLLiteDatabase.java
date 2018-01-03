@@ -3,6 +3,8 @@ package database.implementation;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -109,9 +111,8 @@ public  class SQLLiteDatabase implements Database {
 		Map<String,Object> out=new HashMap<String,Object>();
 		out.put("id",id);
 		SQLResult res=query("SELECT `status`,`balance` FROM `reddconomy_wallets` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
-		if(res!=null&&res.getNumRows()!=0){
+		if(res!=null&&!res.isEmpty()){
 			Map<String,String> fetched=res.FetchAssoc();
-			System.out.println(fetched);
 			out.put("status",Integer.parseInt(fetched.get("status")));
 			out.put("balance",Long.parseLong(fetched.get("balance")));
 		}else{
@@ -129,7 +130,7 @@ public  class SQLLiteDatabase implements Database {
 		id=id.replaceAll("[^A-Za-z0-9]","");
 		Map<String,Object> out=new HashMap<String,Object>();
 		SQLResult res=query("SELECT * FROM `reddconomy_contracts` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
-		if(res!=null&&res.getNumRows()!=0){
+		if(res!=null&&!res.isEmpty()){
 			Map<String,String> fetched=res.FetchAssoc();
 			System.out.println(fetched);
 			out.put("id",fetched.get("id"));
@@ -212,10 +213,10 @@ public  class SQLLiteDatabase implements Database {
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		deposit_addr=deposit_addr.replaceAll("[^A-Za-z0-9]","_");
 		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `addr`='"+deposit_addr+"' LIMIT 0,1",true,false);
-		if(res!=null){
+		if(res!=null&&!res.isEmpty()){
 			throw new Exception("Cannot reuse deposit addresses");
 		}else
-			query("INSERT INTO reddconomy_deposits(`addr`,`receiver`,`espected_balance`) VALUES('"+deposit_addr+"','"+walletid+"','"+expected_balance+"')",false,false);
+			query("INSERT INTO reddconomy_deposits(`addr`,`receiver`,`expected_balance`) VALUES('"+deposit_addr+"','"+walletid+"','"+expected_balance+"')",false,false);
 	}
 	
 
@@ -223,7 +224,7 @@ public  class SQLLiteDatabase implements Database {
 	public synchronized Collection<Map<String,Object>> getIncompletedDepositsAndUpdate(long tms) throws Exception {
 		ArrayList<Map<String,Object>> out=new ArrayList<Map<String,Object>>();
 		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `status`='1'",true,false);
-		if(res!=null){
+		if(res!=null&&!res.isEmpty()){
 			Map<String,String> fetch;
 			while(!(fetch=res.FetchAssoc()).isEmpty()){
 				
@@ -289,8 +290,9 @@ public  class SQLLiteDatabase implements Database {
 		SQLResult result=null;
 		try {
 			if(expectoutput){
-				Statement stm = CONNECTION.createStatement();
-				result=new SQLResult(stm.executeQuery(q));
+				PreparedStatement stm = CONNECTION.prepareStatement(q,ResultSet.TYPE_FORWARD_ONLY,
+					    ResultSet.CONCUR_READ_ONLY);
+				result=new SQLResult(stm.executeQuery()); 
 			}else{
 				Statement stm = CONNECTION.createStatement();
 				stm.executeUpdate(q);
