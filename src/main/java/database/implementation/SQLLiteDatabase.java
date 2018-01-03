@@ -64,7 +64,7 @@ public  class SQLLiteDatabase implements Database {
 			query("CREATE TABLE `reddconomy_contracts` ( `id`  TEXT NOT NULL PRIMARY KEY,"
 					+ "`receiver` TEXT NOT NULL, "
 					+ "`ammount` INTEGER DEFAULT 0, "
-					+ "`acceptor` TEXT NOT NULL,"
+					+ "`acceptor` TEXT DEFAULT '',"
 					+ "`created` DATETIME DEFAULT CURRENT_TIMESTAMP,"
 					+ "`accepted` DATETIME DEFAULT CURRENT_TIMESTAMP ,"
 					+ "FOREIGN KEY(`receiver`) REFERENCES reddconomy_wallets(`id`), "

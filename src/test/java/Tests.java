@@ -3,6 +3,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +30,21 @@ public class Tests{
 		f.delete();
 	}
 
+	@Test
+	public void testContract() throws Exception{
+		Object db_data[]=createSqliteDB();
+
+		Database db=(Database)db_data[1];
+		String wallet_id=UUID.randomUUID().toString();
+		long ammount=10;
+		String contract_id=db.createContract(wallet_id, ammount);
+		Map<String,Object> contract=db.getContract(contract_id);
+		long cammount=(long)contract.get("ammount");
+		assertTrue(ammount+"=/="+cammount,ammount==cammount);
+		closeSqliteDB(db_data);
+
+	}
+	
 	@Test
 	public void testDepositPrepareAndCompleteSQLite() throws Exception{
 		Object db_data[]=createSqliteDB();
