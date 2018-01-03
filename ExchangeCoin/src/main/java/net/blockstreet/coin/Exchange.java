@@ -79,6 +79,20 @@ public class Exchange extends JavaPlugin implements Listener {
 		  return (String)data.get("addr");
 	 }
 	 
+	 private String createContract(long ammount, UUID pUUID) throws Exception
+	 {
+		 String action = "newcontract&wallid=" + pUUID + "&ammount=" + ammount;
+		 Map data=(Map)apiCall(action).get("data");
+		 return (String)data.get("contractId");
+	 }
+	 
+	 private String acceptContract(String contractId, UUID pUUID) throws Exception
+	 {
+		 String action = "acceptcontract&wallid=" + pUUID + "&contractid=" + contractId;
+		 Map status=(Map)apiCall(action).get("status");
+		 return (String)status.get("status");
+	 }
+	 
 	 private long getBalance(UUID pUUID) throws Exception {
 		 
 		  String action = "balance&wallid=" + pUUID;
@@ -90,17 +104,18 @@ public class Exchange extends JavaPlugin implements Listener {
 	// This does commands.
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
-		// Controllo iniziale prima del comando
-	    	if (!(sender instanceof Player))
-	    	{
-		    	sender.sendMessage("You must be a player!");
-		    	return false;
-	    	}
+	// Controllo iniziale prima del comando
+	    if (!(sender instanceof Player))
+	    {
+		    sender.sendMessage("You must be a player!");
+		    return false;
+	    }
+	    	
+	    UUID pUUID = ((Player) sender).getUniqueId();
 	    	
 		if (cmd.getName().equalsIgnoreCase("deposit"))
 		{
 		    if (args.length==1) {
-			    	UUID pUUID = ((Player) sender).getUniqueId();
 			    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
 				        	try {
 								sender.sendMessage("Deposit to this address: " + getAddrDeposit(balance, pUUID));
@@ -119,7 +134,6 @@ public class Exchange extends JavaPlugin implements Listener {
 	    {		    	
 		    if (args.length==0)
 		    	{
-				UUID pUUID = ((Player) sender).getUniqueId();
 				try {
 					sender.sendMessage("You have: " + getBalance(pUUID) + " RDD");
 				} catch (Exception e) {
@@ -135,10 +149,40 @@ public class Exchange extends JavaPlugin implements Listener {
 	    
 		else if (cmd.getName().equalsIgnoreCase("contract"))
 	    {		    	
-		    	if (args.length==2)
+			if (args.length==2)
 		    	{
-			    	// Do stuff.
-				// sender.sendMessage("Send money");
+		    		if (args[0]=="new")
+		    		{
+		    			long ammount = (long)(Double.parseDouble(args[1])*100000000L);
+		    			try {
+							sender.sendMessage("Contract ID: " + createContract(ammount, pUUID));
+							sender.sendMessage("Contract created. Share the Contract ID.");
+						} catch (Exception e) {
+							sender.sendMessage("Cannot create contract. Call an admin for more info.");
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+		    		} else if (args[0] == "accept") {
+		    			String contractId = args[1];
+		    			try {
+							String status = acceptContract(contractId, pUUID);
+							if (status=="200")
+							{
+								sender.sendMessage("Contract accepted.");
+							} else {
+								sender.sendMessage("Error.");
+							}
+						} catch (Exception e) {
+							sender.sendMessage("Cannot accept contract. Are you sure that you haven't already accepted?");
+							sender.sendMessage("Otherwise, call and admin for more info.");
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+		    			sender.sendMessage("Contract accepted.");
+		    			sender.sendMessage("Contract");
+		    		} else if (args[0] == "info") {
+		    			String contractId = args[1];
+		    		}
 				return true;
 			} else {
 			    	sender.sendMessage("Wrong arguments! Check how to use this command here:");
