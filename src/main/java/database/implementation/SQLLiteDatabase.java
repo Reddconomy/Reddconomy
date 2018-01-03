@@ -64,7 +64,7 @@ public  class SQLLiteDatabase implements Database {
 			query("CREATE TABLE `reddconomy_contracts` ( `id`  TEXT NOT NULL PRIMARY KEY,"
 					+ "`receiver` TEXT NOT NULL, "
 					+ "`ammount` INTEGER DEFAULT 0, "
-					+ "`acceptor` TEXT NOT NULL,"
+					+ "`acceptor` TEXT DEFAULT '',"
 					+ "`created` DATETIME DEFAULT CURRENT_TIMESTAMP,"
 					+ "`accepted` DATETIME DEFAULT CURRENT_TIMESTAMP ,"
 					+ "FOREIGN KEY(`receiver`) REFERENCES reddconomy_wallets(`id`), "
@@ -126,7 +126,7 @@ public  class SQLLiteDatabase implements Database {
 	
 	@Override
 	public synchronized Map<String,Object> getContract(String id) throws SQLException{
-		id=id.replaceAll("[^A-Za-z0-9]","");
+		id=id.replaceAll("[^A-Za-z0-9]","_");
 		Map<String,Object> out=new HashMap<String,Object>();
 		SQLResult res=query("SELECT * FROM `reddconomy_contracts` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
 		if(res!=null&&!res.isEmpty()){
@@ -149,6 +149,8 @@ public  class SQLLiteDatabase implements Database {
 	public synchronized String createContract(String walletid,long ammount) throws SQLException{
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		String id="0c"+(System.currentTimeMillis()+"___"+walletid+"__"+ammount).hashCode();
+		id=id.replaceAll("[^A-Za-z0-9]","_");
+
 		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`ammount`) VALUES('"+id+"','"+walletid+"','"+ammount+"')",false,false);			
 		return id;
 	}
@@ -157,7 +159,7 @@ public  class SQLLiteDatabase implements Database {
 	@Override
 	public synchronized void acceptContract(String contractid, String walletid) throws Exception {
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
-		contractid=contractid.replaceAll("[^A-Za-z0-9]","");
+		contractid=contractid.replaceAll("[^A-Za-z0-9]","_");
 		Map<String,Object> contract=getContract(contractid);
 		if(contract!=null){
 			String accp=(String)contract.get("acceptor");
@@ -174,7 +176,7 @@ public  class SQLLiteDatabase implements Database {
 					rcv_balance+=price;
 					query("UPDATE reddconomy_wallets SET `balance`='"+acc_balance+"' WHERE `id`='"+walletid+"'",false,false);
 					query("UPDATE reddconomy_wallets SET `balance`='"+rcv_balance+"' WHERE `id`='"+rcv_walletid+"'",false,false);
-					query("UPDATE reddconomy_contracts SET `accepted`=TIMESTAMP `acceptor`='"+walletid+"' WHERE `id`='"+contractid+"'",false,false);
+					query("UPDATE reddconomy_contracts SET `accepted`= CURRENT_TIMESTAMP ,`acceptor`='"+walletid+"' WHERE `id`='"+contractid+"'",false,false);
 				}else{
 					if(price>=0)throw new Exception("Not enought money. Wallet id "+walletid+" has balance "+acc_balance+" but contract requires "+price);
 					else throw new Exception("Not enought money. Wallet id "+rcv_walletid+" has balance "+rcv_balance+" but contract requires "+price);
