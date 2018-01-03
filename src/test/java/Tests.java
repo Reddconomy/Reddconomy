@@ -29,6 +29,8 @@ public class Tests{
 		db.close();
 		f.delete();
 	}
+	
+	
 
 	@Test
 	public void testContract() throws Exception{
@@ -41,6 +43,7 @@ public class Tests{
 		Map<String,Object> contract=db.getContract(contract_id);
 		long cammount=(long)contract.get("ammount");
 		assertTrue(ammount+"=/="+cammount,ammount==cammount);
+				
 		closeSqliteDB(db_data);
 
 	}
