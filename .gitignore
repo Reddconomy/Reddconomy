@@ -11,4 +11,4 @@ gradlew.bat
 *.conf
 *.dll
 .DS_Store
-
+*.sqlite
