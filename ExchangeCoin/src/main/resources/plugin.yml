@@ -4,7 +4,12 @@ version: 0.0.1
 author: Soxasora
 commands:
   deposit:
-    description: Show deposit address.
-    usage: /deposit
+    description: Deposit Reddcoins.
+    usage: /deposit <money>
     permission: ExchangeCoin.deposit
+    permission-message: You don't have <permission>
+  balance:
+    description: Show balance.
+    usage: /balance
+    permission: ExchangeCoin.balance
     permission-message: You don't have <permission>

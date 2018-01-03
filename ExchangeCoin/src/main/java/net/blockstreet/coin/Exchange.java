@@ -50,16 +50,11 @@ public class Exchange extends JavaPlugin implements Listener {
 		_JSON = new GsonBuilder().setPrettyPrinting().create();
 	}
 	
-
-	 private String getAddrDeposit(long addmoney, UUID pUUID) throws Exception {
-		 
-		  String urlString = "http://localhost:8099/?action=deposit&wallid=" + pUUID + "&addmoney=" + addmoney;
-		  
+	private Map apiCall(String action) throws Exception
+	{
+		  String urlString = "http://localhost:8099/?action=" + action;
 		  URL url = new URL(urlString);
 		  HttpURLConnection con = (HttpURLConnection) url.openConnection();
-		  
-		  
-		  //Map resp=_JSON.fromJson(resp_tx,Map.class);
 		 
 		  // Reading response from input Stream
 		  BufferedReader in = new BufferedReader(
@@ -73,11 +68,23 @@ public class Exchange extends JavaPlugin implements Listener {
 		  in.close();
 		  
 		  Map resp=_JSON.fromJson(response.toString(),Map.class);
-		  Map data=(Map)resp.get("data");
+		  return resp;
+	}
+	
+
+	 private String getAddrDeposit(long balance, UUID pUUID) throws Exception {
+		 
+		  String action = "deposit&wallid=" + pUUID + "&balance=" + balance;
+		  Map data=(Map)apiCall(action).get("data");
 		  return (String)data.get("addr");
-		  
-		  
-		  //return resp.toString();
+	 }
+	 
+	 private long getBalance(UUID pUUID) throws Exception {
+		 
+		  String action = "balance&wallid=" + pUUID;
+		  Map data=(Map)apiCall(action).get("data");
+		  Number balance=(Number)data.get("balance");
+		  return balance.longValue();
 	 }
 	 
 	// This does commands.
@@ -85,46 +92,60 @@ public class Exchange extends JavaPlugin implements Listener {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
 		// Controllo iniziale prima del comando
 		if (cmd.getName().equalsIgnoreCase("deposit"))
-		
+		{
 		    if (sender instanceof Player) {
-		    	UUID pUUID = ((Player) sender).getUniqueId();
-		    	long addmoney = (long)(Double.parseDouble(args[0])*100000000L);
-			        	try {
-							sender.sendMessage("Deposit to this address: " + getAddrDeposit(addmoney, pUUID));
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-			        	return true;
-		    } else {
-			        sender.sendMessage("You must be a player!");
-			        return false;
+			    	UUID pUUID = ((Player) sender).getUniqueId();
+			    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
+				        	try {
+								sender.sendMessage("Deposit to this address: " + getAddrDeposit(balance, pUUID));
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+				        	return true;
+		    } else if (!(sender instanceof Player)) {
+		    		sender.sendMessage("You must be a player!");
+		    		return false;
+		    } else if (!(args.length == 1)) {
+	    			sender.sendMessage("Wrong arguments! Check how to use this command here:");
+	    			return false;
 		    }
-		
-		   /* if (args.length>0)
-		    {
+		}
+	
+	    if (cmd.getName().equalsIgnoreCase("balance"))
+	    {
+			if (sender instanceof Player) {
+				UUID pUUID = ((Player) sender).getUniqueId();
+				try {
+					sender.sendMessage("You have: " + getBalance(pUUID) + " RDD");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return true;
+			} else if (!(sender instanceof Player)) {
+			    	sender.sendMessage("You must be a player!");
+			    	return false;
+			} else if (!(args.length==0)) {
 		    		sender.sendMessage("Wrong arguments! Check how to use this command here:");
 		    		return false;
-		    }*/
-	
-	
-	    /*if (cmd.getName().equalsIgnoreCase("balance"))
-		if (sender instanceof Player) {
-			sender.sendMessage("Say balance");
-			return true;
-		} else {
-			sender.sendMessage("You must be a player!");
-			return false;
-		}
+			}
+	    }
 	    
 	    if (cmd.getName().equalsIgnoreCase("send"))
-	    if (sender instanceof Player) {
-	    	sender.sendMessage("Send money");
-	    	return true;
-	    } else {
-	    	sender.sendMessage("You must be a player!");
-	    	return false;
-	    }*/
+	    {
+		    if (sender instanceof Player) {
+		    		// Do stuff.
+			    //	sender.sendMessage("Send money");
+			    	return true;
+			} else if (!(sender instanceof Player)) {
+			    	sender.sendMessage("You must be a player!");
+			    	return false;
+		    } else if (!(args.length == 2)) {
+		    		sender.sendMessage("Wrong arguments! Check how to use this command here:");
+		    		return false;
+		    }
+	    }
 	return false;
 	}
 }	
