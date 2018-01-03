@@ -51,9 +51,9 @@ public class Exchange extends JavaPlugin implements Listener {
 	}
 	
 
-	 private String getAddrDeposit(long balance, UUID pUUID) throws Exception {
+	 private String getAddrDeposit(long addmoney, UUID pUUID) throws Exception {
 		 
-		  String urlString = "http://localhost:8099/?action=deposit&wallid=" + pUUID + "&balance=" + balance;
+		  String urlString = "http://localhost:8099/?action=deposit&wallid=" + pUUID + "&addmoney=" + addmoney;
 		  
 		  URL url = new URL(urlString);
 		  HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -88,9 +88,9 @@ public class Exchange extends JavaPlugin implements Listener {
 		
 		    if (sender instanceof Player) {
 		    	UUID pUUID = ((Player) sender).getUniqueId();
-		    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
+		    	long addmoney = (long)(Double.parseDouble(args[0])*100000000L);
 			        	try {
-							sender.sendMessage("Deposit to this address: " + getAddrDeposit(balance, pUUID));
+							sender.sendMessage("Deposit to this address: " + getAddrDeposit(addmoney, pUUID));
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
