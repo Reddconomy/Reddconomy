@@ -91,9 +91,15 @@ public class Exchange extends JavaPlugin implements Listener {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
 		// Controllo iniziale prima del comando
+	    	if (!(sender instanceof Player))
+	    	{
+		    	sender.sendMessage("You must be a player!");
+		    	return false;
+	    	}
+	    	
 		if (cmd.getName().equalsIgnoreCase("deposit"))
 		{
-		    if (sender instanceof Player) {
+		    if (args.length==1) {
 			    	UUID pUUID = ((Player) sender).getUniqueId();
 			    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
 				        	try {
@@ -103,18 +109,16 @@ public class Exchange extends JavaPlugin implements Listener {
 								e.printStackTrace();
 							}
 				        	return true;
-		    } else if (!(sender instanceof Player)) {
-		    		sender.sendMessage("You must be a player!");
-		    		return false;
-		    } else if (!(args.length == 1)) {
+		    } else {
 	    			sender.sendMessage("Wrong arguments! Check how to use this command here:");
 	    			return false;
 		    }
 		}
 	
-	    if (cmd.getName().equalsIgnoreCase("balance"))
-	    {
-			if (sender instanceof Player) {
+		else if (cmd.getName().equalsIgnoreCase("balance"))
+	    {		    	
+		    if (args.length==0)
+		    	{
 				UUID pUUID = ((Player) sender).getUniqueId();
 				try {
 					sender.sendMessage("You have: " + getBalance(pUUID) + " RDD");
@@ -123,29 +127,24 @@ public class Exchange extends JavaPlugin implements Listener {
 					e.printStackTrace();
 				}
 				return true;
-			} else if (!(sender instanceof Player)) {
-			    	sender.sendMessage("You must be a player!");
-			    	return false;
-			} else if (!(args.length==0)) {
+			} else {
 		    		sender.sendMessage("Wrong arguments! Check how to use this command here:");
 		    		return false;
 			}
 	    }
 	    
-	    if (cmd.getName().equalsIgnoreCase("send"))
-	    {
-		    if (sender instanceof Player) {
-		    		// Do stuff.
-			    //	sender.sendMessage("Send money");
-			    	return true;
-			} else if (!(sender instanceof Player)) {
-			    	sender.sendMessage("You must be a player!");
+		else if (cmd.getName().equalsIgnoreCase("contract"))
+	    {		    	
+		    	if (args.length==2)
+		    	{
+			    	// Do stuff.
+				// sender.sendMessage("Send money");
+				return true;
+			} else {
+			    	sender.sendMessage("Wrong arguments! Check how to use this command here:");
 			    	return false;
-		    } else if (!(args.length == 2)) {
-		    		sender.sendMessage("Wrong arguments! Check how to use this command here:");
-		    		return false;
-		    }
+			}
 	    }
-	return false;
+	    return false;
 	}
 }	
