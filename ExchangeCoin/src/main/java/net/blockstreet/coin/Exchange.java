@@ -7,6 +7,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -16,6 +18,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -47,13 +53,23 @@ public class Exchange extends JavaPlugin implements Listener {
 
 	    }
 	}
+	
+	final Gson _JSON;
+	
+	public Exchange() {
+		_JSON = new GsonBuilder().setPrettyPrinting().create();
+	}
+	
 
-	 private String getAddr() throws Exception {
+	 private String getAddrDeposit(long balance, UUID pUUID) throws Exception {
 		 
-		  String urlString = "http://localhost:8099/getaddr";
+		  String urlString = "http://localhost:8099/?action=deposit&wallid=" + pUUID + "&balance=" + balance;
 		  
 		  URL url = new URL(urlString);
 		  HttpURLConnection con = (HttpURLConnection) url.openConnection();
+		  
+		  
+		  //Map resp=_JSON.fromJson(resp_tx,Map.class);
 		 
 		  // Reading response from input Stream
 		  BufferedReader in = new BufferedReader(
@@ -66,9 +82,12 @@ public class Exchange extends JavaPlugin implements Listener {
 		  }
 		  in.close();
 		  
+		  Map resp=_JSON.fromJson(response.toString(),Map.class);
+		  Map data=(Map)resp.get("data");
+		  return (String)data.get("addr");
 		  
 		  
-		  return response.toString();
+		  //return resp.toString();
 	 }
 	 
 	// This does commands.
@@ -78,23 +97,10 @@ public class Exchange extends JavaPlugin implements Listener {
 		if (cmd.getName().equalsIgnoreCase("deposit"))
 		
 		    if (sender instanceof Player) {
-			     /*   //Player playerD = Bukkit.getPlayer(args[0]); // Player2
-				  JsonRpcHttpClient client = null;
-				try {
-					client = new JsonRpcHttpClient(new URL("http://xmpp.frk.wf:45443/"));
-				} catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				  String addr = null;
-				try {
-					addr = (String)client.invoke("getnewaddress",new Object[]{},Object.class);
-				} catch (Throwable e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}*/
+		    	UUID pUUID = ((Player) sender).getUniqueId();
+		    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
 			        	try {
-							sender.sendMessage("Deposit to this address: " + getAddr());
+							sender.sendMessage("Deposit to this address: " + getAddrDeposit(balance, pUUID));
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -112,7 +118,7 @@ public class Exchange extends JavaPlugin implements Listener {
 		    }*/
 	
 	
-	    if (cmd.getName().equalsIgnoreCase("balance"))
+	    /*if (cmd.getName().equalsIgnoreCase("balance"))
 		if (sender instanceof Player) {
 			sender.sendMessage("Say balance");
 			return true;
@@ -128,10 +134,7 @@ public class Exchange extends JavaPlugin implements Listener {
 	    } else {
 	    	sender.sendMessage("You must be a player!");
 	    	return false;
-	    }
-	    
-	
+	    }*/
 	return false;
 	}
-	}
-	
+}	
