@@ -96,8 +96,8 @@ public class Reddconomy implements HttpHandler{
 				Collection<Map<String,Object>> deposits=_DATABASE.getIncompletedDepositsAndUpdate(delta_t);
 				for(Map<String,Object> deposit:deposits){
 					String addr=deposit.get("addr").toString();
-					long balance=(long)deposit.get("balance");
-					if(getReceivedBA(addr)>=balance){
+					long expected_balance=(long)deposit.get("expected_balance");
+					if(getReceivedBA(addr)>=expected_balance){
 						_DATABASE.completeDeposit(addr);
 					}
 				}
