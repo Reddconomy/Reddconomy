@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import database.Database;
-import utils.HashUtils;
 
 /**
  * DB implementation on SQLITE - NOT SAFE FOR PRODUCTION
@@ -149,7 +148,7 @@ public  class SQLLiteDatabase implements Database {
 	@Override
 	public synchronized String createContract(String walletid,long ammount) throws SQLException{
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
-		String id=HashUtils.hash(System.currentTimeMillis()+"___"+walletid+"__"+ammount);
+		String id="0c"+(System.currentTimeMillis()+"___"+walletid+"__"+ammount).hashCode();
 		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`ammount`) VALUES('"+id+"','"+walletid+"','"+ammount+"')",false,false);			
 		return id;
 	}
