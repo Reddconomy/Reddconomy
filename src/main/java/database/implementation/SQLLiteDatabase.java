@@ -174,7 +174,7 @@ public  class SQLLiteDatabase implements Database {
 					rcv_balance+=price;
 					query("UPDATE reddconomy_wallets SET `balance`='"+acc_balance+"' WHERE `id`='"+walletid+"'",false,false);
 					query("UPDATE reddconomy_wallets SET `balance`='"+rcv_balance+"' WHERE `id`='"+rcv_walletid+"'",false,false);
-					query("UPDATE reddconomy_contracts SET `accepted`=TIMESTAMP ,`acceptor`='"+walletid+"' WHERE `id`='"+contractid+"'",false,false);
+					query("UPDATE reddconomy_contracts SET `accepted`= CURRENT_TIMESTAMP() ,`acceptor`='"+walletid+"' WHERE `id`='"+contractid+"'",false,false);
 				}else{
 					if(price>=0)throw new Exception("Not enought money. Wallet id "+walletid+" has balance "+acc_balance+" but contract requires "+price);
 					else throw new Exception("Not enought money. Wallet id "+rcv_walletid+" has balance "+rcv_balance+" but contract requires "+price);
