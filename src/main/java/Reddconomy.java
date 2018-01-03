@@ -288,7 +288,7 @@ public class Reddconomy implements HttpHandler{
 						response.end();
 						break;							
 					}
-					case "contractinfo":{
+					/*case "contractinfo":{
 						Map<String,Object> resp_obj=new HashMap<String,Object>();
 						try {
 							Map<String,Object> data=new HashMap<String,Object>();
@@ -312,7 +312,7 @@ public class Reddconomy implements HttpHandler{
 						response.content(resp_json);
 						response.end();
 						break;							
-					}
+					}*/
 					default:{
 						response.status(401);
 						response.header("Content-type","application/json");
