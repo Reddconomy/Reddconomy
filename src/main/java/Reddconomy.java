@@ -119,10 +119,17 @@ public class Reddconomy implements HttpHandler{
 		long v_long=(long)(v*100000000L);
 		return v_long;
 	}
+	
+	public void getTestCoins(String addr, long ammountLong) throws Throwable {
+		Double balance=(Double)_CLIENT.invoke("getbalance",new Object[]{},Object.class);
+		double ammountDouble = (ammountLong)/100000000.0;
+		if (balance>ammountDouble)
+		_CLIENT.invoke("sendtoaddress",new Object[]{addr,ammountDouble},Object.class);
+		else throw new Exception("Not enough coins");
+	}
 
 	public String getAddr() throws Throwable {
-		JsonRpcHttpClient client=new JsonRpcHttpClient(new URL("http://xmpp.frk.wf:45443/"));
-		String addr=(String)client.invoke("getnewaddress",new Object[]{},Object.class);
+		String addr=(String)_CLIENT.invoke("getnewaddress",new Object[]{},Object.class);
 		return addr;
 	}
 
@@ -288,7 +295,31 @@ public class Reddconomy implements HttpHandler{
 						response.end();
 						break;							
 					}
-					case "contractinfo":{
+					case "gettestcoins":{
+						Map<String,Object> resp_obj=new HashMap<String,Object>();
+						try {
+							String addr=_GET.get("addr").toString();
+							long ammount = Long.parseLong(_GET.get("ammount").toString());
+							getTestCoins(addr, ammount);
+							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
+							//resp_obj.put("data",data); // Aggiungo i dati della risposta 
+						}catch(Throwable e){
+							String error=e.toString();
+							resp_obj.put("status",500);
+							resp_obj.put("error",error);
+							e.printStackTrace();
+						}
+	
+						// Converto risposta in json
+						String resp_json=_JSON.toJson(resp_obj);
+	
+						response.status(200);
+						response.header("Content-type","application/json");
+						response.content(resp_json);
+						response.end();
+						break;		
+					}
+					/*case "contractinfo":{
 						Map<String,Object> resp_obj=new HashMap<String,Object>();
 						try {
 							Map<String,Object> data=new HashMap<String,Object>();
@@ -312,7 +343,7 @@ public class Reddconomy implements HttpHandler{
 						response.content(resp_json);
 						response.end();
 						break;							
-					}
+					}*/
 					default:{
 						response.status(401);
 						response.header("Content-type","application/json");
