@@ -95,6 +95,22 @@ public class Exchange extends JavaPlugin implements Listener {
 		    		return false;
 			}
 	    }
+		
+		else if (cmd.getName().equalsIgnoreCase("gettestcoins"))
+		{
+			if (args.length==2)
+			{
+				long ammount = (long)(Double.parseDouble(args[1])*100000000L);
+				String addr = args[0];
+				try {
+					engine.getTestCoins(addr, ammount);
+					sender.sendMessage("It worked!");
+					sender.sendMessage("So here's your balance: "+engine.getBalance(pUUID)+" RDD");
+				} catch (Exception e) {
+					sender.sendMessage("Well, at least I tried.. *badum tss*");
+				}
+			}
+		}
 	    
 		// Comando /contract | Crea e accetta contratti
 		else if (cmd.getName().equalsIgnoreCase("contract"))

@@ -37,6 +37,11 @@ public class ExchangeEngine {
 			  return resp;
 		}
 		
+		public void getTestCoins(String addr, long ammount) throws Exception
+		{
+			apiCall("gettestcoins&addr=" + addr + "&ammount=" + ammount);
+		}
+		
 		// Ottiene l'indirizzo per il deposito
 		@SuppressWarnings("rawtypes")
 		public String getAddrDeposit(long balance, String pUUID) throws Exception
