@@ -7,8 +7,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
-//import org.bukkit.event.player.PlayerJoinEvent;
-//import java.util.UUID;
+//import org.bukkit.event.player.PlayerJoinEvent; // Remove if you want to use onPlayerJoinEvent
+//import java.util.UUID; // Remove if you want to change from String to UUID
 
 public class Exchange extends JavaPlugin implements Listener {
 	
