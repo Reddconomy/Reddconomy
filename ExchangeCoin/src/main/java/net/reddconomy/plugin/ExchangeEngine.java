@@ -1,4 +1,4 @@
-package net.blockstreet.coin;
+package net.reddconomy.plugin;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

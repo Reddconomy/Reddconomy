@@ -1,6 +1,6 @@
 // This enables reddCoin exchanges in-game
 // Author: Simone Cervino, @soxasora
-package net.blockstreet.coin;
+package net.reddconomy.plugin;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
