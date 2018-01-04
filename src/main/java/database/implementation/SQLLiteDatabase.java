@@ -126,7 +126,7 @@ public  class SQLLiteDatabase implements Database {
 	
 	@Override
 	public synchronized Map<String,Object> getContract(String id) throws SQLException{
-		id=id.replaceAll("[^A-Za-z0-9]","");
+		id=id.replaceAll("[^A-Za-z0-9]","_");
 		Map<String,Object> out=new HashMap<String,Object>();
 		SQLResult res=query("SELECT * FROM `reddconomy_contracts` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
 		if(res!=null&&!res.isEmpty()){
@@ -149,6 +149,8 @@ public  class SQLLiteDatabase implements Database {
 	public synchronized String createContract(String walletid,long ammount) throws SQLException{
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		String id="0c"+(System.currentTimeMillis()+"___"+walletid+"__"+ammount).hashCode();
+		id=id.replaceAll("[^A-Za-z0-9]","_");
+
 		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`ammount`) VALUES('"+id+"','"+walletid+"','"+ammount+"')",false,false);			
 		return id;
 	}
@@ -157,7 +159,7 @@ public  class SQLLiteDatabase implements Database {
 	@Override
 	public synchronized void acceptContract(String contractid, String walletid) throws Exception {
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
-		contractid=contractid.replaceAll("[^A-Za-z0-9]","");
+		contractid=contractid.replaceAll("[^A-Za-z0-9]","_");
 		Map<String,Object> contract=getContract(contractid);
 		if(contract!=null){
 			String accp=(String)contract.get("acceptor");
