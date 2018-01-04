@@ -1,4 +1,4 @@
-// This enables reddcoin exchanges in-game
+// This enables reddCoin exchanges in-game
 // Author: Simone Cervino, @soxasora
 package net.blockstreet.coin;
 
@@ -12,23 +12,24 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Exchange extends JavaPlugin implements Listener {
 	
-	// Dichiaro ExchangeEngine come engine così lo posso usare
+	// Let's declare ExchangeEngine, shall we?
 	ExchangeEngine engine = new ExchangeEngine();
 	
-	// Cosa fa quando attivato
+	// This is what the plugin do when activated
 	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
 	}
 	
-	// Cosa fa quando disattivato
+	// And this is what the plugin do when deactivated.
 	@Override
 	public void onDisable() {
 		getLogger().info("Exchanges between users, deactivated!");
 	}
 	
-	// Fa cose al primo login di un nuovo utente
+	// This should do things when a new player logins for the first time.
+	// As you can see, it's deactivated because, well, we don't need it.
 	/*@EventHandler
 	public void onPlayerJoinEvent(PlayerJoinEvent event) throws Throwable {
 	  if(!event.getPlayer().hasPlayedBefore()) {
@@ -36,23 +37,25 @@ public class Exchange extends JavaPlugin implements Listener {
 	    }
 	}*/
 	
-	// Dichiarazione dei comandi
+	// Commands!
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
 	{
-		// Ti chiederai perché usare una stringa per l'UUID, beh, se il server è crackato
-		// usa il nome di un utente al posto di un UUID dato da Mojang.
+		// Maybe you're asking yourself why am I using String instead of UUID.
+		// Well, let's say that you will find out later. Let's continue!
 		String pUUID = null;
 		
-		// Controllo iniziale prima del comando
-		// I comandi dunque funzionano solo se eseguiti da utenti.
+		// These commands only works if a player executes them. So here's a way to force it.
 	    if (!(sender instanceof Player))
 	    {
 		    sender.sendMessage("You must be a player!");
 		    return false;
 	    }
 	    
-	    // Se il server è originale, usa UUID, altrimenti usa nome del player.
+	    // Here we are. I'm using String instead of UUID because
+	    // if a server is cracked (offline mode), pUUID will have the Player's name
+	    // instead of the Mojang's UUID
+	    // Extremely unsafe way to use this plugin, please, make only original servers.
 	    if ((getServer().getOnlineMode())==true)
 	    {
 	    	pUUID = (((Player) sender).getUniqueId()).toString();
@@ -60,7 +63,9 @@ public class Exchange extends JavaPlugin implements Listener {
 	    	pUUID = sender.getName();
 	    }
 	    	
-	    // Comando /deposit | Mostra l'indirizzo sul quale l'utente deve depositare
+	    // /deposit command here. | This shows the deposit address where the player
+	    // 						  | should send money.
+	    // example: /deposit 27.3 | You will deposit 27.3 RDD this way.
 		if (cmd.getName().equalsIgnoreCase("deposit"))
 		{
 		    if (args.length==1) {
@@ -78,7 +83,7 @@ public class Exchange extends JavaPlugin implements Listener {
 		    }
 		}
 		
-		// Comando /balance | Mostra il saldo di un utente
+		// /balance just shows.. well, you guessed it! The balance!
 		else if (cmd.getName().equalsIgnoreCase("balance"))
 	    {		    	
 		    if (args.length==0)
@@ -96,6 +101,7 @@ public class Exchange extends JavaPlugin implements Listener {
 			}
 	    }
 		
+		// Let's just use it in order to test /deposit. Don't use it in a production server.
 		else if (cmd.getName().equalsIgnoreCase("gettestcoins"))
 		{
 			if (args.length==2)
@@ -105,14 +111,15 @@ public class Exchange extends JavaPlugin implements Listener {
 				try {
 					engine.getTestCoins(addr, ammount);
 					sender.sendMessage("It worked!");
-					sender.sendMessage("You added " + args[1] + " doge to the address: " + addr);
+					sender.sendMessage("You added " + args[1] + " to the address: " + addr);
 				} catch (Exception e) {
 					sender.sendMessage("Nope. Well, at least I tried.. *badum tss*");
 				}
 			}
 		}
 	    
-		// Comando /contract | Crea e accetta contratti
+		// "send" is boring and unsafe. Let's make contracts!
+		// TO-DO: a way to make it easier for the user.
 		else if (cmd.getName().equalsIgnoreCase("contract"))
 	    {		    	
 			if (args.length==2)
