@@ -105,9 +105,9 @@ public class Exchange extends JavaPlugin implements Listener {
 				try {
 					engine.getTestCoins(addr, ammount);
 					sender.sendMessage("It worked!");
-					sender.sendMessage("So here's your balance: "+engine.getBalance(pUUID)+" RDD");
+					sender.sendMessage("You added " + args[1] + " doge to the address: " + addr);
 				} catch (Exception e) {
-					sender.sendMessage("Well, at least I tried.. *badum tss*");
+					sender.sendMessage("Nope. Well, at least I tried.. *badum tss*");
 				}
 			}
 		}
