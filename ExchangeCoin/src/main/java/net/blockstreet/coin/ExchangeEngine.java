@@ -16,7 +16,7 @@ public class ExchangeEngine {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 		}
 		
-		// Le api fondamentali per interfacciarsi a Reddconomy.
+		// Fundamental APIs for Reddconomy.
 		@SuppressWarnings("rawtypes")
 		public Map apiCall(String action) throws Exception
 		{
@@ -37,12 +37,13 @@ public class ExchangeEngine {
 			  return resp;
 		}
 		
+		// Test, test, test and moar test.
 		public void getTestCoins(String addr, long ammount) throws Exception
 		{
 			apiCall("gettestcoins&addr=" + addr + "&ammount=" + ammount);
 		}
 		
-		// Ottiene l'indirizzo per il deposito
+		// Let's get that deposit address.
 		@SuppressWarnings("rawtypes")
 		public String getAddrDeposit(long balance, String pUUID) throws Exception
 		{
@@ -52,7 +53,7 @@ public class ExchangeEngine {
 			 return (String)data.get("addr");
 		}
 		
-		// Crea contratto
+		// Create contract.
 		@SuppressWarnings("rawtypes")
 		public String createContract(long ammount, String pUUID) throws Exception
 		{
@@ -61,13 +62,13 @@ public class ExchangeEngine {
 			return (String)data.get("contractId");
 		}
 		 
-		// Accetta contratto
+		// Accept contract.
 		public void acceptContract(String contractId, String pUUID) throws Exception
 		{
 			apiCall("acceptcontract&wallid=" + pUUID + "&contractid=" + contractId);
 		}
 		 
-		// Ottiene saldo di un utente
+		// Get balance.
 		@SuppressWarnings("rawtypes")
 		public double getBalance(String pUUID) throws Exception
 		{
