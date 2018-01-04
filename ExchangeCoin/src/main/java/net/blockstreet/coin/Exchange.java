@@ -2,27 +2,18 @@
 // Author: Simone Cervino, @soxasora
 package net.blockstreet.coin;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Map;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-//import java.util.UUID;
 //import org.bukkit.event.player.PlayerJoinEvent;
+//import java.util.UUID;
+
 public class Exchange extends JavaPlugin implements Listener {
 	
-	// Dichiaro _JSON usando Gson
-	final Gson _JSON;
-	public Exchange() {
-		_JSON = new GsonBuilder().setPrettyPrinting().create();
-	}
+	// Dichiaro ExchangeEngine come engine così lo posso usare
+	ExchangeEngine engine = new ExchangeEngine();
 	
 	// Cosa fa quando attivato
 	@Override
@@ -45,59 +36,6 @@ public class Exchange extends JavaPlugin implements Listener {
 	    }
 	}*/
 	
-	// Le api fondamentali per interfacciarsi a Reddconomy.
-	@SuppressWarnings("rawtypes")
-	private Map apiCall(String action) throws Exception
-	{
-		  String urlString = "http://localhost:8099/?action=" + action;
-		  URL url = new URL(urlString);
-		  HttpURLConnection con = (HttpURLConnection) url.openConnection();
-		  
-		  BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-		  String output;
-		  StringBuffer response = new StringBuffer();
-		 
-		  while ((output = in.readLine()) != null) {
-		   response.append(output);
-		  }
-		  in.close();
-		  
-		  Map resp=_JSON.fromJson(response.toString(),Map.class);
-		  return resp;
-	}
-	
-	// Ottiene l'indirizzo per il deposito
-	private String getAddrDeposit(long balance, String pUUID) throws Exception
-	{
-		 
-		 String action = "deposit&wallid=" + pUUID + "&balance=" + balance;
-		 Map data=(Map)apiCall(action).get("data");
-		 return (String)data.get("addr");
-	}
-	
-	// Crea contratto
-	private String createContract(long ammount, String pUUID) throws Exception
-	{
-		String action = "newcontract&wallid=" + pUUID + "&ammount=" + ammount;
-		Map data=(Map)apiCall(action).get("data");
-		return (String)data.get("contractId");
-	}
-	 
-	// Accetta contratto
-	private void acceptContract(String contractId, String pUUID) throws Exception
-	{
-		apiCall("acceptcontract&wallid=" + pUUID + "&contractid=" + contractId);
-	}
-	 
-	// Ottiene saldo di un utente
-	private double getBalance(String pUUID) throws Exception
-	{
-		String action = "balance&wallid=" + pUUID;
-		Map data=(Map)apiCall(action).get("data");
-		Number balance=(Number)data.get("balance");
-		return (balance.longValue())/100000000.0;
-	}
-	 
 	// Dichiarazione dei comandi
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
@@ -128,7 +66,7 @@ public class Exchange extends JavaPlugin implements Listener {
 		    if (args.length==1) {
 			    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
 				        	try {
-								sender.sendMessage("Deposit to this address: " + getAddrDeposit(balance, pUUID));
+								sender.sendMessage("Deposit to this address: " + engine.getAddrDeposit(balance, pUUID));
 							} catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -146,7 +84,7 @@ public class Exchange extends JavaPlugin implements Listener {
 		    if (args.length==0)
 		    	{
 				try {
-					sender.sendMessage("You have: " + getBalance(pUUID) + " RDD");
+					sender.sendMessage("You have: " + engine.getBalance(pUUID) + " RDD");
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -167,7 +105,7 @@ public class Exchange extends JavaPlugin implements Listener {
 		    		{
 		    			long ammount = (long)(Double.parseDouble(args[1])*100000000L);
 		    			try {
-							sender.sendMessage("Contract ID: " + createContract(ammount, pUUID));
+							sender.sendMessage("Contract ID: " + engine.createContract(ammount, pUUID));
 							sender.sendMessage("Contract created. Share the Contract ID.");
 						} catch (Exception e) {
 							sender.sendMessage("Cannot create contract. Call an admin for more info.");
@@ -177,9 +115,9 @@ public class Exchange extends JavaPlugin implements Listener {
 		    		} else if (args[0].equalsIgnoreCase("accept")) {
 		    			String contractId = args[1];
 		    			try {
-		    				acceptContract(contractId, pUUID);
+		    				engine.acceptContract(contractId, pUUID);
 							sender.sendMessage("Contract accepted.");
-							sender.sendMessage("You now have: " + getBalance(pUUID) + " RDD");
+							sender.sendMessage("You now have: " + engine.getBalance(pUUID) + " RDD");
 						} catch (Exception e) {
 							sender.sendMessage("Cannot accept contract. Are you sure that you haven't already accepted?");
 							sender.sendMessage("Otherwise, call and admin for more info.");
