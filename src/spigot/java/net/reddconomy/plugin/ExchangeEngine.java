@@ -1,6 +1,8 @@
 package net.reddconomy.plugin;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -37,21 +39,27 @@ public class ExchangeEngine {
 		public Map apiCall(String action) throws Exception
 		{
 			  String query = "/?action="+action;
-			  String urlString = "http://localhost:8099/"+query;
+			  String urlString = "http://localhost:8099"+query;
 			  URL url = new URL(urlString);
 			  String hash = hmac("SECRET123", query);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
 	          httpc.setRequestProperty("Hash",hash);
-			  BufferedReader in = new BufferedReader(new InputStreamReader(httpc.getInputStream()));
-			  String output;
-			  StringBuffer response = new StringBuffer();
-			 
-			  while ((output = in.readLine()) != null) {
-			   response.append(output);
-			  }
-			  in.close();
+	          System.out.println(hash);
 			  
-			  Map resp=_JSON.fromJson(response.toString(),Map.class);
+	          byte chunk[]=new byte[1024*1024];
+	          int read;
+	          ByteArrayOutputStream bos=new ByteArrayOutputStream();
+	          InputStream is=(httpc.getInputStream());
+	          
+	          while((read=is.read(chunk))!=-1){
+	        	  bos.write(chunk,0,read);
+	          }
+			  
+			  is.close();
+			  
+			  String response=new String(bos.toByteArray(),"UTF-8");
+			 
+			  Map resp=_JSON.fromJson(response,Map.class);
 			  return resp;
 		}
 		
