@@ -128,7 +128,7 @@ public class Exchange extends JavaPlugin implements Listener {
 				try {
 					engine.withdraw(ammount, addr, pUUID);
 					sender.sendMessage("Withdrawing..");
-					sender.sendMessage("Ok, it should work, wait for the money.");
+					sender.sendMessage("Ok, it should work, wait please.");
 				} catch (Exception e) {
 					sender.sendMessage("Something went wrong. Call an admin.");
 				}

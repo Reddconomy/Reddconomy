@@ -98,7 +98,7 @@ public class ExchangeEngine {
 			apiCall("acceptcontract&wallid=" + pUUID + "&contractid=" + contractId);
 		}
 		
-		// Withdraw
+		// Withdraw money
 		public void withdraw(long ammount, String addr, String pUUID) throws Exception
 		{
 			apiCall("withdraw&ammount=" + ammount + "&addr="+addr+"&wallid="+pUUID);
