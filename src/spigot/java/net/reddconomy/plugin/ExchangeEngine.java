@@ -68,7 +68,7 @@ public class ExchangeEngine {
 		public String getAddrDeposit(long balance, String pUUID) throws Exception
 		{
 			 
-			 String action = "deposit&wallid=" + pUUID + "&balance=" + balance;
+			 String action = "deposit&wallid=" + pUUID + "&ammount=" + balance;
 			 Map data=(Map)apiCall(action).get("data");
 			 return (String)data.get("addr");
 		}
