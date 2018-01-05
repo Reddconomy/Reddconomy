@@ -83,12 +83,12 @@ public class Reddconomy extends Thread implements ActionListener{
 				try{
 					Map<String,Object> data=new HashMap<String,Object>();
 					String addr=_WALLET.getNewAddress();
-					data.put("addr",addr);
-					resp_obj.put("status",200);
-					resp_obj.put("data",data);
 					String wallet_id=_GET.get("wallid").toString();
 					long balance=Long.parseLong(_GET.get("ammount").toString());
 					_DATABASE.prepareForDeposit(addr,wallet_id,balance);
+					data.put("addr",addr);
+					resp_obj.put("status",200);
+					resp_obj.put("data",data);
 				}catch(Throwable e){
 					String error=e.toString();
 					resp_obj.put("status",500);
