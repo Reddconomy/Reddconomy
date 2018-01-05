@@ -46,7 +46,7 @@ public class HttpGateway implements HttpHandler{
 			
 			String uri=request.uri();
 			String hash=HashUtils.hmac(_SECRET,uri);
-			String sent_hash=request.header("Hash");
+			String sent_hash=request.header("Hash");			
 			if(hash.equals(sent_hash)){
 	
 				Map<String,String> _GET=new HashMap<String,String>();
@@ -68,7 +68,7 @@ public class HttpGateway implements HttpHandler{
 				System.out.println("Request: "+request.uri());
 				System.out.println("Get params: "+_GET);
 	
-				String action=(String)_GET.get("action");
+				String action=_GET.get("action").toLowerCase();
 				String resp=_LISTENER.performAction(action,_GET);
 				response.status(200);
 				response.header("Content-type","application/json");
@@ -83,6 +83,10 @@ public class HttpGateway implements HttpHandler{
 			}
 		}catch(Exception e){
 			e.printStackTrace();
+			response.status(500);
+			response.header("Content-type","text/plain");
+			response.content("Error?");
+			response.end();
 		}
 	}
 }

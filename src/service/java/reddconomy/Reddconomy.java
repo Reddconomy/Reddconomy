@@ -46,7 +46,7 @@ public class Reddconomy extends Thread implements ActionListener{
 		CLOSED=true;
 	}
 
-	public synchronized void run() {
+	public void run() {
 		long t=0;
 		while(!CLOSED){
 			long delta_t=t==0?0:System.currentTimeMillis()-t;
@@ -75,9 +75,10 @@ public class Reddconomy extends Thread implements ActionListener{
 		}
 	}
 
-	public synchronized String performAction(String action, Map<String,String> _GET) {
+	public String performAction(String action, Map<String,String> _GET) {
 		Map<String,Object> resp_obj=new HashMap<String,Object>();
 		switch(action){
+			
 			// action=deposit&wallid=XXX&ammount=XXXX
 			case "deposit":{
 				try{
@@ -176,6 +177,7 @@ public class Reddconomy extends Thread implements ActionListener{
 			}
 			case "sendcoins":{
 				try{
+					System.out.println("Send");
 					String addr=_GET.get("addr").toString();
 					long ammount=Long.parseLong(_GET.get("ammount").toString());
 					_WALLET.sendToAddress(addr,ammount);
