@@ -31,12 +31,16 @@ import net.glxn.qrgen.javase.QRCode;
 
 public class Exchange extends JavaPlugin implements Listener {
 	
+	public String EnableQR;
+	
 	// Let's declare ExchangeEngine, shall we?
 	ExchangeEngine engine = new ExchangeEngine();
 	
 	// This is what the plugin does when activated
 	@Override
 	public void onEnable() {
+		saveDefaultConfig();
+		EnableQR=getConfig().getString("EnableQR");
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
 	}
@@ -92,7 +96,8 @@ public class Exchange extends JavaPlugin implements Listener {
 				        	try {
 				        		String addr=engine.getAddrDeposit(balance, pUUID);
 				        		
-				        			
+				        			if (EnableQR=="yes")
+				        			{
 				        			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
 				        			com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(engine.coin!=null&&!engine.coin.isEmpty()?
 				        					engine.coin+":"+addr+"?amount="+args[0]:args[0],ErrorCorrectionLevel.L,hint);
@@ -111,6 +116,9 @@ public class Exchange extends JavaPlugin implements Listener {
 					        				ImageChar.BLOCK.getChar()
 					        				).sendToPlayer(sender);
 					        		sender.sendMessage("Deposit "+args[0]+" "+engine.coin+" to this address: "+addr);
+				        			} else {
+				        				sender.sendMessage("Deposit "+args[0]+" "+engine.coin+" to this address: "+addr);
+				        			}
 							} catch (Exception e) {
 								e.printStackTrace();
 							}

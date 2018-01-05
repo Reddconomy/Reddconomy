@@ -164,7 +164,7 @@ public class ImageMessage {
             int leftPadding = (length - s.length()) / 2;
             StringBuilder leftBuilder = new StringBuilder();
             for (int i = 0; i < leftPadding; i++) {
-                leftBuilder.append(" ");
+                leftBuilder.append("");
             }
             return leftBuilder.toString() + s;
         }
