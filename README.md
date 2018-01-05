@@ -6,7 +6,7 @@
 
 ##### SH:
 ```
-VERSION="`curl http://ci_deploy.frk.wf/Reddconomy_latest.txt`"
+VERSION="`curl https://ci_deploy.frk.wf/Reddconomy_latest.txt`"
 PASSWORD="N2lMuG106fRM4yJRcQyozzUnzF13tJid"
 
 #Download spigot plugin
@@ -29,7 +29,7 @@ choco install wget curl
 
 ##### Batch:
 ```
-wget http://ci_deploy.frk.wf/Reddconomy_latest.txt
+wget https://ci_deploy.frk.wf/Reddconomy_latest.txt
 set /p VERSION=<Reddconomy_latest.txt
 set PASSWORD="N2lMuG106fRM4yJRcQyozzUnzF13tJid"
 
