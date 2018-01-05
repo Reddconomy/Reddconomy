@@ -98,6 +98,12 @@ public class ExchangeEngine {
 			apiCall("acceptcontract&wallid=" + pUUID + "&contractid=" + contractId);
 		}
 		
+		// Withdraw
+		public void withdraw(long ammount, String addr, String pUUID) throws Exception
+		{
+			apiCall("withdraw&ammount=" + ammount + "&addr="+addr+"&wallid="+pUUID);
+		}
+		
 		// Test, test, test and moar test.
 		public void sendCoins(String addr, long ammount) throws Exception
 		{

@@ -118,6 +118,25 @@ public class Exchange extends JavaPlugin implements Listener {
 		    	return false;
 			}
 		}
+		
+		else if (cmd.getName().equalsIgnoreCase("withdraw"))
+		{
+			if (args.length==2)
+			{
+				long ammount = (long)(Double.parseDouble(args[1])*100000000L);
+				String addr = args[0];
+				try {
+					engine.withdraw(ammount, addr, pUUID);
+					sender.sendMessage("Withdrawing..");
+					sender.sendMessage("Ok, it should work, wait for the money.");
+				} catch (Exception e) {
+					sender.sendMessage("Something went wrong. Call an admin.");
+				}
+			} else {
+				sender.sendMessage("Wrong arguments! Check how to use this command here:");
+				return false;
+			}
+		}
 	    
 		// "send" is boring and unsafe. Let's make contracts!
 		// TODO: a way to make it easier for the user.
