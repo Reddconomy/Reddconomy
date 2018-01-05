@@ -1,0 +1,25 @@
+name: ExchangeCoin
+main: net.blockstreet.coin.Exchange
+version: 0.0.1
+author: Soxasora
+commands:
+  deposit:
+    description: Deposit Reddcoins.
+    usage: /deposit <money>
+    permission: ExchangeCoin.deposit
+    permission-message: You don't have <permission>
+  balance:
+    description: Show balance.
+    usage: /balance
+    permission: ExchangeCoin.balance
+    permission-message: You don't have <permission>
+  contract:
+    description: Create contract.
+    usage: /contract [new/accept] [-/+money|contractid]
+    permission: ExchangeCoin.contract
+    permission-message: You don't have <permission>
+  gettestcoins:
+    description: Get test coins. Please disable for other users.
+    usage: /gettestcoins [address] [money]
+    permission: ExchangeCoin.gettestcoins
+    permission-message: You don't have <permission>
