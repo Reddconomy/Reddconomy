@@ -19,7 +19,7 @@ commands:
     permission: Reddxchange.contract
     permission-message: You don't have <permission>
   sendcoins:
-    description: Get test coins. Please disable for other users.
+    description: Send coins. Please disable for other users.
     usage: /sendcoins [address] [money]
     permission: Reddxchange.gettestcoins
     permission-message: You don't have <permission>
