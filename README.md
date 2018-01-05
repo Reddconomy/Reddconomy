@@ -2,7 +2,7 @@
 
 ## Linux
 ##### Requires:
-- wget | curl | openssl
+-  curl | openssl
 
 ##### SH:
 ```
