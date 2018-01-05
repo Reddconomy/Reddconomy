@@ -22,75 +22,59 @@ import webbit_lite.HttpHandler;
 import webbit_lite.HttpRequest;
 import webbit_lite.HttpResponse;
 import webbit_lite.WebServers;
-import webbit_lite.netty.NettyWebServer;
 
-public class Reddconomy implements HttpHandler{
+public class Reddconomy extends Thread implements ActionListener{
 
 	private final Database _DATABASE;
 	private final Gson _JSON;
-	private final NettyWebServer _WS;
-	private Reddcoind _REDDCOIND;
+	private CentralWallet _WALLET;
 	private boolean CLOSED=false;
 
-	
 	public static void main(String[] args) throws Exception {
 		int port=8099;
 		String ip="0.0.0.0";
-		new Reddconomy(ip,port,"http://xmpp.frk.wf:45443/","test","test123");
+		
+		CentralWallet wallet=new Reddcoind("http://xmpp.frk.wf:45443/","test","test123");
+		Reddconomy reddconomy=new Reddconomy(wallet);
+		HttpGateway httpd=new HttpGateway(ip,port,reddconomy);
+		httpd.start();
+		reddconomy.start();
+		
 		System.out.println("Server started @ "+ip+":"+port);
 
 	}
 
-	
-	
-	public Reddconomy(String bind_ip,int bind_port,String rpc_url,String rpc_user,String rpc_password) throws Exception{
+	public Reddconomy(CentralWallet wallet) throws Exception{
 		_JSON=new GsonBuilder().setPrettyPrinting().create();
-		_REDDCOIND=new Reddcoind(rpc_url,rpc_user,rpc_password);
-		
-	
+		_WALLET=wallet;
+
 		// Init LocalDB
 		_DATABASE=new SQLLiteDatabase("db.sqlite");
 		_DATABASE.open();
 
-		// Init loop thread
-		Thread t=new Thread(){
-			public void run() {
-				try{
-					loop();
-				}catch(Throwable e){
-					e.printStackTrace();
-				}
-			}
-		};
-		t.setDaemon(true);
-		t.start();
-		
-		// Init webservice
-		ExecutorService thread_pool=Executors.newFixedThreadPool(1);
-		_WS=(NettyWebServer)WebServers.createWebServer(thread_pool,new InetSocketAddress(InetAddress.getByName(bind_ip),bind_port));
-		_WS.add(this);
-		_WS.staleConnectionTimeout(10000);
-		_WS.start();
+		setDaemon(true);
 
 	}
-	
-	public void close(){
+
+	public synchronized void stopNow() {
 		CLOSED=true;
-		_WS.stop();
-		_DATABASE.close();
 	}
 
-	public void loop() throws Throwable {
+	public synchronized void run() {
 		long t=0;
 		while(!CLOSED){
+			long delta_t=t==0?0:System.currentTimeMillis()-t;
 			try{
-				long delta_t=t==0?0:System.currentTimeMillis()-t;
 				Collection<Map<String,Object>> deposits=_DATABASE.getIncompletedDepositsAndUpdate(delta_t);
 				for(Map<String,Object> deposit:deposits){
 					String addr=deposit.get("addr").toString();
 					long expected_balance=(long)deposit.get("expected_balance");
-					if(_REDDCOIND.getReceivedByAddress(addr)>=expected_balance){
-						_DATABASE.completeDeposit(addr);
+					try{
+						if(_WALLET.getReceivedByAddress(addr)>=expected_balance){
+							_DATABASE.completeDeposit(addr);
+						}
+					}catch(Throwable e){
+						e.printStackTrace();
 					}
 				}
 			}catch(Exception e){
@@ -100,236 +84,145 @@ public class Reddconomy implements HttpHandler{
 			try{
 				Thread.sleep(10000);
 			}catch(InterruptedException e){
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 
-
-
-	@Override
-	public void handleHttpRequest(HttpRequest request, HttpResponse response, HttpControl control) {
-		try{
-			Map<String,Object> _GET=new HashMap<String,Object>();
-			{
-				String uri=request.uri();
-				String uri_p[]=uri.split("\\?");
-				if(uri_p.length>1){
-					String params[]=uri_p[1].split("&");
-					for(String param:params){
-						if(param.contains("=")){
-							String pp[]=param.split("=");
-							_GET.put(pp[0],pp[1]);
-						}else{
-							_GET.put(param,true);
-						}
-					}
+	public synchronized String performAction(String action, Map<String,String> _GET) {
+		Map<String,Object> resp_obj=new HashMap<String,Object>();
+		switch(action){
+			// action=deposit&wallid=XXX&ammount=XXXX
+			case "deposit":{
+				try{
+					Map<String,Object> data=new HashMap<String,Object>();
+					String addr=_WALLET.getNewAddress();
+					data.put("addr",addr);
+					resp_obj.put("status",200);
+					resp_obj.put("data",data);
+					String wallet_id=_GET.get("wallid").toString();
+					long balance=Long.parseLong(_GET.get("ammount").toString());
+					_DATABASE.prepareForDeposit(addr,wallet_id,balance);
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
 				}
+				break;
 			}
-
-			System.out.println("Request: "+request.uri());
-			System.out.println("Get params: "+_GET);
-
-			String action=(String)_GET.get("action");
-			if(action!=null){
-				switch(action){
-					case "test":{
-						// Esempio
-						Map<String,Object> resp_obj=new HashMap<String,Object>();
-						try{
-
-							Map<String,Object> obj=_DATABASE.getWallet("test__fake_walletid");
-							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
-							resp_obj.put("data",obj); // Aggiungo i dati della risposta 
-						}catch(Exception e){
-							String error=e.toString();
-							resp_obj.put("status",500);
-							resp_obj.put("error",error);
-							e.printStackTrace();
-						}
-
-						// Converto risposta in json
-						String resp_json=_JSON.toJson(resp_obj);
-
-						response.status(200);
-						response.header("Content-type","application/json");
-						response.content(resp_json);
-						response.end();
-						break;
+			//action=withdraw&ammount=XXXX&addr=XXXXXXXx
+			case "withdraw":{
+				long ammount=Long.parseLong(_GET.get("ammount").toString());
+				String addr=(String)_GET.get("addr");
+				String wallet_id=_GET.get("wallid").toString();
+				try{
+					Map<String,Object> wallet=_DATABASE.getWallet(wallet_id);
+					long balance=(long)wallet.get("balance");
+					if(balance>=ammount){
+						_WALLET.sendToAddress(addr,ammount);
+						_DATABASE.withdraw(wallet_id,ammount);
+						resp_obj.put("status",200);
+						resp_obj.put("data",new HashMap<String,Object>());
+					}else{
+						resp_obj.put("status",500);
+						resp_obj.put("error","Not enought money");
 					}
-					case "deposit":{
-						Map<String,Object> resp_obj=new HashMap<String,Object>();
-						try{
-							Map<String,Object> data=new HashMap<String,Object>();
-							String addr=_REDDCOIND.getNewAddress();
-							data.put("addr",addr);
-							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
-							resp_obj.put("data",data); // Aggiungo i dati della risposta 
-							String wallet_id=_GET.get("wallid").toString();
-							long balance=Long.parseLong(_GET.get("balance").toString());
-							_DATABASE.prepareForDeposit(addr,wallet_id,balance);
-						}catch(Throwable e){
-							String error=e.toString();
-							resp_obj.put("status",500);
-							resp_obj.put("error",error);
-							e.printStackTrace();
-						}
-
-						// Converto risposta in json
-						String resp_json=_JSON.toJson(resp_obj);
-
-						response.status(200);
-						response.header("Content-type","application/json");
-						response.content(resp_json);
-						response.end();
-						break;
-					}
-					case "balance":{
-						Map<String,Object> resp_obj=new HashMap<String,Object>();
-						try {
-							String wallet_id=_GET.get("wallid").toString();
-							Map wallet=_DATABASE.getWallet(wallet_id);
-							Map<String,Object> data=wallet;
-							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
-							resp_obj.put("data",data); // Aggiungo i dati della risposta 
-						}catch(Throwable e){
-							String error=e.toString();
-							resp_obj.put("status",500);
-							resp_obj.put("error",error);
-							e.printStackTrace();
-						}
-	
-						// Converto risposta in json
-						String resp_json=_JSON.toJson(resp_obj);
-	
-						response.status(200);
-						response.header("Content-type","application/json");
-						response.content(resp_json);
-						response.end();
-						break;
-					}
-					case "newcontract":{
-						Map<String,Object> resp_obj=new HashMap<String,Object>();
-						try {
-							Map<String,Object> data=new HashMap<String,Object>();
-							String wallet_id=_GET.get("wallid").toString();
-							long ammount = Long.parseLong(_GET.get("ammount").toString());
-							String contractId = _DATABASE.createContract(wallet_id, ammount);
-							data.put("contractId", contractId);
-							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
-							resp_obj.put("data",data); // Aggiungo i dati della risposta 
-						}catch(Throwable e){
-							String error=e.toString();
-							resp_obj.put("status",500);
-							resp_obj.put("error",error);
-							e.printStackTrace();
-						}
-	
-						// Converto risposta in json
-						String resp_json=_JSON.toJson(resp_obj);
-	
-						response.status(200);
-						response.header("Content-type","application/json");
-						response.content(resp_json);
-						response.end();
-						break;						
-					}
-					case "acceptcontract":{
-						Map<String,Object> resp_obj=new HashMap<String,Object>();
-						try {
-							Map<String,Object> data=new HashMap<String,Object>();
-							String wallet_id=_GET.get("wallid").toString();
-							String contractId =_GET.get("contractid").toString();
-							_DATABASE.acceptContract(contractId, wallet_id);
-							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
-							//resp_obj.put("data",data); // Aggiungo i dati della risposta 
-						}catch(Throwable e){
-							String error=e.toString();
-							resp_obj.put("status",500);
-							resp_obj.put("error",error);
-							e.printStackTrace();
-						}
-	
-						// Converto risposta in json
-						String resp_json=_JSON.toJson(resp_obj);
-	
-						response.status(200);
-						response.header("Content-type","application/json");
-						response.content(resp_json);
-						response.end();
-						break;							
-					}
-					case "gettestcoins":{
-						Map<String,Object> resp_obj=new HashMap<String,Object>();
-						try {
-							String addr=_GET.get("addr").toString();
-							long ammount = Long.parseLong(_GET.get("ammount").toString());
-							_REDDCOIND.sendToAddress(addr, ammount);
-							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
-							//resp_obj.put("data",data); // Aggiungo i dati della risposta 
-						}catch(Throwable e){
-							String error=e.toString();
-							resp_obj.put("status",500);
-							resp_obj.put("error",error);
-							e.printStackTrace();
-						}
-	
-						// Converto risposta in json
-						String resp_json=_JSON.toJson(resp_obj);
-	
-						response.status(200);
-						response.header("Content-type","application/json");
-						response.content(resp_json);
-						response.end();
-						break;		
-					}
-					/*case "contractinfo":{
-						Map<String,Object> resp_obj=new HashMap<String,Object>();
-						try {
-							Map<String,Object> data=new HashMap<String,Object>();
-							String contractId =_GET.get("contractid").toString();
-							Map contract = _DATABASE.getContract(contractId);
-							
-							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
-							//resp_obj.put("data",data); // Aggiungo i dati della risposta 
-						}catch(Throwable e){
-							String error=e.toString();
-							resp_obj.put("status",500);
-							resp_obj.put("error",error);
-							e.printStackTrace();
-						}
-	
-						// Converto risposta in json
-						String resp_json=_JSON.toJson(resp_obj);
-	
-						response.status(200);
-						response.header("Content-type","application/json");
-						response.content(resp_json);
-						response.end();
-						break;							
-					}*/
-					default:{
-						response.status(401);
-						response.header("Content-type","application/json");
-						response.content("{'status':401,'error':'Invalid action'}");
-						response.end();
-					}
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
+				}
+				break;
+			}
+			// action=balance&wallid=XXX
+			case "balance":{
+				try{
+					String wallet_id=_GET.get("wallid").toString();
+					Map<String,Object> data=_DATABASE.getWallet(wallet_id);
+					resp_obj.put("status",200);
+					resp_obj.put("data",data);
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
 				}
 
-			}else{
-				response.status(401);
-				response.header("Content-type","application/json");
-				response.content("{'status':401,'error':'Unspecified action'}");
-				response.end();
+				break;
 			}
+			// action=newcontract&wallid=XXX&ammount=XXXX
+			case "newcontract":{
+				try{
+					Map<String,Object> data=new HashMap<String,Object>();
+					String wallet_id=_GET.get("wallid").toString();
+					long ammount=Long.parseLong(_GET.get("ammount").toString());
+					String contractId=_DATABASE.createContract(wallet_id,ammount);
+					data.put("contractId",contractId);
+					resp_obj.put("status",200);
+					resp_obj.put("data",data);
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
+				}
 
-		}catch(Exception e){
-			response.status(401);
-			response.header("Content-type","application/json");
-			response.content("{'status':500,'error':'Invalid request'}");
-			response.end();
-			e.printStackTrace();
+				break;
+			}
+			// action=acceptcontract&wallid=XXXX&contractid=XXXX
+			case "acceptcontract":{
+				try{
+					String wallet_id=_GET.get("wallid").toString();
+					String contractId=_GET.get("contractid").toString();
+					_DATABASE.acceptContract(contractId,wallet_id);
+					resp_obj.put("status",200);
+					resp_obj.put("data",new HashMap<String,Object>());
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
+				}
+
+				break;
+			}
+			case "sendcoins":{
+				try{
+					String addr=_GET.get("addr").toString();
+					long ammount=Long.parseLong(_GET.get("ammount").toString());
+					_WALLET.sendToAddress(addr,ammount);
+					resp_obj.put("status",200);
+					resp_obj.put("data",new HashMap<String,Object>());
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
+				}
+				break;
+			}
+			// action=getcontract&contractid=XXXX
+			case "getcontract":{
+				try{
+					String contractId=_GET.get("contractid").toString();
+					Map<String,Object> contract=_DATABASE.getContract(contractId);
+					resp_obj.put("status",200);
+					resp_obj.put("data",contract);
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
+				}
+				break;
+			}
+			default:
+				resp_obj.put("status",500);
+				resp_obj.put("error","Invalid action");
 		}
+		return _JSON.toJson(resp_obj);
+
 	}
 }
