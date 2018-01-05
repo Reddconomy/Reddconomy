@@ -73,7 +73,6 @@ public class Exchange extends JavaPlugin implements Listener {
 				        	try {
 								sender.sendMessage("Deposit to this address: " + engine.getAddrDeposit(balance, pUUID));
 							} catch (Exception e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 				        	return true;
@@ -91,7 +90,6 @@ public class Exchange extends JavaPlugin implements Listener {
 				try {
 					sender.sendMessage("You have: " + engine.getBalance(pUUID) + " RDD");
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				return true;
@@ -102,24 +100,27 @@ public class Exchange extends JavaPlugin implements Listener {
 	    }
 		
 		// Let's just use it in order to test /deposit. Don't use it in a production server.
-		else if (cmd.getName().equalsIgnoreCase("gettestcoins"))
+		else if (cmd.getName().equalsIgnoreCase("sendcoins"))
 		{
 			if (args.length==2)
 			{
 				long ammount = (long)(Double.parseDouble(args[1])*100000000L);
 				String addr = args[0];
 				try {
-					engine.getTestCoins(addr, ammount);
+					engine.sendCoins(addr, ammount);
 					sender.sendMessage("It worked!");
 					sender.sendMessage("You added " + args[1] + " to the address: " + addr);
 				} catch (Exception e) {
 					sender.sendMessage("Nope. Well, at least I tried.. *badum tss*");
 				}
+			} else {
+		    	sender.sendMessage("Wrong arguments! Check how to use this command here:");
+		    	return false;
 			}
 		}
 	    
 		// "send" is boring and unsafe. Let's make contracts!
-		// TO-DO: a way to make it easier for the user.
+		// TODO: a way to make it easier for the user.
 		else if (cmd.getName().equalsIgnoreCase("contract"))
 	    {		    	
 			if (args.length==2)
@@ -132,7 +133,6 @@ public class Exchange extends JavaPlugin implements Listener {
 							sender.sendMessage("Contract created. Share the Contract ID.");
 						} catch (Exception e) {
 							sender.sendMessage("Cannot create contract. Call an admin for more info.");
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 		    		} else if (args[0].equalsIgnoreCase("accept")) {
@@ -144,7 +144,6 @@ public class Exchange extends JavaPlugin implements Listener {
 						} catch (Exception e) {
 							sender.sendMessage("Cannot accept contract. Are you sure that you haven't already accepted?");
 							sender.sendMessage("Otherwise, call and admin for more info.");
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 		    		}

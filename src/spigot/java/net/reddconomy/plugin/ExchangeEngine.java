@@ -29,7 +29,6 @@ public class ExchangeEngine {
 	        Mac sha256_HMAC=Mac.getInstance("HmacSHA256");
 	        SecretKeySpec secret_key=new SecretKeySpec(key.getBytes("UTF-8"),"HmacSHA256");
 	        sha256_HMAC.init(secret_key);
-
 	        return new String(Base64.getEncoder().encode(sha256_HMAC.doFinal(data.getBytes("UTF-8"))),"UTF-8");
 	    }
 		
@@ -56,12 +55,6 @@ public class ExchangeEngine {
 			  return resp;
 		}
 		
-		// Test, test, test and moar test.
-		public void getTestCoins(String addr, long ammount) throws Exception
-		{
-			apiCall("gettestcoins&addr=" + addr + "&ammount=" + ammount);
-		}
-		
 		// Let's get that deposit address.
 		@SuppressWarnings("rawtypes")
 		public String getAddrDeposit(long balance, String pUUID) throws Exception
@@ -70,6 +63,16 @@ public class ExchangeEngine {
 			 String action = "deposit&wallid=" + pUUID + "&balance=" + balance;
 			 Map data=(Map)apiCall(action).get("data");
 			 return (String)data.get("addr");
+		}
+		
+		// Get balance.
+		@SuppressWarnings("rawtypes")
+		public double getBalance(String pUUID) throws Exception
+		{
+			String action = "balance&wallid=" + pUUID;
+			Map data=(Map)apiCall(action).get("data");
+			Number balance=(Number)data.get("balance");
+			return (balance.longValue())/100000000.0;
 		}
 		
 		// Create contract.
@@ -86,14 +89,10 @@ public class ExchangeEngine {
 		{
 			apiCall("acceptcontract&wallid=" + pUUID + "&contractid=" + contractId);
 		}
-		 
-		// Get balance.
-		@SuppressWarnings("rawtypes")
-		public double getBalance(String pUUID) throws Exception
+		
+		// Test, test, test and moar test.
+		public void sendCoins(String addr, long ammount) throws Exception
 		{
-			String action = "balance&wallid=" + pUUID;
-			Map data=(Map)apiCall(action).get("data");
-			Number balance=(Number)data.get("balance");
-			return (balance.longValue())/100000000.0;
+			apiCall("sendcoins&addr=" + addr + "&ammount=" + ammount);
 		}
 }
