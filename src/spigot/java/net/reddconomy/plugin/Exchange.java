@@ -7,6 +7,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -20,6 +22,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.bobacadodl.imgmessage.ImageChar;
 import com.bobacadodl.imgmessage.ImageMessage;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.google.zxing.qrcode.encoder.ByteMatrix;
+import com.google.zxing.qrcode.encoder.Encoder;
 
 import net.glxn.qrgen.javase.QRCode;
 
@@ -85,29 +91,26 @@ public class Exchange extends JavaPlugin implements Listener {
 			    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
 				        	try {
 				        		String addr=engine.getAddrDeposit(balance, pUUID);
-				        		if(engine.coin!=null)
-				        		{
-				        			ByteArrayOutputStream stream = QRCode.from(engine.coin+":"+addr+"?amount="+args[0]).withSize(32,32).stream();
-				        			ByteArrayInputStream istream=new ByteArrayInputStream(stream.toByteArray());
-				        			BufferedImage imageToSend = ImageIO.read(istream);
+				        		
+				        			
+				        			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
+				        			com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(engine.coin!=null&&!engine.coin.isEmpty()?
+				        					engine.coin+":"+addr+"?amount="+args[0]:args[0],ErrorCorrectionLevel.L,hint);
+				        			ByteMatrix matrix=code.getMatrix();
+				        			System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
+				        			BufferedImage bimg=new BufferedImage(matrix.getWidth(),matrix.getHeight(),BufferedImage.TYPE_INT_RGB);
+				        			for(int y=0;y<matrix.getHeight();y++){
+				        				for(int x=0;x<matrix.getWidth();x++){
+				        					boolean v=matrix.get(x,y)==1;
+				        					bimg.setRGB(x,y,v?0xFFFFFF:0x000000);
+				        				}
+				        			}				        			
 					        		new ImageMessage(
-					        				imageToSend,
-					        				32,
+					        				bimg,
+					        				bimg.getHeight(),
 					        				ImageChar.BLOCK.getChar()
 					        				).sendToPlayer(sender);
-					        		sender.sendMessage("Deposit to this address: "+addr);
-				        		} else {
-				        			ByteArrayOutputStream stream = QRCode.from(addr).stream();
-				        			ByteArrayInputStream istream=new ByteArrayInputStream(stream.toByteArray());
-				        			BufferedImage imageToSend = ImageIO.read(istream);
-					        		new ImageMessage(
-					        				imageToSend,
-					        				32,
-					        				ImageChar.BLOCK.getChar()
-					        				).sendToPlayer(sender);
-					        		sender.sendMessage("Deposit to this address: "+addr);
-				        		}
-
+					        		sender.sendMessage("Deposit "+args[0]+" "+engine.coin+" to this address: "+addr);
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
