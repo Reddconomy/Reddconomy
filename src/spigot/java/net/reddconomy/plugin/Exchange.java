@@ -123,8 +123,8 @@ public class Exchange extends JavaPlugin implements Listener {
 		{
 			if (args.length==2)
 			{
-				long ammount = (long)(Double.parseDouble(args[1])*100000000L);
-				String addr = args[0];
+				long ammount = (long)(Double.parseDouble(args[0])*100000000L);
+				String addr = args[1];
 				try {
 					engine.withdraw(ammount, addr, pUUID);
 					sender.sendMessage("Withdrawing..");
