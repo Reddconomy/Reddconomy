@@ -1,0 +1,30 @@
+eval "`docker-machine env Dev1`"
+docker build  --compress=true -t reddconomy_test_paygate:amd64 --label amd64 --rm --force-rm=true .
+
+docker run --name=reddconomy_test_paygate -d -p 45443:45443 -v /srv/reddconomy_testnet:/data \
+--read-only  --rm reddconomy_test_paygate:amd64
+
+docker run --name=reddconomy_test_paygate -it -p 45443:45443 -v /srv/reddconomy_testnet:/data \
+--read-only  --rm reddconomy_test_paygate:amd64
+
+docker exec -it reddconomy_test_paygate  bash -c 'cat ${DATA_DIR}/${CONFIG_FILE}'
+
+docker exec -it reddconomy_test_paygate  bash -c '/opt/dogecoin/bin/dogecoin-cli \
+  -conf="${DATA_DIR}/${CONFIG_FILE}" -datadir="${DATA_DIR}" help'
+
+docker exec -it reddconomy_test_paygate  bash -c '/opt/dogecoin/bin/dogecoin-cli \
+  -conf="${DATA_DIR}/${CONFIG_FILE}" -datadir="${DATA_DIR}" getwalletinfo'
+
+docker exec -it reddconomy_test_paygate  bash -c '/opt/dogecoin/bin/dogecoin-cli  \
+ -conf="${DATA_DIR}/${CONFIG_FILE}" -datadir="${DATA_DIR}" getbalance'
+
+docker exec -it reddconomy_test_paygate  bash -c '/opt/dogecoin/bin/dogecoin-cli  \
+ -conf="${DATA_DIR}/${CONFIG_FILE}" -datadir="${DATA_DIR}" getaccount'
+
+ 
+
+docker logs reddconomy_test_paygate --follow
+docker logs reddconomy_test_paygate --tail 50
+
+docker stop reddconomy_test_paygate
+docker-machine ssh Dev1 rm -Rvf /srv/reddconomy_testnet

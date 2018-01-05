@@ -1,5 +1,4 @@
-FROM riccardoblb/reddcoind-docker:amd64
-
+FROM riccardoblb/dogecoin:amd64
 
 ADD init_testnet.sh /init_testnet.sh
 

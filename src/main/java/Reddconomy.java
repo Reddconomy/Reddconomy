@@ -28,9 +28,8 @@ public class Reddconomy implements HttpHandler{
 
 	private final Database _DATABASE;
 	private final Gson _JSON;
-	private final JsonRpcHttpClient _CLIENT;
 	private final NettyWebServer _WS;
-	
+	private Reddcoind _REDDCOIND;
 	private boolean CLOSED=false;
 
 	
@@ -46,16 +45,9 @@ public class Reddconomy implements HttpHandler{
 	
 	public Reddconomy(String bind_ip,int bind_port,String rpc_url,String rpc_user,String rpc_password) throws Exception{
 		_JSON=new GsonBuilder().setPrettyPrinting().create();
-
+		_REDDCOIND=new Reddcoind(rpc_url,rpc_user,rpc_password);
 		
-		// Init RPC client
-		Authenticator.setDefault(new Authenticator(){
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(rpc_user,rpc_password.toCharArray());
-			}
-		});
-		_CLIENT=new JsonRpcHttpClient(new URL("http://xmpp.frk.wf:45443/"));
-
+	
 		// Init LocalDB
 		_DATABASE=new SQLLiteDatabase("db.sqlite");
 		_DATABASE.open();
@@ -97,7 +89,7 @@ public class Reddconomy implements HttpHandler{
 				for(Map<String,Object> deposit:deposits){
 					String addr=deposit.get("addr").toString();
 					long expected_balance=(long)deposit.get("expected_balance");
-					if(getReceivedBA(addr)>=expected_balance){
+					if(_REDDCOIND.getReceivedByAddress(addr)>=expected_balance){
 						_DATABASE.completeDeposit(addr);
 					}
 				}
@@ -114,39 +106,12 @@ public class Reddconomy implements HttpHandler{
 		}
 	}
 
-	public long getReceivedBA(String addr) throws Throwable {
-		Double v=(Double)_CLIENT.invoke("getreceivedbyaddress",new Object[]{addr},Object.class);
-		long v_long=(long)(v*100000000L);
-		return v_long;
-	}
-	
-	public void getTestCoins(String addr, long ammountLong) throws Throwable {
-		Double balance=(Double)_CLIENT.invoke("getbalance",new Object[]{},Object.class);
-		double ammountDouble = (ammountLong)/100000000.0;
-		if (balance>ammountDouble)
-		_CLIENT.invoke("sendtoaddress",new Object[]{addr,ammountDouble},Object.class);
-		else throw new Exception("Not enough coins");
-	}
 
-	public String getAddr() throws Throwable {
-		String addr=(String)_CLIENT.invoke("getnewaddress",new Object[]{},Object.class);
-		return addr;
-	}
 
 	@Override
 	public void handleHttpRequest(HttpRequest request, HttpResponse response, HttpControl control) {
 		try{
-
-			// Parsa req get
-			// wwww?a=1&b=2&c=3
-			// diventa
-			// { 
-			//		a:1,
-			//		b:2,
-			//		c:3
-			// }
-			//
-			final Map<String,Object> _GET=new HashMap<String,Object>();
+			Map<String,Object> _GET=new HashMap<String,Object>();
 			{
 				String uri=request.uri();
 				String uri_p[]=uri.split("\\?");
@@ -197,7 +162,7 @@ public class Reddconomy implements HttpHandler{
 						Map<String,Object> resp_obj=new HashMap<String,Object>();
 						try{
 							Map<String,Object> data=new HashMap<String,Object>();
-							String addr=getAddr();
+							String addr=_REDDCOIND.getNewAddress();
 							data.put("addr",addr);
 							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
 							resp_obj.put("data",data); // Aggiungo i dati della risposta 
@@ -300,7 +265,7 @@ public class Reddconomy implements HttpHandler{
 						try {
 							String addr=_GET.get("addr").toString();
 							long ammount = Long.parseLong(_GET.get("ammount").toString());
-							getTestCoins(addr, ammount);
+							_REDDCOIND.sendToAddress(addr, ammount);
 							resp_obj.put("status",200); // Aggiungo lo status della risposta 200=ok, qualsiasi altro numero = fallita
 							//resp_obj.put("data",data); // Aggiungo i dati della risposta 
 						}catch(Throwable e){
