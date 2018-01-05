@@ -2,9 +2,16 @@ package net.reddconomy.plugin;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Map;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,15 +23,27 @@ public class ExchangeEngine {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 		}
 		
+		
+		// Crypto stuff
+		public static String hmac(String key, String data) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
+	        Mac sha256_HMAC=Mac.getInstance("HmacSHA256");
+	        SecretKeySpec secret_key=new SecretKeySpec(key.getBytes("UTF-8"),"HmacSHA256");
+	        sha256_HMAC.init(secret_key);
+
+	        return new String(Base64.getEncoder().encode(sha256_HMAC.doFinal(data.getBytes("UTF-8"))),"UTF-8");
+	    }
+		
 		// Fundamental APIs for Reddconomy.
 		@SuppressWarnings("rawtypes")
 		public Map apiCall(String action) throws Exception
 		{
-			  String urlString = "http://localhost:8099/?action=" + action;
+			  String query = "/?action="+action;
+			  String urlString = "http://localhost:8099/"+query;
 			  URL url = new URL(urlString);
-			  HttpURLConnection con = (HttpURLConnection) url.openConnection();
-			  
-			  BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			  String hash = hmac("SECRET123", query);
+			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
+	          httpc.setRequestProperty("Hash",hash);
+			  BufferedReader in = new BufferedReader(new InputStreamReader(httpc.getInputStream()));
 			  String output;
 			  StringBuffer response = new StringBuffer();
 			 

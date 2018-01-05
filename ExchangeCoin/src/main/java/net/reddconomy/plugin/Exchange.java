@@ -15,14 +15,14 @@ public class Exchange extends JavaPlugin implements Listener {
 	// Let's declare ExchangeEngine, shall we?
 	ExchangeEngine engine = new ExchangeEngine();
 	
-	// This is what the plugin do when activated
+	// This is what the plugin does when activated
 	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
 	}
 	
-	// And this is what the plugin do when deactivated.
+	// And this is what the plugin does when deactivated.
 	@Override
 	public void onDisable() {
 		getLogger().info("Exchanges between users, deactivated!");
@@ -53,9 +53,9 @@ public class Exchange extends JavaPlugin implements Listener {
 	    }
 	    
 	    // Here we are. I'm using String instead of UUID because
-	    // if a server is cracked (offline mode), pUUID will have the Player's name
+	    // if a server is in offline mode, pUUID will have the Player's name
 	    // instead of the Mojang's UUID
-	    // Extremely unsafe way to use this plugin, please, make only original servers.
+	    // Extremely unsafe way to use this plugin, please, make only servers in online mode.
 	    if ((getServer().getOnlineMode())==true)
 	    {
 	    	pUUID = (((Player) sender).getUniqueId()).toString();
@@ -64,7 +64,7 @@ public class Exchange extends JavaPlugin implements Listener {
 	    }
 	    	
 	    // /deposit command here. | This shows the deposit address where the player
-	    // 						  | should send money.
+	    //                        | should send money.
 	    // example: /deposit 27.3 | You will deposit 27.3 RDD this way.
 		if (cmd.getName().equalsIgnoreCase("deposit"))
 		{
