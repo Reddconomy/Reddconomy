@@ -37,7 +37,7 @@ public class ExchangeEngine {
 		public Map apiCall(String action) throws Exception
 		{
 			  String query = "/?action="+action;
-			  String urlString = "http://localhost:8099/"+query;
+			  String urlString = "http://localhost:8099"+query;
 			  URL url = new URL(urlString);
 			  String hash = hmac("SECRET123", query);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
