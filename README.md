@@ -20,10 +20,11 @@ curl https://ci_deploy.frk.wf/Reddconomy.jar-$VERSION.aes256 | openssl aes-256-c
 ## Windows
 ##### Requires:
 - [Chocolatey Package Manager](https://chocolatey.org/install)
+- [OpenSSL](https://sourceforge.net/projects/openssl/files/latest/download?source=typ_redirect)
 
 ##### Things to do in Admin's CMD:
 ```
-choco install wget curl openssl
+choco install wget curl
 ```
 
 ##### Batch:
