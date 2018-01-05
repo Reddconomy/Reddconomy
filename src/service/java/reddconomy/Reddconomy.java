@@ -83,12 +83,27 @@ public class Reddconomy extends Thread implements ActionListener{
 				try{
 					Map<String,Object> data=new HashMap<String,Object>();
 					String addr=_WALLET.getNewAddress();
-					data.put("addr",addr);
-					resp_obj.put("status",200);
-					resp_obj.put("data",data);
 					String wallet_id=_GET.get("wallid").toString();
 					long balance=Long.parseLong(_GET.get("ammount").toString());
 					_DATABASE.prepareForDeposit(addr,wallet_id,balance);
+					data.put("addr",addr);
+					resp_obj.put("status",200);
+					resp_obj.put("data",data);
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
+				}
+				break;
+			}
+			//action=getdeposit&addr=XXXXXXXx
+			case "getdeposit":{
+				try{
+					String addr=_GET.get("addr").toString();
+					Map<String,Object> deposit=_DATABASE.getDeposit(addr);
+					resp_obj.put("status",200);
+					resp_obj.put("data",deposit);
 				}catch(Throwable e){
 					String error=e.toString();
 					resp_obj.put("status",500);
