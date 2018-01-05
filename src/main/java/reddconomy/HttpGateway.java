@@ -26,7 +26,7 @@ public class HttpGateway implements HttpHandler{
 		_WS=(NettyWebServer)WebServers.createWebServer(thread_pool,new InetSocketAddress(InetAddress.getByName(bind_ip),bind_port));
 		_WS.add(this);
 		_WS.staleConnectionTimeout(10000);
-	
+		
 
 	}
 

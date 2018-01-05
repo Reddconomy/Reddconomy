@@ -16,11 +16,11 @@ public class Reddconomy extends Thread implements ActionListener{
 	private CentralWallet _WALLET;
 	private boolean CLOSED=false;
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Throwable {
 		int port=8099;
 		String ip="0.0.0.0";
 		
-		CentralWallet wallet=new Reddcoind("http://xmpp.frk.wf:45443/","test","test123");
+		CentralWallet wallet=new Reddcoind("http://reddconomy.frk.wf:45443/","test","test123");
 		Reddconomy reddconomy=new Reddconomy(wallet);
 		HttpGateway httpd=new HttpGateway(ip,port,reddconomy);
 		httpd.start();
