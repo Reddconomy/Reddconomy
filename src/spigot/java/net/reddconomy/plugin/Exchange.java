@@ -87,12 +87,12 @@ public class Exchange extends JavaPlugin implements Listener {
 				        		String addr=engine.getAddrDeposit(balance, pUUID);
 				        		if(engine.coin!=null)
 				        		{
-				        			ByteArrayOutputStream stream = QRCode.from(engine.coin+":"+addr+"?amount="+args[0]).stream();
+				        			ByteArrayOutputStream stream = QRCode.from(engine.coin+":"+addr+"?amount="+args[0]).withSize(32,32).stream();
 				        			ByteArrayInputStream istream=new ByteArrayInputStream(stream.toByteArray());
 				        			BufferedImage imageToSend = ImageIO.read(istream);
 					        		new ImageMessage(
 					        				imageToSend,
-					        				17,
+					        				32,
 					        				ImageChar.BLOCK.getChar()
 					        				).sendToPlayer(sender);
 					        		sender.sendMessage("Deposit to this address: "+addr);
@@ -102,7 +102,7 @@ public class Exchange extends JavaPlugin implements Listener {
 				        			BufferedImage imageToSend = ImageIO.read(istream);
 					        		new ImageMessage(
 					        				imageToSend,
-					        				17,
+					        				32,
 					        				ImageChar.BLOCK.getChar()
 					        				).sendToPlayer(sender);
 					        		sender.sendMessage("Deposit to this address: "+addr);
