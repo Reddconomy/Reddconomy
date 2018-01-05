@@ -106,7 +106,7 @@ public class Exchange extends JavaPlugin implements Listener {
 				        			BufferedImage bimg=new BufferedImage(matrix.getWidth(),matrix.getHeight(),BufferedImage.TYPE_INT_RGB);
 				        			for(int y=0;y<matrix.getHeight();y++){
 				        				for(int x=0;x<matrix.getWidth();x++){
-				        					boolean v=matrix.get(x,y)==1;
+				        					boolean v=matrix.get(x,y)==0;
 				        					bimg.setRGB(x,y,v?0xFFFFFF:0x000000);
 				        				}
 				        			}				        			
