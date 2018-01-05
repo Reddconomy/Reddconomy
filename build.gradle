@@ -90,7 +90,7 @@ task buildSpigotPlugin(type: Jar) {
     }
 
 	manifest {
-        attributes  'Main-Class':  "net.reddconomy.Exchange"
+        attributes  'Main-Class':  "net.reddconomy.plugin.Exchange"
     }
     baseName = project.name + '-spigot-fat'
     from { 
