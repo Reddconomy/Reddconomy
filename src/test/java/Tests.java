@@ -10,8 +10,8 @@ import java.util.UUID;
 
 import org.junit.Test;
 
-import database.Database;
-import database.implementation.SQLLiteDatabase;
+import reddconomy.database.Database;
+import reddconomy.database.implementation.SQLLiteDatabase;
 
 public class Tests{
 

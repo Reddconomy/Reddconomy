@@ -1,3 +1,4 @@
+package reddconomy;
 
 public interface CentralWallet{
 	public long getReceivedByAddress(String addr) throws Throwable ;	

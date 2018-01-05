@@ -1,4 +1,4 @@
-package utils;
+package reddconomy.utils;
 /**
  * Copyright (c) 2015, Riccardo Balbo
  * All rights reserved.

@@ -1,5 +1,4 @@
-package database;
-import java.sql.Connection;
+package reddconomy.database;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;

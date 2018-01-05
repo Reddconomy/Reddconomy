@@ -1,4 +1,4 @@
-package database.implementation;
+package reddconomy.database.implementation;
 
 
 import java.sql.Connection;
@@ -13,7 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import database.Database;
+import reddconomy.database.Database;
+
 
 /**
  * DB implementation on SQLITE - NOT SAFE FOR PRODUCTION

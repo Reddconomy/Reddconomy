@@ -1,17 +1,9 @@
+package reddconomy;
 import java.net.Authenticator;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import com.google.gson.GsonBuilder;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
-
-import database.implementation.SQLLiteDatabase;
-import webbit_lite.WebServers;
-import webbit_lite.netty.NettyWebServer;
 
 public class Reddcoind implements CentralWallet{
 	private final JsonRpcHttpClient _CLIENT;

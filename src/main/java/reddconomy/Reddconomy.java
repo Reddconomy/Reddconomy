@@ -1,27 +1,13 @@
-import java.net.Authenticator;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.UnknownHostException;
+package reddconomy;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 
-import database.Database;
-import database.implementation.SQLLiteDatabase;
-import webbit_lite.HttpControl;
-import webbit_lite.HttpHandler;
-import webbit_lite.HttpRequest;
-import webbit_lite.HttpResponse;
-import webbit_lite.WebServers;
+import reddconomy.database.Database;
+import reddconomy.database.implementation.SQLLiteDatabase;
 
 public class Reddconomy extends Thread implements ActionListener{
 
