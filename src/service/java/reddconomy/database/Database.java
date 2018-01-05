@@ -78,6 +78,13 @@ public interface Database{
 	 * @throws Exception 
 	 */
 	void completeDeposit(String deposit_addr) throws Exception;
+	
+	/**
+	 * Ritorna informazioni sul deposito
+	 * @param deposit_addr indirizzo di deposito (blockchain)
+	 * @throws Exception 
+	 */
+	Map<String,Object> getDeposit(String deposit_addr) throws Exception;
 
 
 }

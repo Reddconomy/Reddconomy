@@ -279,6 +279,24 @@ public  class SQLLiteDatabase implements Database {
 
 	}
 	
+	@Override
+	public synchronized Map<String,Object> getDeposit(String deposit_addr) throws Exception{
+		Map<String,Object> resp=new HashMap<String,Object>();
+		deposit_addr=deposit_addr.replaceAll("[^A-Za-z0-9]","_");
+		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `addr`='"+deposit_addr+"' LIMIT 0,1",true,false);
+		if(res==null){
+			throw new Exception("Deposit is not ready");
+		}else{		
+			Map<String,String> deposit=res.FetchAssoc();
+			resp.put("addr",deposit_addr);
+			resp.put("receiver",deposit.get("receiver"));
+			resp.put("expected_balance",Long.parseLong(deposit.get("expected_balance")));
+			resp.put("status",Integer.parseInt(deposit.get("status")));
+			resp.put("expiring",Integer.parseInt(deposit.get("accepted")));
+			resp.put("expiring",Integer.parseInt(deposit.get("status")));
+		}
+		return resp;
+	}
 	
 	/**
 	 * Query sql
