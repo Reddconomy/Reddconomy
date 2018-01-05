@@ -2,6 +2,7 @@ package net.reddconomy.plugin;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -18,6 +19,8 @@ import javax.crypto.spec.SecretKeySpec;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import net.glxn.qrgen.javase.QRCode;
+
 public class ExchangeEngine {
 		
 		final Gson _JSON;
@@ -25,6 +28,7 @@ public class ExchangeEngine {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 		}
 		
+		public String coin = "dogecoin";
 		
 		// Crypto stuff
 		public static String hmac(String key, String data) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
@@ -90,6 +94,16 @@ public class ExchangeEngine {
 			String action = "newcontract&wallid=" + pUUID + "&ammount=" + ammount;
 			Map data=(Map)apiCall(action).get("data");
 			return (String)data.get("contractId");
+		}
+		
+		
+		
+		
+		// Get QRCode
+		public void getQRCode(String addr)
+		{
+			QRCode.from("Hello World").file(addr);
+			
 		}
 		 
 		// Accept contract.

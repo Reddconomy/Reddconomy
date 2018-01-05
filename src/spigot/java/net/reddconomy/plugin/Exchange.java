@@ -2,6 +2,14 @@
 // Author: Simone Cervino, @soxasora
 package net.reddconomy.plugin;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.nio.file.Files;
+
+import javax.imageio.ImageIO;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -9,6 +17,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 //import org.bukkit.event.player.PlayerJoinEvent; // Remove if you want to use onPlayerJoinEvent
 //import java.util.UUID; // Remove if you want to change from String to UUID
+
+import com.bobacadodl.imgmessage.ImageChar;
+import com.bobacadodl.imgmessage.ImageMessage;
+
+import net.glxn.qrgen.javase.QRCode;
 
 public class Exchange extends JavaPlugin implements Listener {
 	
@@ -71,7 +84,30 @@ public class Exchange extends JavaPlugin implements Listener {
 		    if (args.length==1) {
 			    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
 				        	try {
-								sender.sendMessage("Deposit to this address: " + engine.getAddrDeposit(balance, pUUID));
+				        		String addr=engine.getAddrDeposit(balance, pUUID);
+				        		if(engine.coin!=null)
+				        		{
+				        			ByteArrayOutputStream stream = QRCode.from(engine.coin+":"+addr+"?amount="+args[0]).stream();
+				        			ByteArrayInputStream istream=new ByteArrayInputStream(stream.toByteArray());
+				        			BufferedImage imageToSend = ImageIO.read(istream);
+					        		new ImageMessage(
+					        				imageToSend,
+					        				17,
+					        				ImageChar.BLOCK.getChar()
+					        				).sendToPlayer(sender);
+					        		sender.sendMessage("Deposit to this address: "+addr);
+				        		} else {
+				        			ByteArrayOutputStream stream = QRCode.from(addr).stream();
+				        			ByteArrayInputStream istream=new ByteArrayInputStream(stream.toByteArray());
+				        			BufferedImage imageToSend = ImageIO.read(istream);
+					        		new ImageMessage(
+					        				imageToSend,
+					        				17,
+					        				ImageChar.BLOCK.getChar()
+					        				).sendToPlayer(sender);
+					        		sender.sendMessage("Deposit to this address: "+addr);
+				        		}
+
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
