@@ -77,8 +77,7 @@ public class Reddconomy extends Thread implements ActionListener{
 
 	public String performAction(String action, Map<String,String> _GET) {
 		Map<String,Object> resp_obj=new HashMap<String,Object>();
-		switch(action){
-			
+		switch(action){			
 			// action=deposit&wallid=XXX&ammount=XXXX
 			case "deposit":{
 				try{
@@ -177,7 +176,6 @@ public class Reddconomy extends Thread implements ActionListener{
 			}
 			case "sendcoins":{
 				try{
-					System.out.println("Send");
 					String addr=_GET.get("addr").toString();
 					long ammount=Long.parseLong(_GET.get("ammount").toString());
 					_WALLET.sendToAddress(addr,ammount);
