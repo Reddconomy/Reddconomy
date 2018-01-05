@@ -28,12 +28,27 @@ package reddconomy.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 
 
 
 public class HashUtils{
+	public static String hmac(String key, String data) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
+		Mac sha256_HMAC=Mac.getInstance("HmacSHA256");
+		SecretKeySpec secret_key=new SecretKeySpec(key.getBytes("UTF-8"),"HmacSHA256");
+		sha256_HMAC.init(secret_key);
+
+		return new String(Base64.getEncoder().encode(sha256_HMAC.doFinal(data.getBytes("UTF-8"))),"UTF-8");
+	}
+	
 
 	/**
 	 * @deprecated Replaced with HashUtils.hash(File file,"MD5");

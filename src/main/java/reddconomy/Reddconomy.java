@@ -22,7 +22,7 @@ public class Reddconomy extends Thread implements ActionListener{
 		
 		CentralWallet wallet=new Reddcoind("http://reddconomy.frk.wf:45443/","test","test123");
 		Reddconomy reddconomy=new Reddconomy(wallet);
-		HttpGateway httpd=new HttpGateway(ip,port,reddconomy);
+		HttpGateway httpd=new HttpGateway("SECRET123",ip,port,reddconomy);
 		httpd.start();
 		reddconomy.start();
 		
