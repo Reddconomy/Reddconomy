@@ -1,7 +1,7 @@
 # Download
 
 ```
-VERSION="`curl http://ci_public_deploy.frk.wf/Reddconomy_latest.txt`"
+VERSION="`curl http://ci_deploy.frk.wf/Reddconomy_latest.txt`"
 PASSWORD="N2lMuG106fRM4yJRcQyozzUnzF13tJid"
 
 #Download spigot plugin
