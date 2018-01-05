@@ -97,6 +97,21 @@ public class Reddconomy extends Thread implements ActionListener{
 				}
 				break;
 			}
+			//action=getdeposit&addr=XXXXXXXx
+			case "getdeposit":{
+				try{
+					String addr=_GET.get("addr").toString();
+					Map<String,Object> deposit=_DATABASE.getDeposit(addr);
+					resp_obj.put("status",200);
+					resp_obj.put("data",deposit);
+				}catch(Throwable e){
+					String error=e.toString();
+					resp_obj.put("status",500);
+					resp_obj.put("error",error);
+					e.printStackTrace();
+				}
+				break;
+			}
 			//action=withdraw&ammount=XXXX&addr=XXXXXXXx
 			case "withdraw":{
 				long ammount=Long.parseLong(_GET.get("ammount").toString());
