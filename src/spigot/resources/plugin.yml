@@ -18,8 +18,8 @@ commands:
     usage: /contract [new/accept] [-/+money|contractid]
     permission: ExchangeCoin.contract
     permission-message: You don't have <permission>
-  gettestcoins:
+  sendcoins:
     description: Get test coins. Please disable for other users.
-    usage: /gettestcoins [address] [money]
+    usage: /sendcoins [address] [money]
     permission: ExchangeCoin.gettestcoins
     permission-message: You don't have <permission>
