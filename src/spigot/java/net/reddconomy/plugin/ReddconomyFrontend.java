@@ -8,14 +8,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-import javax.imageio.ImageIO;
-
+// Bukkit libraries
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
@@ -23,30 +24,19 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 //import org.bukkit.event.player.PlayerJoinEvent; // Remove if you want to use onPlayerJoinEvent
-//import java.util.UUID; // Remove if you want to change from String to UUID
 
+// Image in chat framework
 import com.bobacadodl.imgmessage.ImageChar;
 import com.bobacadodl.imgmessage.ImageMessage;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import com.google.zxing.qrcode.encoder.ByteMatrix;
-import com.google.zxing.qrcode.encoder.Encoder;
-
-import net.glxn.qrgen.javase.QRCode;
 
 public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	
 	public String EnableQR;
 	public String coin;
 	public String reddconomy_api_url;
-	
-	
 	
 	// This is what the plugin does when activated
 	@Override
@@ -57,7 +47,42 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 		reddconomy_api_url=getConfig().getString("reddconomy_api_url");
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
-	}
+		final Iterator<String> it=_PENDING_DEPOSITS.iterator();
+		Bukkit.getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
+			public void run() {
+			while(it.hasNext()){
+					String addr=it.next();
+					UUID pUUID = null;
+					PendingDepositData deposit_data;
+					try {
+						deposit_data = api.getDepositStatus(addr);
+						pUUID = UUID.fromString(deposit_data.addr);
+	
+						if (deposit_data.status==1)
+						{
+							it.remove();
+							Bukkit.getPlayer(pUUID).sendMessage("Deposit completed. Check your balance!");
+						} else if (deposit_data.status==-1)
+						{
+							it.remove();
+							Bukkit.getPlayer(pUUID).sendMessage("Deposit expired! Request another one.");
+							
+						}
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}	
+			}	
+		}, 100, 200);
+		
+	  } 
+
+	
+	
+	// TODO: Thread cycle
+		
+		
 	
 	// Let's declare ExchangeEngine, shall we?
 		ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
@@ -121,6 +146,9 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	 
 	}
 	
+	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
+	
+	
 
 
 	// Commands!
@@ -163,6 +191,8 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 				        			} else if (EnableQR.equalsIgnoreCase("disabled")) {
 				        				sender.sendMessage("Deposit "+args[0]+" "+coin+" to this address: "+addr);
 				        			}
+				        			_PENDING_DEPOSITS.add(addr);
+				        		
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
