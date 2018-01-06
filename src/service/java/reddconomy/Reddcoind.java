@@ -33,10 +33,10 @@ public class Reddcoind implements CentralWallet{
 		return (long)(v*100000000L);
 	}
 	
-	public synchronized void sendToAddress(String addr, long ammount_long) throws Throwable {
-		double ammount = (ammount_long)/100000000.0;
+	public synchronized void sendToAddress(String addr, long amount_long) throws Throwable {
+		double amount = (amount_long)/100000000.0;
 		double balance=(double)_CLIENT.invoke("getbalance",new Object[]{},Object.class);
-		if (balance>ammount)_CLIENT.invoke("sendtoaddress",new Object[]{addr,ammount},Object.class);
+		if (balance>amount)_CLIENT.invoke("sendtoaddress",new Object[]{addr,amount},Object.class);
 		else throw new Exception("Not enough coins");
 	}
 

@@ -78,13 +78,13 @@ public class Reddconomy extends Thread implements ActionListener{
 	public String performAction(String action, Map<String,String> _GET) {
 		Map<String,Object> resp_obj=new HashMap<String,Object>();
 		switch(action){			
-			// action=deposit&wallid=XXX&ammount=XXXX
+			// action=deposit&wallid=XXX&amount=XXXX
 			case "deposit":{
 				try{
 					Map<String,Object> data=new HashMap<String,Object>();
 					String addr=_WALLET.getNewAddress();
 					String wallet_id=_GET.get("wallid").toString();
-					long balance=Long.parseLong(_GET.get("ammount").toString());
+					long balance=Long.parseLong(_GET.get("amount").toString());
 					_DATABASE.prepareForDeposit(addr,wallet_id,balance);
 					data.put("addr",addr);
 					resp_obj.put("status",200);
@@ -112,17 +112,17 @@ public class Reddconomy extends Thread implements ActionListener{
 				}
 				break;
 			}
-			//action=withdraw&ammount=XXXX&addr=XXXXXXXx
+			//action=withdraw&amount=XXXX&addr=XXXXXXXx
 			case "withdraw":{
-				long ammount=Long.parseLong(_GET.get("ammount").toString());
+				long amount=Long.parseLong(_GET.get("amount").toString());
 				String addr=(String)_GET.get("addr");
 				String wallet_id=_GET.get("wallid").toString();
 				try{
 					Map<String,Object> wallet=_DATABASE.getWallet(wallet_id);
 					long balance=(long)wallet.get("balance");
-					if(balance>=ammount){
-						_WALLET.sendToAddress(addr,ammount);
-						_DATABASE.withdraw(wallet_id,ammount);
+					if(balance>=amount){
+						_WALLET.sendToAddress(addr,amount);
+						_DATABASE.withdraw(wallet_id,amount);
 						resp_obj.put("status",200);
 						resp_obj.put("data",new HashMap<String,Object>());
 					}else{
@@ -153,13 +153,13 @@ public class Reddconomy extends Thread implements ActionListener{
 
 				break;
 			}
-			// action=newcontract&wallid=XXX&ammount=XXXX
+			// action=newcontract&wallid=XXX&amount=XXXX
 			case "newcontract":{
 				try{
 					Map<String,Object> data=new HashMap<String,Object>();
 					String wallet_id=_GET.get("wallid").toString();
-					long ammount=Long.parseLong(_GET.get("ammount").toString());
-					String contractId=_DATABASE.createContract(wallet_id,ammount);
+					long amount=Long.parseLong(_GET.get("amount").toString());
+					String contractId=_DATABASE.createContract(wallet_id,amount);
 					data.put("contractId",contractId);
 					resp_obj.put("status",200);
 					resp_obj.put("data",data);
@@ -192,8 +192,8 @@ public class Reddconomy extends Thread implements ActionListener{
 			case "sendcoins":{
 				try{
 					String addr=_GET.get("addr").toString();
-					long ammount=Long.parseLong(_GET.get("ammount").toString());
-					_WALLET.sendToAddress(addr,ammount);
+					long amount=Long.parseLong(_GET.get("amount").toString());
+					_WALLET.sendToAddress(addr,amount);
 					resp_obj.put("status",200);
 					resp_obj.put("data",new HashMap<String,Object>());
 				}catch(Throwable e){

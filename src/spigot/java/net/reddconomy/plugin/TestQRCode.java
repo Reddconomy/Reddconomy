@@ -24,7 +24,7 @@ public class TestQRCode{
 	public static void main(String[] args) throws WriterException, IOException {
 
 		Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
-		com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode("dogecoin:nn6GTxBU1fUrWkfXHYNNLYDkXmHMtSUjiZ?ammount=1000",ErrorCorrectionLevel.L,hint);
+		com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode("dogecoin:nn6GTxBU1fUrWkfXHYNNLYDkXmHMtSUjiZ?amount=1000",ErrorCorrectionLevel.L,hint);
 		ByteMatrix matrix=code.getMatrix();
 		System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
 		BufferedImage bimg=new BufferedImage(matrix.getWidth(),matrix.getHeight(),BufferedImage.TYPE_INT_RGB);

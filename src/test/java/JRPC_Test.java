@@ -28,8 +28,8 @@ public class JRPC_Test{
 		Double balance=(Double)client.invoke("getbalance",new Object[]{},Object.class);
 		System.out.println(balance);
 //
-//		Double ammount=10.;
-//		client.invoke("sendtoaddress",new Object[]{addr,ammount},Object.class);
+//		Double amount=10.;
+//		client.invoke("sendtoaddress",new Object[]{addr,amount},Object.class);
 //		Double v=(Double)client.invoke("getreceivedbyaddress",new Object[]{addr},Object.class);
 
 //		System.out.println(v);

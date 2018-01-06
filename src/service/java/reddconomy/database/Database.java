@@ -33,11 +33,11 @@ public interface Database{
 	/**
 	 * Crea contratto
 	 * @param walletid id di chi lo crea
-	 * @param ammount quantità di soldi che vuole trasferire (positivo= da chi lo accetta a chi lo crea, negativo=da chi lo crea a chi lo accetta)
+	 * @param amount quantità di soldi che vuole trasferire (positivo= da chi lo accetta a chi lo crea, negativo=da chi lo crea a chi lo accetta)
 	 * @return
 	 * @throws SQLException
 	 */
-	String createContract(String walletid, long ammount) throws SQLException;
+	String createContract(String walletid, long amount) throws SQLException;
 
 	/**
 	 * Accetta contratto
@@ -50,10 +50,10 @@ public interface Database{
 	/**
 	 * Riflette sul db un'operazione di withdraw.
 	 * @param walletid chi lo fa
-	 * @param ammount quanti soldi
+	 * @param amount quanti soldi
 	 * @throws Exception solleva eccezione se non è possibile farlo
 	 */
-	void withdraw(String walletid, long ammount) throws Exception;
+	void withdraw(String walletid, long amount) throws Exception;
 
 	/**
 	 * Prepara un'operazione di deposit

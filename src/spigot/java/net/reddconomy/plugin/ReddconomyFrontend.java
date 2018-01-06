@@ -96,9 +96,9 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	  
 	  if (line0.equals("[CONTRACT]"))
 	  {
-		  	long ammount = (long)(Double.parseDouble(line2)*100000000L);
+		  	long amount = (long)(Double.parseDouble(line2)*100000000L);
 			try {
-				String cID = api.createContract(ammount, sellerUUID);
+				String cID = api.createContract(amount, sellerUUID);
 				api.acceptContract(cID, pUUID);
 				player.sendMessage("Contract ID: "+cID);
 				player.sendMessage("Contract accepted. Redstone activated.");
@@ -195,10 +195,10 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 		{
 			if (args.length==2)
 			{
-				long ammount = (long)(Double.parseDouble(args[1])*100000000L);
+				long amount = (long)(Double.parseDouble(args[1])*100000000L);
 				String addr = args[0];
 				try {
-					api.sendCoins(addr, ammount);
+					api.sendCoins(addr, amount);
 					sender.sendMessage("It worked!");
 					sender.sendMessage("You added " + args[1] + " to the address: " + addr);
 				} catch (Exception e) {
@@ -214,10 +214,10 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 		{
 			if (args.length==2)
 			{
-				long ammount = (long)(Double.parseDouble(args[0])*100000000L);
+				long amount = (long)(Double.parseDouble(args[0])*100000000L);
 				String addr = args[1];
 				try {
-					api.withdraw(ammount, addr, pUUID);
+					api.withdraw(amount, addr, pUUID);
 					sender.sendMessage("Withdrawing..");
 					sender.sendMessage("Ok, it should work, wait please.");
 				} catch (Exception e) {
@@ -237,9 +237,9 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 		    	{
 		    		if (args[0].equalsIgnoreCase("new"))
 		    		{
-		    			long ammount = (long)(Double.parseDouble(args[1])*100000000L);
+		    			long amount = (long)(Double.parseDouble(args[1])*100000000L);
 		    			try {
-							sender.sendMessage("Contract ID: " + api.createContract(ammount, pUUID));
+							sender.sendMessage("Contract ID: " + api.createContract(amount, pUUID));
 							sender.sendMessage("Contract created. Share the Contract ID.");
 						} catch (Exception e) {
 							sender.sendMessage("Cannot create contract. Call an admin for more info.");

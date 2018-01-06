@@ -92,7 +92,7 @@ public class ReddconomyApi {
 		public String getAddrDeposit(long balance, UUID pUUID) throws Exception
 		{
 			 
-			 String action = "deposit&wallid=" + pUUID + "&ammount=" + balance;
+			 String action = "deposit&wallid=" + pUUID + "&amount=" + balance;
 			 Map data=(Map)apiCall(action).get("data");
 			 return (String)data.get("addr");
 		}
@@ -109,9 +109,9 @@ public class ReddconomyApi {
 		
 		// Create contract.
 		@SuppressWarnings("rawtypes")
-		public String createContract(long ammount, UUID pUUID) throws Exception
+		public String createContract(long amount, UUID pUUID) throws Exception
 		{
-			String action = "newcontract&wallid=" + pUUID + "&ammount=" + ammount;
+			String action = "newcontract&wallid=" + pUUID + "&amount=" + amount;
 			Map data=(Map)apiCall(action).get("data");
 			return (String)data.get("contractId");
 		}
@@ -172,11 +172,11 @@ public class ReddconomyApi {
 			activateRed(blockNORTH);
 		}
 		
-		public BufferedImage QR (String addr, String coin, String ammount) throws WriterException
+		public BufferedImage QR (String addr, String coin, String amount) throws WriterException
 		{
 			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
 			com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?
-					coin+":"+addr+"?amount="+ammount:ammount,ErrorCorrectionLevel.L,hint);
+					coin+":"+addr+"?amount="+amount:amount,ErrorCorrectionLevel.L,hint);
 			ByteMatrix matrix=code.getMatrix();
 			System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
 			BufferedImage bimg=new BufferedImage(matrix.getWidth(),matrix.getHeight(),BufferedImage.TYPE_INT_RGB);
@@ -196,14 +196,14 @@ public class ReddconomyApi {
 		}
 		
 		// Withdraw money
-		public void withdraw(long ammount, String addr, UUID pUUID) throws Exception
+		public void withdraw(long amount, String addr, UUID pUUID) throws Exception
 		{
-			apiCall("withdraw&ammount=" + ammount + "&addr="+addr+"&wallid="+pUUID);
+			apiCall("withdraw&amount=" + amount + "&addr="+addr+"&wallid="+pUUID);
 		}
 		
 		// Test, test, test and moar test.
-		public void sendCoins(String addr, long ammount) throws Exception
+		public void sendCoins(String addr, long amount) throws Exception
 		{
-			apiCall("sendcoins&addr=" + addr + "&ammount=" + ammount);
+			apiCall("sendcoins&addr=" + addr + "&amount=" + amount);
 		}
 }

@@ -57,14 +57,14 @@ public  class SQLLiteDatabase implements Database {
 			/*
 			 * id : id del contratto (univoco)
 			 * receiver: beneficiario del contratto 
-			 * ammount: $$ (i soldi si muovono da acceptor a receiver se + o il contrario se -)
+			 * amount: $$ (i soldi si muovono da acceptor a receiver se + o il contrario se -)
 			 * acceptor : id di chi ha accettato, se vuoto = contratto non completato 
 			 * created: data in cui è stato creato
 			 * accepted: data in cui è stato accettato 
 			 */
 			query("CREATE TABLE `reddconomy_contracts` ( `id`  TEXT NOT NULL PRIMARY KEY,"
 					+ "`receiver` TEXT NOT NULL, "
-					+ "`ammount` INTEGER DEFAULT 0, "
+					+ "`amount` INTEGER DEFAULT 0, "
 					+ "`acceptor` TEXT DEFAULT '',"
 					+ "`created` DATETIME DEFAULT CURRENT_TIMESTAMP,"
 					+ "`accepted` DATETIME DEFAULT CURRENT_TIMESTAMP ,"
@@ -134,7 +134,7 @@ public  class SQLLiteDatabase implements Database {
 			Map<String,String> fetched=res.FetchAssoc();
 			System.out.println(fetched);
 			out.put("id",fetched.get("id"));
-			out.put("ammount",Long.parseLong(fetched.get("ammount")));
+			out.put("amount",Long.parseLong(fetched.get("amount")));
 			out.put("acceptor",fetched.get("acceptor"));
 			out.put("receiver",fetched.get("receiver"));
 			out.put("created",fetched.get("created"));
@@ -147,12 +147,12 @@ public  class SQLLiteDatabase implements Database {
 	
 
 	@Override
-	public synchronized String createContract(String walletid,long ammount) throws SQLException{
+	public synchronized String createContract(String walletid,long amount) throws SQLException{
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
-		String id="0c"+(System.currentTimeMillis()+"___"+walletid+"__"+ammount).hashCode();
+		String id="0c"+(System.currentTimeMillis()+"___"+walletid+"__"+amount).hashCode();
 		id=id.replaceAll("[^A-Za-z0-9]","_");
 
-		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`ammount`) VALUES('"+id+"','"+walletid+"','"+ammount+"')",false,false);			
+		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`amount`) VALUES('"+id+"','"+walletid+"','"+amount+"')",false,false);			
 		return id;
 	}
 	
@@ -169,7 +169,7 @@ public  class SQLLiteDatabase implements Database {
 				String rcv_walletid=contract.get("receiver").toString();
 				Map<String,Object> rcv_wallet=getWallet(rcv_walletid);
 
-				long price=(long)contract.get("ammount");
+				long price=(long)contract.get("amount");
 				long acc_balance=(long)acc_wallet.get("balance");
 				long rcv_balance=(long)rcv_wallet.get("balance");
 				if((price>=0&&price<=acc_balance)||(price<0&&-price<=rcv_balance)){
@@ -194,15 +194,15 @@ public  class SQLLiteDatabase implements Database {
 	
 
 	@Override
-	public synchronized void withdraw(String walletid,long ammount) throws Exception{
+	public synchronized void withdraw(String walletid,long amount) throws Exception{
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		Map<String,Object> wallet=getWallet(walletid);
 		long balance=(long)wallet.get("balance");
-		if(balance>=ammount){
-			balance-=ammount;
+		if(balance>=amount){
+			balance-=amount;
 			query("UPDATE reddconomy_wallets SET `balance`='"+balance+"' WHERE `id`='"+walletid+"'",false,false);
 		}else{
-			throw new Exception("Requested withdraw of "+ammount+" but only "+balance+" available");
+			throw new Exception("Requested withdraw of "+amount+" but only "+balance+" available");
 		}
 	}
 	
@@ -269,11 +269,11 @@ public  class SQLLiteDatabase implements Database {
 			query("UPDATE reddconomy_deposits SET `status`='0' WHERE `addr`='"+deposit_addr+"'",false,false);
 			
 			Map<String,String> deposit=res.FetchAssoc();
-			long ammount=Long.parseLong(deposit.get("expected_balance"));
+			long amount=Long.parseLong(deposit.get("expected_balance"));
 			String wallet_id=deposit.get("receiver");
 			Map<String,Object> wallet=this.getWallet(wallet_id);
 			long balance=(long)wallet.get("balance");
-			balance+=ammount;
+			balance+=amount;
 			query("UPDATE reddconomy_wallets SET `balance`='"+balance+"' WHERE `id`='"+wallet_id+"'",false,false);
 		}
 

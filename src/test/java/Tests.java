@@ -72,18 +72,18 @@ public class Tests{
 		db.prepareForDeposit("fakeaddr",wallet_id2,10);
 		db.completeDeposit("fakeaddr");
 
-		long ammount1=10;
-		long ammount2=-3;
+		long amount1=10;
+		long amount2=-3;
 		
 		
-		String contract1_id=db.createContract(wallet_id1, ammount1);
+		String contract1_id=db.createContract(wallet_id1, amount1);
 		System.out.println("Contract1 " +contract1_id);
-		String contract2_id=db.createContract(wallet_id1, ammount2);
+		String contract2_id=db.createContract(wallet_id1, amount2);
 		System.out.println("Contract2 " +contract2_id);
 
 		Map<String,Object> contract1=db.getContract(contract1_id);
-		long cammount=(long)contract1.get("ammount");
-		assertTrue(ammount1+"=/="+cammount,ammount1==cammount);
+		long camount=(long)contract1.get("amount");
+		assertTrue(amount1+"=/="+camount,amount1==camount);
 
 		
 		
