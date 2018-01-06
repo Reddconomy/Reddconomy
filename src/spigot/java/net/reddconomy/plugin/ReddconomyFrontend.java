@@ -34,12 +34,12 @@ import com.bobacadodl.imgmessage.ImageMessage;
 
 public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	
-	public String EnableQR;
-	public String coin;
-	public String reddconomy_api_url;
-	
+	private String EnableQR;
+	private String coin;
+	private String reddconomy_api_url;
+	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
+
 	// This is what the plugin does when activated
-	@SuppressWarnings("deprecation")
 	@Override
 	public void onEnable() {
 		saveDefaultConfig();
@@ -48,36 +48,39 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 		reddconomy_api_url=getConfig().getString("reddconomy_api_url");
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
-		final Iterator<String> it=_PENDING_DEPOSITS.iterator();
 		Bukkit.getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
 			public void run() {
-			while(it.hasNext()){
-					String addr=it.next();
-					UUID pUUID = null;
-					PendingDepositData deposit_data;
-					try {
-						deposit_data = api.getDepositStatus(addr);
-						pUUID = UUID.fromString(deposit_data.addr);
-	
-						if (deposit_data.status==1)
-						{
-							it.remove();
-							Bukkit.getPlayer(pUUID).sendMessage("Deposit completed. Check your balance!");
-						} else if (deposit_data.status==-1)
-						{
-							it.remove();
-							Bukkit.getPlayer(pUUID).sendMessage("Deposit expired! Request another one.");
-							
-						}
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}	
+				processPendingDeposits();
 			}	
 		}, 100, 200);
 		
 	  } 
+	
+	private void processPendingDeposits() {
+		final Iterator<String> it=_PENDING_DEPOSITS.iterator();
+
+		while(it.hasNext()){
+			String addr=it.next();
+		
+			try{
+				final PendingDepositData deposit_data=api.getDepositStatus(addr);
+				final UUID pUUID=UUID.fromString(deposit_data.addr);
+				if(deposit_data.status!=0){
+					it.remove();
+					Bukkit.getScheduler().runTaskLater(this,new Runnable(){
+						@Override
+						public void run() {
+							Bukkit.getPlayer(pUUID).sendMessage(
+									deposit_data.status==1?"Deposit completed. Check your balance!":"Deposit expired! Request another one."
+							);
+						}						
+					},0);
+				}		
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
 
 	
 	
@@ -176,7 +179,6 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	 
 	}
 	
-	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
 	
 	
 
