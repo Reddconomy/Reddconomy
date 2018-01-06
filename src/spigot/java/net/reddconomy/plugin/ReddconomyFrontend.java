@@ -83,7 +83,8 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	}
 	
 	// Let's declare ExchangeEngine, shall we?
-	ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
+	
+	ReddconomyApi api = new ReddconomyApi(getConfig().getString("reddconomy_api_url"));
 	
 	// And this is what the plugin does when deactivated.
 	@Override
