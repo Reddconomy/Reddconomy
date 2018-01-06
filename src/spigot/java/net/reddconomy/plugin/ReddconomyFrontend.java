@@ -8,8 +8,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.imageio.ImageIO;
 
@@ -46,9 +49,8 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	public String coin;
 	public String reddconomy_api_url;
 	
-	
-	
 	// This is what the plugin does when activated
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onEnable() {
 		saveDefaultConfig();
@@ -58,6 +60,35 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
 	}
+	
+	// TODO: Thread cycle
+	/*	final Iterator<String> it=_PENDING_DEPOSITS.iterator();
+			while(it.hasNext()){
+				 String addr=it.next();
+				 UUID pUUID = null;
+				 PendingDepositData deposit_data;
+				try {
+					deposit_data = api.getDepositStatus(addr);
+					pUUID = UUID.fromString(deposit_data.addr);
+
+					if (deposit_data.status==1)
+					{
+						it.remove();
+						Bukkit.getPlayer(pUUID).sendMessage("Deposit completed. Check your balance!");
+					} else if (deposit_data.status==-1)
+					{
+						it.remove();
+						Bukkit.getPlayer(pUUID).sendMessage("Deposit expired! Request another one.");
+						
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} 
+	}*/
+		
 	
 	// Let's declare ExchangeEngine, shall we?
 		ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
@@ -121,6 +152,9 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	 
 	}
 	
+	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
+	
+	
 
 
 	// Commands!
@@ -163,6 +197,8 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 				        			} else if (EnableQR.equalsIgnoreCase("disabled")) {
 				        				sender.sendMessage("Deposit "+args[0]+" "+coin+" to this address: "+addr);
 				        			}
+				        			_PENDING_DEPOSITS.add(addr);
+				        		
 							} catch (Exception e) {
 								e.printStackTrace();
 							}

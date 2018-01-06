@@ -1,5 +1,5 @@
 name: Reddxchange
-main: net.reddconomy.plugin.Exchange
+main: net.reddconomy.plugin.ReddconomyFrontend
 version: 0.0.1
 author: Soxasora
 commands:
@@ -22,4 +22,9 @@ commands:
     description: Send coins. Please disable for other users.
     usage: /sendcoins [address] [money]
     permission: Reddxchange.gettestcoins
+    permission-message: You don't have <permission>
+  withdraw:
+    description: Withdraw money.
+    usage: /withdraw [money] [address]
+    permission: Reddxchange.withdraw
     permission-message: You don't have <permission>
