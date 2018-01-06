@@ -81,44 +81,9 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 			}
 		}
 	}
-
-	
-	
-	// TODO: Thread cycle
-		
-		
-	
-	// TODO: Thread cycle
-	/*	final Iterator<String> it=_PENDING_DEPOSITS.iterator();
-			while(it.hasNext()){
-				 String addr=it.next();
-				 UUID pUUID = null;
-				 PendingDepositData deposit_data;
-				try {
-					deposit_data = api.getDepositStatus(addr);
-					pUUID = UUID.fromString(deposit_data.addr);
-
-					if (deposit_data.status==1)
-					{
-						it.remove();
-						Bukkit.getPlayer(pUUID).sendMessage("Deposit completed. Check your balance!");
-					} else if (deposit_data.status==-1)
-					{
-						it.remove();
-						Bukkit.getPlayer(pUUID).sendMessage("Deposit expired! Request another one.");
-						
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		} 
-	}*/
-		
 	
 	// Let's declare ExchangeEngine, shall we?
-		ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
+	ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
 	
 	// And this is what the plugin does when deactivated.
 	@Override
@@ -137,7 +102,7 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	
 
 	
-	@SuppressWarnings({ "incomplete-switch", "deprecation" })
+	@SuppressWarnings({ "deprecation" })
 	@EventHandler
 	public void onInteract(PlayerInteractEvent Event) throws InterruptedException {
 

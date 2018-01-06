@@ -1,7 +1,7 @@
 name: Reddxchange
 main: net.reddconomy.plugin.ReddconomyFrontend
 version: 0.0.1
-author: Soxasora
+author: Simone C. | Riccardo B.
 commands:
   deposit:
     description: Deposit Reddcoins.

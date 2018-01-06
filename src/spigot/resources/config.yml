@@ -1,7 +1,7 @@
 #### Reddxchange, part of Reddconomy
 
 # Choose between "enabled", "link", "disabled"
-EnableQR: "enable"
+EnableQR: "enabled"
 
 # Choose a coin (example: reddcoin | example2: dogecoin)
 coin: "dogecoin"
