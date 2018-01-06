@@ -36,7 +36,7 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	
 	private String EnableQR;
 	private String coin;
-	private String reddconomy_api_url;
+	private String reddconomy_api_url=getConfig().getString("reddconomy_api_url");
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
 
 	// This is what the plugin does when activated
@@ -45,7 +45,6 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 		saveDefaultConfig();
 		EnableQR=getConfig().getString("EnableQR");
 		coin=getConfig().getString("coin");
-		reddconomy_api_url=getConfig().getString("reddconomy_api_url");
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
 		Bukkit.getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
@@ -84,8 +83,7 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	
 	// Let's declare ExchangeEngine, shall we?
 	
-	ReddconomyApi api = new ReddconomyApi(getConfig().getString("reddconomy_api_url"));
-	
+	ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
 	// And this is what the plugin does when deactivated.
 	@Override
 	public void onDisable() {
