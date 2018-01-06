@@ -1,4 +1,7 @@
 #!/bin/bash
+#Force testnet
+
+
 echo "server=1
 rpcuser=test
 rpcpassword=test123
@@ -12,9 +15,14 @@ addnode=testnets.chain.so
 addnode=suchdig.com
 addnode=testdoge.lionservers.de
 addnode=senatorwhiskers.com
-gen=1
-genproclimit=1
 ################
 " > "${DATA_DIR}/${CONFIG_FILE}"
+
+if [ "$GEN" != "" ];
+then
+echo "gen=1
+genproclimit=1" >> "${DATA_DIR}/${CONFIG_FILE}"
+fi
+
 echo "1" > "${DATA_DIR}/bootstrapped"
 /init.sh $@
