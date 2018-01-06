@@ -40,13 +40,13 @@ import com.google.zxing.qrcode.encoder.Encoder;
 
 import net.glxn.qrgen.javase.QRCode;
 
-public class Exchange extends JavaPlugin implements Listener {
+public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	
 	public String EnableQR;
 	public String coin;
+	public String reddconomy_api_url;
 	
-	// Let's declare ExchangeEngine, shall we?
-	ExchangeEngine engine = new ExchangeEngine();
+	
 	
 	// This is what the plugin does when activated
 	@Override
@@ -54,9 +54,13 @@ public class Exchange extends JavaPlugin implements Listener {
 		saveDefaultConfig();
 		EnableQR=getConfig().getString("EnableQR");
 		coin=getConfig().getString("coin");
+		reddconomy_api_url=getConfig().getString("reddconomy_api_url");
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
 	}
+	
+	// Let's declare ExchangeEngine, shall we?
+		ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
 	
 	// And this is what the plugin does when deactivated.
 	@Override
@@ -94,16 +98,16 @@ public class Exchange extends JavaPlugin implements Listener {
 	  {
 		  	long ammount = (long)(Double.parseDouble(line2)*100000000L);
 			try {
-				String cID = engine.createContract(ammount, sellerUUID);
-				engine.acceptContract(cID, pUUID);
+				String cID = api.createContract(ammount, sellerUUID);
+				api.acceptContract(cID, pUUID);
 				player.sendMessage("Contract ID: "+cID);
 				player.sendMessage("Contract accepted. Redstone activated.");
 				// this way, it powers button attached to the interacted sign.
-				engine.powerButton(interacted);
+				api.powerButton(interacted);
 				Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 					  @Override
 					  public void run() {
-						engine.shutdownButton(interacted);
+						api.shutdownButton(interacted);
 					  }
 					}, 5);
 					 
@@ -141,11 +145,11 @@ public class Exchange extends JavaPlugin implements Listener {
 		    if (args.length==1) {
 			    	long balance = (long)(Double.parseDouble(args[0])*100000000L);
 				        	try {
-				        		String addr=engine.getAddrDeposit(balance, pUUID);
+				        		String addr=api.getAddrDeposit(balance, pUUID);
 				        		
-				        			if (EnableQR.equalsIgnoreCase("enable"))
+				        			if (EnableQR.equalsIgnoreCase("enabled"))
 				        			{
-				        			BufferedImage bimg = engine.QR(addr, coin, args[0]);
+				        			BufferedImage bimg = api.QR(addr, coin, args[0]);
 					        		new ImageMessage(
 					        				bimg,
 					        				bimg.getHeight(),
@@ -153,10 +157,10 @@ public class Exchange extends JavaPlugin implements Listener {
 					        				).sendToPlayer(sender);
 					        		sender.sendMessage("Deposit "+args[0]+" "+coin+" to this address: "+addr);
 				        			} else if (EnableQR.equalsIgnoreCase("link")){
-				        				//BufferedImage bimg = engine.QR(addr, coin, args[0]);
+				        				//BufferedImage bimg = api.QR(addr, coin, args[0]);
 				        				//ImageIO.write(bimg, "png", new File (addr+".png"));
 				        				sender.sendMessage("Deposit "+args[0]+" "+coin+" to this address: "+addr);
-				        			} else if (EnableQR.equalsIgnoreCase("no")) {
+				        			} else if (EnableQR.equalsIgnoreCase("disabled")) {
 				        				sender.sendMessage("Deposit "+args[0]+" "+coin+" to this address: "+addr);
 				        			}
 							} catch (Exception e) {
@@ -175,7 +179,7 @@ public class Exchange extends JavaPlugin implements Listener {
 		    if (args.length==0)
 		    	{
 				try {
-					sender.sendMessage("You have: " + engine.getBalance(pUUID) + " RDD");
+					sender.sendMessage("You have: " + api.getBalance(pUUID) + " RDD");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -194,7 +198,7 @@ public class Exchange extends JavaPlugin implements Listener {
 				long ammount = (long)(Double.parseDouble(args[1])*100000000L);
 				String addr = args[0];
 				try {
-					engine.sendCoins(addr, ammount);
+					api.sendCoins(addr, ammount);
 					sender.sendMessage("It worked!");
 					sender.sendMessage("You added " + args[1] + " to the address: " + addr);
 				} catch (Exception e) {
@@ -213,7 +217,7 @@ public class Exchange extends JavaPlugin implements Listener {
 				long ammount = (long)(Double.parseDouble(args[0])*100000000L);
 				String addr = args[1];
 				try {
-					engine.withdraw(ammount, addr, pUUID);
+					api.withdraw(ammount, addr, pUUID);
 					sender.sendMessage("Withdrawing..");
 					sender.sendMessage("Ok, it should work, wait please.");
 				} catch (Exception e) {
@@ -235,7 +239,7 @@ public class Exchange extends JavaPlugin implements Listener {
 		    		{
 		    			long ammount = (long)(Double.parseDouble(args[1])*100000000L);
 		    			try {
-							sender.sendMessage("Contract ID: " + engine.createContract(ammount, pUUID));
+							sender.sendMessage("Contract ID: " + api.createContract(ammount, pUUID));
 							sender.sendMessage("Contract created. Share the Contract ID.");
 						} catch (Exception e) {
 							sender.sendMessage("Cannot create contract. Call an admin for more info.");
@@ -244,9 +248,9 @@ public class Exchange extends JavaPlugin implements Listener {
 		    		} else if (args[0].equalsIgnoreCase("accept")) {
 		    			String contractId = args[1];
 		    			try {
-		    				engine.acceptContract(contractId, pUUID);
+		    				api.acceptContract(contractId, pUUID);
 							sender.sendMessage("Contract accepted.");
-							sender.sendMessage("You now have: " + engine.getBalance(pUUID) + " RDD");
+							sender.sendMessage("You now have: " + api.getBalance(pUUID) + " RDD");
 						} catch (Exception e) {
 							sender.sendMessage("Cannot accept contract. Are you sure that you haven't already accepted?");
 							sender.sendMessage("Otherwise, call and admin for more info.");

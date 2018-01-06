@@ -40,14 +40,15 @@ import com.google.zxing.qrcode.encoder.Encoder;
 
 import net.glxn.qrgen.javase.QRCode;
 
-public class ExchangeEngine {
+public class ReddconomyApi {
 		
 		final Gson _JSON;
-		public ExchangeEngine() {
+		final String _URL;
+		
+		public ReddconomyApi(String reddconomy_api_url) {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
+			_URL = reddconomy_api_url;
 		}
-		
-		
 		
 		// Crypto stuff
 		public static String hmac(String key, String data) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
@@ -62,7 +63,7 @@ public class ExchangeEngine {
 		public Map apiCall(String action) throws Exception
 		{
 			  String query = "/?action="+action;
-			  String urlString = "http://localhost:8099"+query;
+			  String urlString = _URL+query;
 			  URL url = new URL(urlString);
 			  String hash = hmac("SECRET123", query);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
