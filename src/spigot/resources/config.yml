@@ -1,1 +1,2 @@
-EnableQR=yes
+EnableQR: "enable"
+coin: "dogecoin"

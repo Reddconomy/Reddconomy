@@ -9,13 +9,24 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
+import org.bukkit.Bukkit;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 //import org.bukkit.event.player.PlayerJoinEvent; // Remove if you want to use onPlayerJoinEvent
 //import java.util.UUID; // Remove if you want to change from String to UUID
@@ -32,6 +43,7 @@ import net.glxn.qrgen.javase.QRCode;
 public class Exchange extends JavaPlugin implements Listener {
 	
 	public String EnableQR;
+	public String coin;
 	
 	// Let's declare ExchangeEngine, shall we?
 	ExchangeEngine engine = new ExchangeEngine();
@@ -41,6 +53,7 @@ public class Exchange extends JavaPlugin implements Listener {
 	public void onEnable() {
 		saveDefaultConfig();
 		EnableQR=getConfig().getString("EnableQR");
+		coin=getConfig().getString("coin");
 		getServer().getPluginManager().registerEvents(this, this);
 		getLogger().info("Exchanges between users, activated!");
 	}
@@ -60,14 +73,56 @@ public class Exchange extends JavaPlugin implements Listener {
 	    }
 	}*/
 	
+
+	
+	@SuppressWarnings({ "incomplete-switch", "deprecation" })
+	@EventHandler
+	public void onInteract(PlayerInteractEvent Event) throws InterruptedException {
+
+	  Player player = Event.getPlayer();
+	  final Block interacted = Event.getClickedBlock();
+	  if(interacted.getState() instanceof Sign) {
+	  BlockState sign = interacted.getState();
+	  String line0 = ((Sign) sign).getLine(0);
+	  String line1 = ((Sign) sign).getLine(1);
+	  String line2 = ((Sign) sign).getLine(2);
+	  //String line3 = ((Sign) sign).getLine(3);
+	  UUID pUUID = player.getUniqueId();
+	  UUID sellerUUID = (Bukkit.getServer().getPlayer(line1)).getUniqueId();
+	  
+	  if (line0.equals("[CONTRACT]"))
+	  {
+		  	long ammount = (long)(Double.parseDouble(line2)*100000000L);
+			try {
+				String cID = engine.createContract(ammount, sellerUUID);
+				engine.acceptContract(cID, pUUID);
+				player.sendMessage("Contract ID: "+cID);
+				player.sendMessage("Contract accepted. Redstone activated.");
+				// this way, it powers button attached to the interacted sign.
+				engine.powerButton(interacted);
+				Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+					  @Override
+					  public void run() {
+						engine.shutdownButton(interacted);
+					  }
+					}, 5);
+					 
+			} catch (Exception e) {
+				player.sendMessage("Cannot create/accept contract. Call an admin for more info.");
+				e.printStackTrace();
+			}
+
+	  }
+}
+	 
+	}
+	
+
+
 	// Commands!
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
 	{
-		// Maybe you're asking yourself why am I using String instead of UUID.
-		// Well, let's say that you will find out later. Let's continue!
-		String pUUID = null;
-		
 		// These commands only works if a player executes them. So here's a way to force it.
 	    if (!(sender instanceof Player))
 	    {
@@ -75,16 +130,8 @@ public class Exchange extends JavaPlugin implements Listener {
 		    return false;
 	    }
 	    
-	    // Here we are. I'm using String instead of UUID because
-	    // if a server is in offline mode, pUUID will have the Player's name
-	    // instead of the Mojang's UUID
-	    // Extremely unsafe way to use this plugin, please, make only servers in online mode.
-	    if ((getServer().getOnlineMode())==true)
-	    {
-	    	pUUID = (((Player) sender).getUniqueId()).toString();
-	    } else {
-	    	pUUID = sender.getName();
-	    }
+	    // Getting the unique ID of the sender.
+	    UUID pUUID = ((Player) sender).getUniqueId();
 	    	
 	    // /deposit command here. | This shows the deposit address where the player
 	    //                        | should send money.
@@ -96,28 +143,21 @@ public class Exchange extends JavaPlugin implements Listener {
 				        	try {
 				        		String addr=engine.getAddrDeposit(balance, pUUID);
 				        		
-				        			if (EnableQR=="yes")
+				        			if (EnableQR.equalsIgnoreCase("enable"))
 				        			{
-				        			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
-				        			com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(engine.coin!=null&&!engine.coin.isEmpty()?
-				        					engine.coin+":"+addr+"?amount="+args[0]:args[0],ErrorCorrectionLevel.L,hint);
-				        			ByteMatrix matrix=code.getMatrix();
-				        			System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
-				        			BufferedImage bimg=new BufferedImage(matrix.getWidth(),matrix.getHeight(),BufferedImage.TYPE_INT_RGB);
-				        			for(int y=0;y<matrix.getHeight();y++){
-				        				for(int x=0;x<matrix.getWidth();x++){
-				        					boolean v=matrix.get(x,y)==0;
-				        					bimg.setRGB(x,y,v?0xFFFFFF:0x000000);
-				        				}
-				        			}				        			
+				        			BufferedImage bimg = engine.QR(addr, coin, args[0]);
 					        		new ImageMessage(
 					        				bimg,
 					        				bimg.getHeight(),
 					        				ImageChar.BLOCK.getChar()
 					        				).sendToPlayer(sender);
-					        		sender.sendMessage("Deposit "+args[0]+" "+engine.coin+" to this address: "+addr);
-				        			} else {
-				        				sender.sendMessage("Deposit "+args[0]+" "+engine.coin+" to this address: "+addr);
+					        		sender.sendMessage("Deposit "+args[0]+" "+coin+" to this address: "+addr);
+				        			} else if (EnableQR.equalsIgnoreCase("link")){
+				        				//BufferedImage bimg = engine.QR(addr, coin, args[0]);
+				        				//ImageIO.write(bimg, "png", new File (addr+".png"));
+				        				sender.sendMessage("Deposit "+args[0]+" "+coin+" to this address: "+addr);
+				        			} else if (EnableQR.equalsIgnoreCase("no")) {
+				        				sender.sendMessage("Deposit "+args[0]+" "+coin+" to this address: "+addr);
 				        			}
 							} catch (Exception e) {
 								e.printStackTrace();

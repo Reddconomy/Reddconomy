@@ -1,5 +1,6 @@
 package net.reddconomy.plugin;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,18 +14,29 @@ import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
 
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapView;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.google.zxing.qrcode.encoder.ByteMatrix;
+import com.google.zxing.qrcode.encoder.Encoder;
 
 import net.glxn.qrgen.javase.QRCode;
 
@@ -35,7 +47,7 @@ public class ExchangeEngine {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 		}
 		
-		public String coin = "dogecoin";
+		
 		
 		// Crypto stuff
 		public static String hmac(String key, String data) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
@@ -76,7 +88,7 @@ public class ExchangeEngine {
 		
 		// Let's get that deposit address.
 		@SuppressWarnings("rawtypes")
-		public String getAddrDeposit(long balance, String pUUID) throws Exception
+		public String getAddrDeposit(long balance, UUID pUUID) throws Exception
 		{
 			 
 			 String action = "deposit&wallid=" + pUUID + "&ammount=" + balance;
@@ -86,7 +98,7 @@ public class ExchangeEngine {
 		
 		// Get balance.
 		@SuppressWarnings("rawtypes")
-		public double getBalance(String pUUID) throws Exception
+		public double getBalance(UUID pUUID) throws Exception
 		{
 			String action = "balance&wallid=" + pUUID;
 			Map data=(Map)apiCall(action).get("data");
@@ -96,31 +108,94 @@ public class ExchangeEngine {
 		
 		// Create contract.
 		@SuppressWarnings("rawtypes")
-		public String createContract(long ammount, String pUUID) throws Exception
+		public String createContract(long ammount, UUID pUUID) throws Exception
 		{
 			String action = "newcontract&wallid=" + pUUID + "&ammount=" + ammount;
 			Map data=(Map)apiCall(action).get("data");
 			return (String)data.get("contractId");
 		}
 		
-		
-		
-		
-		// Get QRCode
-		public void getQRCode(String addr)
+		public void activateRed(Block block)
 		{
-			QRCode.from("Hello World").file(addr);
-			
+			switch(block.getType())
+			{
+			case WOOD_BUTTON:
+			case STONE_BUTTON:
+			{
+			      block.setData((byte) (block.getData() | 0x8)); // put it back, ready for the next contract.
+			      break;
+			} }
+		}
+		
+		public void shutdownRed(Block block)
+		{
+			switch(block.getType())
+			{
+			case WOOD_BUTTON:
+			case STONE_BUTTON:
+			{
+			      block.setData((byte) (block.getData() & ~0x8)); // put it back, ready for the next contract.
+			      break;
+			} }
+		}
+		
+		public void shutdownButton(Block interacted)
+		{
+			Block blockUP= interacted.getRelative(BlockFace.UP, 1);
+			Block blockDOWN= interacted.getRelative(BlockFace.DOWN, 1);
+			Block blockLEFT=interacted.getRelative(BlockFace.EAST, 1);
+			Block blockRIGHT=interacted.getRelative(BlockFace.WEST, 1);
+			Block blockNORTH=interacted.getRelative(BlockFace.NORTH, 1);
+			Block blockSOUTH=interacted.getRelative(BlockFace.SOUTH, 1);
+			shutdownRed(blockDOWN);
+			shutdownRed(blockUP);
+			shutdownRed(blockLEFT);
+			shutdownRed(blockRIGHT);
+			shutdownRed(blockSOUTH);
+			shutdownRed(blockNORTH);
+		}
+		
+		public void powerButton(Block interacted)
+		{
+			Block blockUP= interacted.getRelative(BlockFace.UP, 1);
+			Block blockDOWN= interacted.getRelative(BlockFace.DOWN, 1);
+			Block blockLEFT=interacted.getRelative(BlockFace.EAST, 1);
+			Block blockRIGHT=interacted.getRelative(BlockFace.WEST, 1);
+			Block blockNORTH=interacted.getRelative(BlockFace.NORTH, 1);
+			Block blockSOUTH=interacted.getRelative(BlockFace.SOUTH, 1);
+			activateRed(blockDOWN);
+			activateRed(blockUP);
+			activateRed(blockLEFT);
+			activateRed(blockRIGHT);
+			activateRed(blockSOUTH);
+			activateRed(blockNORTH);
+		}
+		
+		public BufferedImage QR (String addr, String coin, String ammount) throws WriterException
+		{
+			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
+			com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?
+					coin+":"+addr+"?amount="+ammount:ammount,ErrorCorrectionLevel.L,hint);
+			ByteMatrix matrix=code.getMatrix();
+			System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
+			BufferedImage bimg=new BufferedImage(matrix.getWidth(),matrix.getHeight(),BufferedImage.TYPE_INT_RGB);
+			for(int y=0;y<matrix.getHeight();y++){
+				for(int x=0;x<matrix.getWidth();x++){
+					boolean v=matrix.get(x,y)==0;
+					bimg.setRGB(x,y,v?0xFFFFFF:0x000000);
+				}
+			}	
+			return bimg;
 		}
 		 
 		// Accept contract.
-		public void acceptContract(String contractId, String pUUID) throws Exception
+		public void acceptContract(String contractId, UUID pUUID) throws Exception
 		{
 			apiCall("acceptcontract&wallid=" + pUUID + "&contractid=" + contractId);
 		}
 		
 		// Withdraw money
-		public void withdraw(long ammount, String addr, String pUUID) throws Exception
+		public void withdraw(long ammount, String addr, UUID pUUID) throws Exception
 		{
 			apiCall("withdraw&ammount=" + ammount + "&addr="+addr+"&wallid="+pUUID);
 		}

@@ -127,7 +127,7 @@ public class Reddconomy extends Thread implements ActionListener{
 						resp_obj.put("data",new HashMap<String,Object>());
 					}else{
 						resp_obj.put("status",500);
-						resp_obj.put("error","Not enought money");
+						resp_obj.put("error","Not enough money");
 					}
 				}catch(Throwable e){
 					String error=e.toString();
