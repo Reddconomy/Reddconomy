@@ -10,12 +10,10 @@ import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 
-import net.reddconomy.plugin.spigot.ReddconomyApi_spigot;
-
 public class ReddExecutor implements CommandExecutor {
 	
-	String reddconomy_api_url = "https://reddconomy.frk.wf:8099";
-	ReddconomyApi_spigot api = new ReddconomyApi_spigot(reddconomy_api_url);
+	String reddconomy_api_url = "http://reddconomy.frk.wf:8099";
+	ReddconomyApi_sponge api = new ReddconomyApi_sponge(reddconomy_api_url);
 	final String _COMMAND;
 	public ReddExecutor (String commandChosen)
 	{
