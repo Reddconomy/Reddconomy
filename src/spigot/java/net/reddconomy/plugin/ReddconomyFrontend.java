@@ -68,13 +68,13 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 			try{
 				final PendingDepositData deposit_data=api.getDepositStatus(addr);
 				final UUID pUUID=UUID.fromString(deposit_data.addr);
-				if(deposit_data.status!=0){
+				if(deposit_data.status!=1){
 					it.remove();
 					Bukkit.getScheduler().runTaskLater(this,new Runnable(){
 						@Override
 						public void run() {
 							Bukkit.getPlayer(pUUID).sendMessage(
-									deposit_data.status==1?"Deposit completed. Check your balance!":"Deposit expired! Request another one."
+									deposit_data.status==0?"Deposit completed. Check your balance!":"Deposit expired! Request another one."
 							);
 						}						
 					},0);
