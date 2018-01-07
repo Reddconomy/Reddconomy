@@ -135,6 +135,7 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 							player.sendMessage("Contract ID: "+cID);
 							player.sendMessage("Contract accepted. Redstone activated.");
 							} else {
+							//TODO sned error instead of this fake shit
 							player.sendMessage("Cannot create contract");
 							player.sendMessage("Maybe not enough money? Check your balance with /balance");
 							}
