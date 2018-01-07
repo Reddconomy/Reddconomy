@@ -1,4 +1,4 @@
-package net.reddconomy.plugin;
+package net.reddconomy.plugin.spigot;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;

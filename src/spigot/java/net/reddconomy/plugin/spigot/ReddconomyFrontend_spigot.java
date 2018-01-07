@@ -1,6 +1,6 @@
 // This enables reddCoin exchanges in-game
 // Author: Simone Cervino, @soxasora
-package net.reddconomy.plugin;
+package net.reddconomy.plugin.spigot;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -34,7 +34,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.bobacadodl.imgmessage.ImageChar;
 import com.bobacadodl.imgmessage.ImageMessage;
 
-public class ReddconomyFrontend extends JavaPlugin implements Listener {
+import net.reddconomy.plugin.sponge.ReddconomyApi_sponge;
+
+public class ReddconomyFrontend_spigot extends JavaPlugin implements Listener {
 	
 	private String EnableQR;
 	private String coin;
@@ -87,7 +89,7 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	
 	// Let's declare ExchangeEngine, shall we?
 	
-	ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
+	ReddconomyApi_spigot api = new ReddconomyApi_spigot(reddconomy_api_url);
 	// And this is what the plugin does when deactivated.
 	@Override
 	public void onDisable() {

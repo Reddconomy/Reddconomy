@@ -1,4 +1,4 @@
-package net.reddconomy.plugin;
+package net.reddconomy.plugin.sponge;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -24,13 +24,6 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
 
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
-import org.bukkit.map.MapCanvas;
-import org.bukkit.map.MapView;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.zxing.EncodeHintType;
@@ -41,12 +34,12 @@ import com.google.zxing.qrcode.encoder.Encoder;
 
 import net.glxn.qrgen.javase.QRCode;
 
-public class ReddconomyApi {
+public class ReddconomyApi_sponge {
 		
 		final Gson _JSON;
 		final String _URL;
 		
-		public ReddconomyApi(String reddconomy_api_url) {
+		public ReddconomyApi_sponge(String reddconomy_api_url) {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 			_URL = reddconomy_api_url;
 		}
@@ -87,7 +80,7 @@ public class ReddconomyApi {
 			  Map resp=_JSON.fromJson(response,Map.class);
 			  return resp;
 		}
-		
+		/*
 		public PendingDepositData getDepositStatus(String addr) throws Exception
 		{
 			String action = "getdeposit&addr=" + addr;
@@ -97,7 +90,7 @@ public class ReddconomyApi {
 			output.addr=data.get("receiver").toString();
 			return output;
 		}
-		
+		*/
 		// Let's get that deposit address.
 		@SuppressWarnings("rawtypes")
 		public String getAddrDeposit(long balance, UUID pUUID) throws Exception
@@ -126,7 +119,7 @@ public class ReddconomyApi {
 			Map data=(Map)apiCall(action).get("data");
 			return (String)data.get("contractId");
 		}
-		
+		/*
 		public void activateRed(Block block)
 		{
 			switch(block.getType())
@@ -201,7 +194,7 @@ public class ReddconomyApi {
 			}	
 			return bimg;
 		}
-		 
+		 */
 		// Accept contract.
 		public int acceptContract(String contractId, UUID pUUID) throws Exception
 		{
