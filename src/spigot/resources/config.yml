@@ -8,3 +8,6 @@ coin: "dogecoin"
 
 # Set the api url without slash at the end
 reddconomy_api_url: "http://reddconomy.frk.wf:8099"
+
+# Set if you're in testmode ||NOT FOR PRODUCTION
+testmode: false
