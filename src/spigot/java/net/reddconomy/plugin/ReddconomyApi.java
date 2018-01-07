@@ -140,6 +140,7 @@ public class ReddconomyApi {
 			{
 			case WOOD_BUTTON:
 			case STONE_BUTTON:
+			case DISPENSER:
 			{
 			      block.setData((byte) (block.getData() | 0x8)); // put it back, ready for the next contract.
 			      break;
@@ -152,6 +153,7 @@ public class ReddconomyApi {
 			{
 			case WOOD_BUTTON:
 			case STONE_BUTTON:
+			case DISPENSER:
 			{
 			      block.setData((byte) (block.getData() & ~0x8)); // put it back, ready for the next contract.
 			      break;
@@ -208,9 +210,11 @@ public class ReddconomyApi {
 		}
 		 
 		// Accept contract.
-		public void acceptContract(String contractId, UUID pUUID) throws Exception
+		public int acceptContract(String contractId, UUID pUUID) throws Exception
 		{
-			apiCall("acceptcontract&wallid=" + pUUID + "&contractid=" + contractId);
+			String action = "acceptcontract&wallid=" + pUUID + "&contractid=" + contractId;
+			Number status=(Number)apiCall(action).get("status");
+			return status.intValue();
 		}
 		
 		// Withdraw money

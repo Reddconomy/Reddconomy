@@ -16,7 +16,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 // Bukkit libraries
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
@@ -105,46 +107,57 @@ public class ReddconomyFrontend extends JavaPlugin implements Listener {
 	@EventHandler
 	public void onInteract(PlayerInteractEvent Event) throws InterruptedException {
 
-	  Player player = Event.getPlayer();
-	  final Block interacted = Event.getClickedBlock();
-	  if(interacted.getState() instanceof Sign) {
-	  BlockState sign = interacted.getState();
-	  String line0 = ((Sign) sign).getLine(0);
-	  String line1 = ((Sign) sign).getLine(1);
-	  String line2 = ((Sign) sign).getLine(2);
-	  //String line3 = ((Sign) sign).getLine(3);
-	  UUID pUUID = player.getUniqueId();
-	  UUID sellerUUID = (Bukkit.getServer().getPlayer(line1)).getUniqueId();
-	  
-	  if (line0.equals("[CONTRACT]"))
-	  {
-		  	long amount = (long)(Double.parseDouble(line2)*100000000L);
-			try {
-				String cID = api.createContract(amount, sellerUUID);
-				api.acceptContract(cID, pUUID);
-				player.sendMessage("Contract ID: "+cID);
-				player.sendMessage("Contract accepted. Redstone activated.");
-				// this way, it powers button attached to the interacted sign.
-				api.powerButton(interacted);
-				Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-					  @Override
-					  public void run() {
-						api.shutdownButton(interacted);
-					  }
-					}, 5);
-					 
-			} catch (Exception e) {
-				player.sendMessage("Cannot create/accept contract. Call an admin for more info.");
-				e.printStackTrace();
-			}
-
+		  Player player = Event.getPlayer();
+		  final Block interacted = Event.getClickedBlock();
+		  if(interacted==null)return;
+		  if(interacted.getState() instanceof Sign) {
+			  BlockState sign = interacted.getState();
+			  String line0 = ((Sign) sign).getLine(0);
+			  String line1 = ((Sign) sign).getLine(1);
+			  String line2 = ((Sign) sign).getLine(2);
+			  //String line3 = ((Sign) sign).getLine(3);
+			  UUID pUUID = player.getUniqueId();
+			  UUID sellerUUID = (Bukkit.getServer().getPlayer(line1)).getUniqueId();
+			  if (line0.equals("[CONTRACT]"))
+			  {
+				  if (!line1.equalsIgnoreCase(Bukkit.getPlayer(pUUID).getDisplayName()))
+				  {
+		
+					  	long amount = (long)(Double.parseDouble(line2)*100000000L);
+						try {
+							String cID = api.createContract(amount, sellerUUID);
+							int status = api.acceptContract(cID, pUUID);
+							if (status==200)
+							{
+							player.sendMessage("Contract ID: "+cID);
+							player.sendMessage("Contract accepted. Redstone activated.");
+							} else {
+							player.sendMessage("Cannot create contract");
+							player.sendMessage("Maybe not enough money? Check your balance with /balance");
+							}
+							// this way, it powers button attached to the interacted sign.
+							api.powerButton(interacted);
+							Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+								  @Override
+								  public void run() {
+									api.shutdownButton(interacted);
+								  }
+								}, 5);
+								 
+						} catch (Exception e) {
+							player.sendMessage("Cannot create/accept contract. Call an admin for more info.");
+							e.printStackTrace();
+						}
+		
+				  } else {
+					  player.sendMessage("You can't accept YOUR contracts.");
+				  }
+			  }
+		  	}
 	  }
-}
-	 
-	}
 	
 	
-	
+
 
 
 	// Commands!
