@@ -292,7 +292,7 @@ public  class SQLLiteDatabase implements Database {
 			resp.put("receiver",deposit.get("receiver"));
 			resp.put("expected_balance",Long.parseLong(deposit.get("expected_balance")));
 			resp.put("status",Integer.parseInt(deposit.get("status")));
-			resp.put("expiring",Integer.parseInt(deposit.get("accepted")));
+			resp.put("created",(deposit.get("created")));
 			resp.put("expiring",Integer.parseInt(deposit.get("status")));
 		}
 		return resp;
