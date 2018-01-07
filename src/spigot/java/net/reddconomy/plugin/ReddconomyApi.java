@@ -90,19 +90,12 @@ public class ReddconomyApi {
 		
 		public PendingDepositData getDepositStatus(String addr) throws Exception
 		{
-			String action = "getdeposit&addr" + addr;
+			String action = "getdeposit&addr=" + addr;
 			Map data=(Map)apiCall(action).get("data");
 			PendingDepositData output=new PendingDepositData();
 			output.status=((Number) data.get("status")).intValue();
 			output.addr=data.get("receiver").toString();
 			return output;
-		}
-		
-		public String getDepositUser(String addr) throws Exception
-		{
-			String action = "getdeposit&addr" + addr;
-			Map data=(Map)apiCall(action).get("data");
-			return (String)data.get("receiver");
 		}
 		
 		// Let's get that deposit address.
