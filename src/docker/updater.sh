@@ -7,7 +7,12 @@ do
     then
         echo "Restart & update"
         PREVIOUS_VERSION=$NEW_VERSION
-        supervisorctl restart reddconomy
+        supervisorctl stop reddconomy
+
+        #HOTFIX : force kill
+        kill `jps|xargs`
+
+        supervisorctl start reddconomy
     fi
     sleep 60
 done

@@ -56,7 +56,7 @@ docker build  --compress=true -t reddconomy_test:amd64 --label amd64 --rm --forc
 ### Run
 
 ```
-docker run --name=reddconomy_test -d -p 8099:8099 -p 45443:45443 -v /srv/reddconomy_testnet:/data --rm reddconomy_test:amd64
+docker run --name=reddconomy_test -d -p 8099:8099 -p 45443:45443 -v /srv/reddconomy_testnet:/data --restart=always reddconomy_test:amd64
 ```
 
 ### Debug

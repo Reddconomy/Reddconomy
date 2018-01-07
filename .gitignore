@@ -8,7 +8,6 @@ gradlew.bat
 *.class
 *.so
 *.log
-*.conf
 *.dll
 .DS_Store
 *.sqlite
