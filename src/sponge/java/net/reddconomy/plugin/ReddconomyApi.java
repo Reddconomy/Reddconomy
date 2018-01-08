@@ -1,4 +1,4 @@
-package net.reddconomy.plugin.sponge;
+package net.reddconomy.plugin;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -34,12 +34,12 @@ import com.google.zxing.qrcode.encoder.Encoder;
 
 import net.glxn.qrgen.javase.QRCode;
 
-public class ReddconomyApi_sponge {
+public class ReddconomyApi {
 		
 		final Gson _JSON;
 		final String _URL;
 		
-		public ReddconomyApi_sponge(String reddconomy_api_url) {
+		public ReddconomyApi(String reddconomy_api_url) {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 			_URL = reddconomy_api_url;
 		}
@@ -80,11 +80,11 @@ public class ReddconomyApi_sponge {
 			  return resp;
 		}
 		
-		public PendingDepositData_sponge getDepositStatus(String addr) throws Exception
+		public PendingDepositData getDepositStatus(String addr) throws Exception
 		{
 			String action = "getdeposit&addr=" + addr;
 			Map data=(Map)apiCall(action).get("data");
-			PendingDepositData_sponge output=new PendingDepositData_sponge();
+			PendingDepositData output=new PendingDepositData();
 			output.status=((Number) data.get("status")).intValue();
 			output.addr=data.get("receiver").toString();
 			return output;

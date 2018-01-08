@@ -1,4 +1,4 @@
-package net.reddconomy.plugin.sponge;
+package net.reddconomy.plugin;
 
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -6,7 +6,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 
-import net.reddconomy.plugin.sponge.CommandListener;
+import net.reddconomy.plugin.CommandListener;
 
 public class CommandHandler  implements CommandExecutor {
 	private final String _COMMAND;

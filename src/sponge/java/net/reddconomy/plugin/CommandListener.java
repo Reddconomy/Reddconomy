@@ -1,4 +1,4 @@
-package net.reddconomy.plugin.sponge;
+package net.reddconomy.plugin;
 
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;

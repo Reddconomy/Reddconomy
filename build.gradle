@@ -94,7 +94,7 @@ task buildSpongePlugin(type: Jar) {
     }
 
 	manifest {
-        attributes  'Main-Class':  "net.reddconomy.plugin.sponge.ReddconomyFrontend_sponge"
+        attributes  'Main-Class':  "net.reddconomy.plugin.ReddconomyFrontend"
     }
     baseName = project.name + '-sponge-fat'
     from { 

@@ -1,4 +1,4 @@
-package net.reddconomy.plugin.sponge;
+package net.reddconomy.plugin;
 
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.scheduler.Task;
@@ -7,7 +7,7 @@ import org.spongepowered.api.text.Text;
 
 import com.google.inject.Inject;
 
-import net.reddconomy.plugin.sponge.ReddconomyApi_sponge;
+import net.reddconomy.plugin.ReddconomyApi;
 
 import java.util.Iterator;
 import java.util.UUID;
@@ -29,11 +29,11 @@ import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 
 @Plugin(id = "reddxchange", name = "Reddxchange", version = "0.0.1")
 
-public class ReddconomyFrontend_sponge implements CommandListener{
+public class ReddconomyFrontend implements CommandListener{
 	
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
     String reddconomy_api_url = "http://reddconomy.frk.wf:8099";
-    ReddconomyApi_sponge api = new ReddconomyApi_sponge(reddconomy_api_url);
+    ReddconomyApi api = new ReddconomyApi(reddconomy_api_url);
 	
 	@Inject
 	Game game;
@@ -92,7 +92,7 @@ public class ReddconomyFrontend_sponge implements CommandListener{
 			String addr=it.next();
 		
 			try{
-				final PendingDepositData_sponge deposit_data=api.getDepositStatus(addr);
+				final PendingDepositData deposit_data=api.getDepositStatus(addr);
 				final UUID pUUID=UUID.fromString(deposit_data.addr);
 				if(deposit_data.status!=1){
 					it.remove();
