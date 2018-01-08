@@ -17,12 +17,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
-import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
@@ -36,7 +34,6 @@ public class ReddconomyFrontend_sponge implements CommandListener{
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
     String reddconomy_api_url = "http://reddconomy.frk.wf:8099";
     ReddconomyApi_sponge api = new ReddconomyApi_sponge(reddconomy_api_url);
-    Task.Builder taskBuilder = Task.builder();
 	
 	@Inject
 	Game game;
@@ -83,7 +80,7 @@ public class ReddconomyFrontend_sponge implements CommandListener{
     }
     @Listener
     public void hasStarted(GameStartedServerEvent event) {
-		taskBuilder.execute(() -> processPendingDeposits())
+		Task.builder().execute(() -> processPendingDeposits())
 	    .async().delay(1, TimeUnit.SECONDS).interval(10, TimeUnit.SECONDS)
 	    .name("Fetch deposit status").submit(this);
     }
@@ -99,7 +96,7 @@ public class ReddconomyFrontend_sponge implements CommandListener{
 				final UUID pUUID=UUID.fromString(deposit_data.addr);
 				if(deposit_data.status!=1){
 					it.remove();
-					taskBuilder.execute((new Runnable() {
+					Task.builder().execute((new Runnable() {
 						public void run() {
 							(Sponge.getServer().getPlayer(pUUID)).get().sendMessage(Text.of(
 									deposit_data.status==0?"Deposit completed. Check your balance!":"Deposit expired! Request another one."
@@ -149,8 +146,8 @@ public class ReddconomyFrontend_sponge implements CommandListener{
 			long amount = (long)(text*100000000L);
 			try {
 				api.sendCoins(addr, amount);
-				player.sendMessage(Text.of("It worked!"));
-				player.sendMessage(Text.of("You added " + text + " to the address: " + addr));
+				player.sendMessage(Text.of("It worked! Now please wait for the confirmation."));
+				player.sendMessage(Text.of("We're adding " + text + " to the address: " + addr));
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
