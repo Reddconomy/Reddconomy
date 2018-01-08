@@ -68,7 +68,7 @@ public class ReddconomyFrontend_spigot extends JavaPlugin implements Listener {
 			String addr=it.next();
 		
 			try{
-				final PendingDepositData deposit_data=api.getDepositStatus(addr);
+				final PendingDepositData_spigot deposit_data=api.getDepositStatus(addr);
 				final UUID pUUID=UUID.fromString(deposit_data.addr);
 				if(deposit_data.status!=1){
 					it.remove();

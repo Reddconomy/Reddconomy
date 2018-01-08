@@ -80,17 +80,17 @@ public class ReddconomyApi_sponge {
 			  Map resp=_JSON.fromJson(response,Map.class);
 			  return resp;
 		}
-		/*
-		public PendingDepositData getDepositStatus(String addr) throws Exception
+		
+		public PendingDepositData_sponge getDepositStatus(String addr) throws Exception
 		{
 			String action = "getdeposit&addr=" + addr;
 			Map data=(Map)apiCall(action).get("data");
-			PendingDepositData output=new PendingDepositData();
+			PendingDepositData_sponge output=new PendingDepositData_sponge();
 			output.status=((Number) data.get("status")).intValue();
 			output.addr=data.get("receiver").toString();
 			return output;
 		}
-		*/
+		
 		// Let's get that deposit address.
 		@SuppressWarnings("rawtypes")
 		public String getAddrDeposit(long balance, UUID pUUID) throws Exception

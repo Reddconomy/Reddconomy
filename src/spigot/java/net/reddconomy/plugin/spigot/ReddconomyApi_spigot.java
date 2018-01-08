@@ -88,11 +88,11 @@ public class ReddconomyApi_spigot {
 			  return resp;
 		}
 		
-		public PendingDepositData getDepositStatus(String addr) throws Exception
+		public PendingDepositData_spigot getDepositStatus(String addr) throws Exception
 		{
 			String action = "getdeposit&addr=" + addr;
 			Map data=(Map)apiCall(action).get("data");
-			PendingDepositData output=new PendingDepositData();
+			PendingDepositData_spigot output=new PendingDepositData_spigot();
 			output.status=((Number) data.get("status")).intValue();
 			output.addr=data.get("receiver").toString();
 			return output;

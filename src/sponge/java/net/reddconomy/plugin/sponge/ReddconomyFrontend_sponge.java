@@ -1,16 +1,22 @@
 package net.reddconomy.plugin.sponge;
 
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.channel.MessageReceiver;
 
 
 import com.google.inject.Inject;
 
+import net.reddconomy.plugin.sponge.ReddconomyApi_sponge;
+
+import java.util.Iterator;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.spongepowered.api.Game;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.event.Listener;
@@ -19,6 +25,8 @@ import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 
 @Plugin(id = "reddxchange", name = "Reddxchange", version = "0.0.1")
 public class ReddconomyFrontend_sponge {
+	
+	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
 	
 	@Inject
 	Game game;
@@ -62,5 +70,41 @@ public class ReddconomyFrontend_sponge {
     	game.getCommandManager().register(this, contractCmd, "contract");
     }
     
+    String reddconomy_api_url = "http://reddconomy.frk.wf:8099";
+    ReddconomyApi_sponge api = new ReddconomyApi_sponge(reddconomy_api_url);
     
+    @Listener
+    public void onServerStart (GameStartedServerEvent event)
+    {
+		Task task = Task.builder().execute(() -> processPendingDeposits())
+		    .async().delay(500, TimeUnit.MILLISECONDS).interval(30, TimeUnit.SECONDS)
+		    .name("Fetch deposit status").submit(this);
+    }
+    
+    private void processPendingDeposits() {
+		final Iterator<String> it=_PENDING_DEPOSITS.iterator();
+
+		while(it.hasNext()){
+			String addr=it.next();
+		
+			try{
+				final PendingDepositData_sponge deposit_data=api.getDepositStatus(addr);
+				final UUID pUUID=UUID.fromString(deposit_data.addr);
+				if(deposit_data.status!=1){
+					it.remove();
+					Task task = Task.builder().execute((new Runnable() {
+						public void run() {
+							(Sponge.getServer().getPlayer(pUUID)).get().sendMessage(Text.of(
+									deposit_data.status==0?"Deposit completed. Check your balance!":"Deposit expired! Request another one."
+							));
+						}		
+					}))
+						    .delay(0, TimeUnit.MILLISECONDS)
+						    .name("Fetch deposit status").submit(this);
+				}		
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
 }

@@ -1,4 +1,4 @@
-package net.reddconomy.plugin.spigot;
+package net.reddconomy.plugin.sponge;
 
 public class PendingDepositData {
 	String addr;
