@@ -17,16 +17,26 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandException;
+import org.spongepowered.api.command.CommandResult;
+import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
+import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.command.spec.CommandSpec;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 
 @Plugin(id = "reddxchange", name = "Reddxchange", version = "0.0.1")
-public class ReddconomyFrontend_sponge {
+
+public class ReddconomyFrontend_sponge implements CommandListener{
 	
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
+    String reddconomy_api_url = "http://reddconomy.frk.wf:8099";
+    ReddconomyApi_sponge api = new ReddconomyApi_sponge(reddconomy_api_url);
+    Task.Builder taskBuilder = Task.builder();
 	
 	@Inject
 	Game game;
@@ -40,45 +50,42 @@ public class ReddconomyFrontend_sponge {
     	CommandSpec depositCmd = CommandSpec.builder()
     			.description(Text.of("Deposit command"))
     			.arguments(GenericArguments.onlyOne(GenericArguments.doubleNum(Text.of("amount"))))
-    			.executor(new ReddExecutor("depositCmd"))
+    			.executor(new CommandHandler("depositCmd",this))
     			.build();
     	game.getCommandManager().register(this, depositCmd, "deposit");
     	CommandSpec balanceCmd = CommandSpec.builder()
     			.description(Text.of("Show balance"))
     			.arguments(GenericArguments.none())
-    			.executor(new ReddExecutor("balanceCmd"))
+    			.executor(new CommandHandler("balanceCmd",this))
     			.build();
     	game.getCommandManager().register(this, balanceCmd, "balance");
     	//TODO abilitare questo comando solo per testmode
     	CommandSpec sendcoinsCmd = CommandSpec.builder()
     			.description(Text.of("Send coins to addr"))
     			.arguments(GenericArguments.seq(GenericArguments.string(Text.of("addr")), GenericArguments.doubleNum(Text.of("amount"))))
-    			.executor(new ReddExecutor("sendcoins"))
+    			.executor(new CommandHandler("sendcoins",this))
     			.build();
     	game.getCommandManager().register(this, sendcoinsCmd, "sendcoins");
     	CommandSpec withdrawCmd = CommandSpec.builder()
     			.description(Text.of("Withdraw money"))
     			.arguments(GenericArguments.seq(GenericArguments.string(Text.of("addr")), GenericArguments.doubleNum(Text.of("amount"))))
-    			.executor(new ReddExecutor("withdrawCmd"))
+    			.executor(new CommandHandler("withdrawCmd",this))
     			.build();
     	game.getCommandManager().register(this, withdrawCmd, "withdraw");
     	CommandSpec contractCmd = CommandSpec.builder()
     			.description(Text.of("Create contract"))
     			.arguments(GenericArguments.seq(GenericArguments.string(Text.of("method")), GenericArguments.string(Text.of("cIDorAmount"))))
-    			.executor(new ReddExecutor("contractCmd"))
+    			.executor(new CommandHandler("contractCmd",this))
     			.build();
     	game.getCommandManager().register(this, contractCmd, "contract");
+    	
+
     }
-    
-    String reddconomy_api_url = "http://reddconomy.frk.wf:8099";
-    ReddconomyApi_sponge api = new ReddconomyApi_sponge(reddconomy_api_url);
-    
     @Listener
-    public void onServerStart (GameStartedServerEvent event)
-    {
-		Task task = Task.builder().execute(() -> processPendingDeposits())
-		    .async().delay(500, TimeUnit.MILLISECONDS).interval(30, TimeUnit.SECONDS)
-		    .name("Fetch deposit status").submit(this);
+    public void hasStarted(GameStartedServerEvent event) {
+		taskBuilder.execute(() -> processPendingDeposits())
+	    .async().delay(1, TimeUnit.SECONDS).interval(10, TimeUnit.SECONDS)
+	    .name("Fetch deposit status").submit(this);
     }
     
     private void processPendingDeposits() {
@@ -92,7 +99,7 @@ public class ReddconomyFrontend_sponge {
 				final UUID pUUID=UUID.fromString(deposit_data.addr);
 				if(deposit_data.status!=1){
 					it.remove();
-					Task task = Task.builder().execute((new Runnable() {
+					taskBuilder.execute((new Runnable() {
 						public void run() {
 							(Sponge.getServer().getPlayer(pUUID)).get().sendMessage(Text.of(
 									deposit_data.status==0?"Deposit completed. Check your balance!":"Deposit expired! Request another one."
@@ -106,5 +113,88 @@ public class ReddconomyFrontend_sponge {
 				e.printStackTrace();
 			}
 		}
+	}
+    
+    @Override
+	public CommandResult onCommand(CommandSource src,String command, CommandContext args) {
+		Player player = (Player) src;
+		UUID pUUID = player.getUniqueId();
+		if(src instanceof Player)
+		if (command.equals("depositCmd"))
+		{
+				// TODO QR Deposits
+				double text = ((Double) args.getOne("amount").get());
+				long amount = (long)(text*100000000L);
+				try {
+					String addr=api.getAddrDeposit(amount, pUUID);
+					player.sendMessage(Text.of("Deposit "+text+/*+coin+*/" RDD to this address: "+addr));
+					_PENDING_DEPOSITS.add(addr);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		
+		} else if (command.equals("balanceCmd"))
+		{
+			try {
+				player.sendMessage(Text.of("You have: " + api.getBalance(pUUID) + " RDD"));
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else if (command.equals("sendcoins"))
+		{
+			double text = ((Double) args.getOne("amount").get());
+			String addr = args.getOne("addr").get().toString();
+			long amount = (long)(text*100000000L);
+			try {
+				api.sendCoins(addr, amount);
+				player.sendMessage(Text.of("It worked!"));
+				player.sendMessage(Text.of("You added " + text + " to the address: " + addr));
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else if (command.equals("withdraw"))
+		{
+			double text = ((Double) args.getOne("amount").get());
+			String addr = args.getOne("addr").get().toString();
+			long amount = (long)(text*100000000L);
+			try {
+				api.withdraw(amount, addr, pUUID);
+				player.sendMessage(Text.of("Withdrawing.."));
+				player.sendMessage(Text.of("Ok, it should work, wait please."));
+			} catch (Exception e) {
+				player.sendMessage(Text.of("Something went wrong. Call an admin."));
+			}
+		} else if (command.equals("contract"))
+		{
+			String method = args.getOne("method").toString();
+			String text = args.getOne("cIDorAmount").get().toString();
+			if (method.equals("new"))
+			{
+				long amount = (long)(Double.parseDouble(text)*100000000L);
+				try {
+					player.sendMessage(Text.of("Share this Contract ID: " + api.createContract(amount, pUUID)));
+				} catch (Exception e) {
+					player.sendMessage(Text.of("Cannot create contract. Call an admin for more info."));
+					e.printStackTrace();
+				}
+			} else if (method.equals("accept"))
+			{
+				String contractId = text;
+				try {
+					api.acceptContract(contractId, pUUID);
+					player.sendMessage(Text.of("Contract accepted."));
+					player.sendMessage(Text.of("You now have: " + api.getBalance(pUUID) + " RDD"));
+				} catch (Exception e) {
+					player.sendMessage(Text.of("Cannot accept contract. Are you sure that you haven't already accepted?"));
+					player.sendMessage(Text.of("Otherwise, call and admin for more info."));
+					e.printStackTrace();
+				}
+			}
+		}
+		else src.sendMessage(Text.of("Only a player can execute this!"));
+		return CommandResult.success();
 	}
 }

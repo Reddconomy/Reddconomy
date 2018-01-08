@@ -62,7 +62,6 @@ public class ReddconomyApi_sponge {
 			  String hash = hmac("SECRET123", query);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
 	          httpc.setRequestProperty("Hash",hash);
-	          System.out.println(hash);
 			  
 	          byte chunk[]=new byte[1024*1024];
 	          int read;
