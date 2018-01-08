@@ -7,8 +7,6 @@ sourceCompatibility = '1.8'
 targetCompatibility = '1.8' 
 
 configurations {
-    compile_reddconomySpigot
-    provided_reddconomySpigot
     compile_reddconomySponge
     provided_reddconomySponge
     compile_reddconomyService
@@ -19,7 +17,6 @@ configurations {
 repositories {
     jcenter()
     mavenCentral()
-    maven { url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"}
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/"}
     maven { url "https://jitpack.io" }
     maven { url = 'https://repo.spongepowered.org/maven'   }
@@ -41,19 +38,14 @@ dependencies {
 	compile_reddconomySponge group: 'com.github.kenglxn.QRGen', name: 'javase', version: '2.3.0'
 	compile_reddconomySponge group: 'com.google.code.gson', name: 'gson', version: '2.7'
 	provided_reddconomySponge group: 'org.spongepowered', name: 'spongeapi', version: '7.0.0'
-	
-	compile_reddconomySpigot group: 'com.google.zxing', name: 'core', version: '3.3.1'
-	compile_reddconomySpigot group: 'com.github.kenglxn.QRGen', name: 'javase', version: '2.3.0'
-	compile_reddconomySpigot group: 'com.google.code.gson', name: 'gson', version: '2.7'
-	provided_reddconomySpigot group: 'org.bukkit', name: 'bukkit', version: '1.12.2-R0.1-SNAPSHOT'
-	provided_reddconomySpigot group: 'org.spigotmc', name: 'spigot-api', version: '1.12.2-R0.1-SNAPSHOT'	
+
 	
 }
 
 
 eclipse {
   classpath {
-    plusConfigurations += [  configurations.compile_reddconomySpigot , configurations.provided_reddconomySpigot , configurations.compile_reddconomySponge , configurations.provided_reddconomySponge , configurations.compile_reddconomyService]
+    plusConfigurations += [   configurations.compile_reddconomySponge , configurations.provided_reddconomySponge , configurations.compile_reddconomyService]
   }
 }
 
@@ -74,16 +66,8 @@ sourceSets {
       java {
 	   srcDir 'src/sponge/java'
 	  }
-    }
-	spigot {
-      compileClasspath = configurations.compile_reddconomySpigot
-      compileClasspath += configurations.provided_reddconomySpigot
-      
-      java {
-	   srcDir 'src/spigot/java'
-	  }
-	  resources {
-	   srcDir 'src/spigot/resources'
+        resources {
+	   srcDir 'src/sponge/resources'
 	  }
     }
 }
@@ -119,19 +103,5 @@ task buildSpongePlugin(type: Jar) {
     with jar
 }
 
-task buildSpigotPlugin(type: Jar) {
-    from(sourceSets.spigot.output) {
-        include '**/*'
-    }
-
-	manifest {
-        attributes  'Main-Class':  "net.reddconomy.plugin.spigot.ReddconomyFrontend_spigot"
-    }
-    baseName = project.name + '-spigot-fat'
-    from { 
-		(configurations.compile_reddconomySpigot).collect { it.isDirectory() ? it : zipTree(it) }
-	}
-    with jar
-}
 
 
