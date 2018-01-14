@@ -13,8 +13,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,59 +70,10 @@ public class ReddconomyApi {
 			_URL = apiUrl;
 		}
 		
-		// Reddxchange dump
-		public String getLine(TileEntity position, int line)
-		{
-			Optional<SignData> data = position.getOrCreate(SignData.class);
-			return (data.get().lines().get(line)).toPlainSingle();
-		}
+
 		
-	    public void setLine(TileEntity entity, int line, Text text) {
-	    	Optional<SignData> sign = entity.getOrCreate(SignData.class);
-	            sign.get().set(sign.get().lines().set(line, text));
-	            entity.offer(sign.get());
-	    }
-	    
 		
-		public boolean canTheyOpen(Location<World> location, String pname)
-		{
-			TileEntity DOWN = location.getRelative(Direction.DOWN).getTileEntity().get();
-			TileEntity UP = location.getRelative(Direction.UP).getTileEntity().get();
-			TileEntity EAST = location.getRelative(Direction.EAST).getTileEntity().get();
-			TileEntity WEST = location.getRelative(Direction.WEST).getTileEntity().get();
-			TileEntity NORTH = location.getRelative(Direction.NORTH).getTileEntity().get();
-			TileEntity SOUTH = location.getRelative(Direction.SOUTH).getTileEntity().get();
-			
-			if (DOWN instanceof Sign
-  				  ||UP instanceof Sign
-  				  ||EAST instanceof Sign
-  				  ||WEST instanceof Sign
-  				  ||NORTH instanceof Sign
-  				  ||SOUTH instanceof Sign)
-  				{
-  					String lineDOWN = getLine(DOWN, 3);
-  					String lineUP = getLine(UP, 3);
-  					String lineEAST = getLine(EAST, 3);
-  					String lineWEST = getLine(WEST, 3);
-  					String lineNORTH = getLine(NORTH, 3);
-  					String lineSOUTH = getLine(SOUTH, 3);
-  					
-  					if (lineDOWN.equals(pname)||lineUP.equals(pname)||lineEAST.equals(pname)
-  					  ||lineWEST.equals(pname)||lineNORTH.equals(pname)||lineSOUTH.equals(pname))
-  					{
-  						return true;
-  					} else return false;
-  				}
-			return false;
-		}
-		
-		// Crypto stuff
-		public static String hmac(String key, String data) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
-	        Mac sha256_HMAC=Mac.getInstance("HmacSHA256");
-	        SecretKeySpec secret_key=new SecretKeySpec(key.getBytes("UTF-8"),"HmacSHA256");
-	        sha256_HMAC.init(secret_key);
-	        return new String(Base64.getEncoder().encode(sha256_HMAC.doFinal(data.getBytes("UTF-8"))),"UTF-8");
-	    }
+	
 		
 		// Fundamental APIs for Reddconomy.
 		@SuppressWarnings("rawtypes")
@@ -129,7 +82,7 @@ public class ReddconomyApi {
 			  String query = "/?action="+action;
 			  String urlString = _URL+query;
 			  URL url = new URL(urlString);
-			  String hash = hmac("SECRET123", query);
+			  String hash = Utils.hmac("SECRET123", query);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
 	          httpc.setRequestProperty("Hash",hash);
 			  System.out.println(url);

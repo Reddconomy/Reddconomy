@@ -240,13 +240,15 @@ public class ReddconomyFrontend implements CommandListener{
     		Task.builder().execute(()-> {
 	    		TileEntity tile = event.getTargetTile();
 		    	Player player = (Player) event.getSource();
-		    	if (api.getLine(tile,0).equals("[CONTRACT]"))
-		    	api.setLine(tile, 3, Text.of(player.getName()));	
+		    	if (Utils.getLine(tile,0).equals("[CONTRACT]")){
+		    		Utils.setLine(tile, 3, Text.of(player.getName()));	
+		    	}
     		})
     		.delay(5, TimeUnit.MILLISECONDS)
     		.name("Powering off Redstone.").submit(this);
     }
     
+    @Listener    
     public void onContainerAdjacentInteract (InteractBlockEvent.Secondary event)
     {
 	    	if (event.getTargetBlock().getLocation().isPresent())
@@ -259,7 +261,7 @@ public class ReddconomyFrontend implements CommandListener{
 	    			{
 	    				
 	    					Player player = (Player) event.getSource();
-	    					if (!api.canTheyOpen(location, player.getName()))
+	    					if (!Utils.canPlayerOpen(location, player.getName()))
 	    					{
 	    						event.setCancelled(true);
 	    					}
@@ -284,10 +286,10 @@ public class ReddconomyFrontend implements CommandListener{
 	    		        if (pluginCSigns.equalsIgnoreCase("enabled"))
 	    		        {
 		    		        UUID pUUID = player.getUniqueId();
-		    				String line0=api.getLine(tile,0);
-		    				String line1=api.getLine(tile,1);
-		    				String line2=api.getLine(tile,2);
-		    				String line3=api.getLine(tile,3);
+		    				String line0=Utils.getLine(tile,0);
+		    				String line1=Utils.getLine(tile,1);
+		    				String line2=Utils.getLine(tile,2);
+		    				String line3=Utils.getLine(tile,3);
 		    				BlockType origsign = location.getBlockType();
 		    				if (line0.equals("[CONTRACT]"))
 		    				{
@@ -303,22 +305,19 @@ public class ReddconomyFrontend implements CommandListener{
 			    						if (status==200)
 			    						{
 				    						player.sendMessage(Text.of("Contract ID: "+cID));
-				    						player.sendMessage(Text.of("Contract accepted."));
+				    						player.sendMessage(Text.of("Contract accepted."));				    					
 				    						location.setBlockType(BlockTypes.REDSTONE_TORCH);
 				    						Task.builder().execute(()-> {
-				    						BlockState state = origsign.getDefaultState();
-				    						BlockState newstate = state.with(Keys.DIRECTION, origdirection).get();
-				    						location.setBlock(newstate);
-				    						TileEntity tile2 = location.getTileEntity().get();
-				    						api.setLine(tile2, 0, Text.of(line0));
-				    						api.setLine(tile2, 1, Text.of(line1));
-				    						api.setLine(tile2, 2, Text.of(line2));
-				    						api.setLine(tile2, 3, Text.of(line3));
-				    						})
-				    						.delay(5, TimeUnit.MILLISECONDS)
-				    					    .name("Powering off Redstone.").submit(this);
+					    						BlockState state = origsign.getDefaultState();
+					    						BlockState newstate = state.with(Keys.DIRECTION, origdirection).get();
+					    						location.setBlock(newstate);
+					    						TileEntity tile2 = location.getTileEntity().get();
+					    						Utils.setLine(tile2, 0, Text.of(line0));
+					    						Utils.setLine(tile2, 1, Text.of(line1));
+					    						Utils.setLine(tile2, 2, Text.of(line2));
+					    						Utils.setLine(tile2, 3, Text.of(line3));
+				    						}) .delay(5, TimeUnit.MILLISECONDS)	 .name("Powering off Redstone.").submit(this);
 				
-				    						player.sendMessage(Text.of("Redstone activated-ish."));
 			    						} else {
 			    							player.sendMessage(Text.of("Check your balance. Cannot accept contract"));
 			    						}
