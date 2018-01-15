@@ -46,6 +46,7 @@ import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
@@ -248,9 +249,10 @@ public class ReddconomyFrontend implements CommandListener{
     		.name("Powering off Redstone.").submit(this);
     }
     
-    @Listener    
+    @Listener (order=Order.FIRST)
     public void onContainerAdjacentInteract (InteractBlockEvent.Secondary event)
     {
+    	Player player = (Player) event.getSource();
 	    	if (event.getTargetBlock().getLocation().isPresent())
 	    	{
 	    		Location<World> location = event.getTargetBlock().getLocation().get();
@@ -259,12 +261,11 @@ public class ReddconomyFrontend implements CommandListener{
 	    			TileEntity tile = location.getTileEntity().get();
 	    			if (tile instanceof Dispenser || tile instanceof Dropper)
 	    			{
-	    				
-	    					Player player = (Player) event.getSource();
-	    					if (!Utils.canPlayerOpen(location, player.getName()))
-	    					{
-	    						event.setCancelled(true);
-	    					}
+		    					if (!Utils.canPlayerOpen(location, player.getName()))
+		    					{
+		    						player.sendMessage(Text.of("This container is protected by The Contract Signs Law. Only the owner can open it."));
+		    						event.setCancelled(true);
+		    					}
 	    			}
 	    		}
 	    	}

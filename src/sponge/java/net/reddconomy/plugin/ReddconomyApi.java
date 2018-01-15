@@ -85,7 +85,7 @@ public class ReddconomyApi {
 			  String hash = Utils.hmac("SECRET123", query);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
 	          httpc.setRequestProperty("Hash",hash);
-			  System.out.println(url);
+			  //System.out.println(url);
 	          byte chunk[]=new byte[1024*1024];
 	          int read;
 	          ByteArrayOutputStream bos=new ByteArrayOutputStream();

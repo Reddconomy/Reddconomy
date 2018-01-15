@@ -32,31 +32,35 @@ public class Utils {
     }
     
     
-	public static <T> Collection<T> getSurroundingBlocks(Class<T> oftype, Location<World> location) {
-		ArrayList<T> out = new ArrayList<T>();
+    public static Collection<Sign> getSurroundingSigns(Location<World> location) {
+		ArrayList<Sign> out = new ArrayList<Sign>();
 		TileEntity sr_entities[] = new TileEntity[] { 
-				location.getRelative(Direction.DOWN).getTileEntity().get(),
-				location.getRelative(Direction.UP).getTileEntity().get(),
-				location.getRelative(Direction.EAST).getTileEntity().get(),
-				location.getRelative(Direction.WEST).getTileEntity().get(),
-				location.getRelative(Direction.NORTH).getTileEntity().get(),
-				location.getRelative(Direction.SOUTH).getTileEntity().get() 
+				location.getRelative(Direction.DOWN).getTileEntity().orElse(null),
+				location.getRelative(Direction.UP).getTileEntity().orElse(null),
+				location.getRelative(Direction.EAST).getTileEntity().orElse(null),
+				location.getRelative(Direction.WEST).getTileEntity().orElse(null),
+				location.getRelative(Direction.NORTH).getTileEntity().orElse(null),
+				location.getRelative(Direction.SOUTH).getTileEntity().orElse(null) 
 		};
 		for (TileEntity te : sr_entities) {
-			if (te.getClass().isAssignableFrom(oftype)) {
-				out.add((T)te);
+			if (te!=null&&te instanceof Sign) {
+				out.add((Sign) te);
 			}
 		}
 		return out;
+		
 	}
 	
 	
 	public static boolean canPlayerOpen(Location<World> location, String pname){
-		Collection<Sign> surrounding_signs=getSurroundingBlocks(Sign.class,location);
+		Collection<Sign> surrounding_signs=getSurroundingSigns(location);
 		for(Sign s:surrounding_signs){
-			if (getLine(s,3).equals(pname))return true;
+			if (!(getLine(s,3).equals(pname)))
+				{
+				return false;
+				}
 		}
-		return false;			
+		return true;			
 	}
 
 	
