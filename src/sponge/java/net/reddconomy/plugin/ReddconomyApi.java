@@ -13,16 +13,40 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
+
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockState;
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.block.tileentity.TileEntity;
+import org.spongepowered.api.block.tileentity.TileEntityTypes;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.manipulator.immutable.block.ImmutableRedstonePoweredData;
+import org.spongepowered.api.data.manipulator.mutable.block.RedstonePoweredData;
+import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
+import org.spongepowered.api.data.value.BaseValue;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.serializer.TextSerializers;
+import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -39,9 +63,55 @@ public class ReddconomyApi {
 		final Gson _JSON;
 		final String _URL;
 		
-		public ReddconomyApi(String reddconomy_api_url) {
+		public ReddconomyApi(String apiUrl) {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
-			_URL = reddconomy_api_url;
+			_URL = apiUrl;
+		}
+		
+		// Reddxchange dump
+		public String getLine(TileEntity position, int line)
+		{
+			Optional<SignData> data = position.getOrCreate(SignData.class);
+			return (data.get().lines().get(line)).toPlainSingle();
+		}
+		
+	    public void setLine(TileEntity entity, int line, Text text) {
+	    	Optional<SignData> sign = entity.getOrCreate(SignData.class);
+	            sign.get().set(sign.get().lines().set(line, text));
+	            entity.offer(sign.get());
+	    }
+	    
+		
+		public boolean canTheyOpen(Location<World> location, String pname)
+		{
+			TileEntity DOWN = location.getRelative(Direction.DOWN).getTileEntity().get();
+			TileEntity UP = location.getRelative(Direction.UP).getTileEntity().get();
+			TileEntity EAST = location.getRelative(Direction.EAST).getTileEntity().get();
+			TileEntity WEST = location.getRelative(Direction.WEST).getTileEntity().get();
+			TileEntity NORTH = location.getRelative(Direction.NORTH).getTileEntity().get();
+			TileEntity SOUTH = location.getRelative(Direction.SOUTH).getTileEntity().get();
+			
+			if (DOWN instanceof Sign
+  				  ||UP instanceof Sign
+  				  ||EAST instanceof Sign
+  				  ||WEST instanceof Sign
+  				  ||NORTH instanceof Sign
+  				  ||SOUTH instanceof Sign)
+  				{
+  					String lineDOWN = getLine(DOWN, 3);
+  					String lineUP = getLine(UP, 3);
+  					String lineEAST = getLine(EAST, 3);
+  					String lineWEST = getLine(WEST, 3);
+  					String lineNORTH = getLine(NORTH, 3);
+  					String lineSOUTH = getLine(SOUTH, 3);
+  					
+  					if (lineDOWN.equals(pname)||lineUP.equals(pname)||lineEAST.equals(pname)
+  					  ||lineWEST.equals(pname)||lineNORTH.equals(pname)||lineSOUTH.equals(pname))
+  					{
+  						return true;
+  					} else return false;
+  				}
+			return false;
 		}
 		
 		// Crypto stuff
@@ -62,7 +132,7 @@ public class ReddconomyApi {
 			  String hash = hmac("SECRET123", query);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
 	          httpc.setRequestProperty("Hash",hash);
-			  
+			  System.out.println(url);
 	          byte chunk[]=new byte[1024*1024];
 	          int read;
 	          ByteArrayOutputStream bos=new ByteArrayOutputStream();
@@ -118,82 +188,55 @@ public class ReddconomyApi {
 			Map data=(Map)apiCall(action).get("data");
 			return (String)data.get("contractId");
 		}
-		/*
-		public void activateRed(Block block)
+		
+		public String createServerContract(long amount) throws Exception
 		{
-			switch(block.getType())
-			{
-			case WOOD_BUTTON:
-			case STONE_BUTTON:
-			case DISPENSER:
-			{
-			      block.setData((byte) (block.getData() | 0x8)); // put it back, ready for the next contract.
-			      break;
-			} }
+			String action = "newcontract&wallid=[SRV]" + "&amount=" + amount;
+			Map data=(Map)apiCall(action).get("data");
+			return (String)data.get("contractId");
 		}
 		
-		public void shutdownRed(Block block)
+		//implying that toggle is true)
+		public void RedstoneEngine(Location<World> location, boolean toggle)
 		{
-			switch(block.getType())
-			{
-			case WOOD_BUTTON:
-			case STONE_BUTTON:
-			case DISPENSER:
-			{
-			      block.setData((byte) (block.getData() & ~0x8)); // put it back, ready for the next contract.
-			      break;
-			} }
+			BlockState state = location.getBlock();
+			BlockType blocktype = state.getType();
+			if (blocktype.equals(BlockTypes.STONE_BUTTON)) {
+				if (toggle) {
+					BlockState newstate = state.with(Keys.POWERED, true).get();
+					location.setBlock(newstate);
+				}
+				else {
+					BlockState newstate = state.with(Keys.POWERED, false).get();
+					location.setBlock(newstate);
+				}
+			}
 		}
 		
-		public void shutdownButton(Block interacted)
+		public void setRed(Location<World> location, BlockType type, String text)
 		{
-			Block blockUP= interacted.getRelative(BlockFace.UP, 1);
-			Block blockDOWN= interacted.getRelative(BlockFace.DOWN, 1);
-			Block blockLEFT=interacted.getRelative(BlockFace.EAST, 1);
-			Block blockRIGHT=interacted.getRelative(BlockFace.WEST, 1);
-			Block blockNORTH=interacted.getRelative(BlockFace.NORTH, 1);
-			Block blockSOUTH=interacted.getRelative(BlockFace.SOUTH, 1);
-			shutdownRed(blockDOWN);
-			shutdownRed(blockUP);
-			shutdownRed(blockLEFT);
-			shutdownRed(blockRIGHT);
-			shutdownRed(blockSOUTH);
-			shutdownRed(blockNORTH);
+
 		}
 		
-		public void powerButton(Block interacted)
-		{
-			Block blockUP= interacted.getRelative(BlockFace.UP, 1);
-			Block blockDOWN= interacted.getRelative(BlockFace.DOWN, 1);
-			Block blockLEFT=interacted.getRelative(BlockFace.EAST, 1);
-			Block blockRIGHT=interacted.getRelative(BlockFace.WEST, 1);
-			Block blockNORTH=interacted.getRelative(BlockFace.NORTH, 1);
-			Block blockSOUTH=interacted.getRelative(BlockFace.SOUTH, 1);
-			activateRed(blockDOWN);
-			activateRed(blockUP);
-			activateRed(blockLEFT);
-			activateRed(blockRIGHT);
-			activateRed(blockSOUTH);
-			activateRed(blockNORTH);
-		}
-		
-		public BufferedImage QR (String addr, String coin, String amount) throws WriterException
+		public String createQR (String addr, String coin, String amount) throws WriterException
 		{
 			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
 			com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?
 					coin+":"+addr+"?amount="+amount:amount,ErrorCorrectionLevel.L,hint);
 			ByteMatrix matrix=code.getMatrix();
 			System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
-			BufferedImage bimg=new BufferedImage(matrix.getWidth(),matrix.getHeight(),BufferedImage.TYPE_INT_RGB);
+			StringBuilder qr=new StringBuilder();
 			for(int y=0;y<matrix.getHeight();y++){
 				for(int x=0;x<matrix.getWidth();x++){
-					boolean v=matrix.get(x,y)==0;
-					bimg.setRGB(x,y,v?0xFFFFFF:0x000000);
+					if(matrix.get(x,y)==0)qr.append("\u00A7f\u2588");
+                    else qr.append("\u00A70\u2588");
+
 				}
-			}	
-			return bimg;
+				qr.append("\n");
+			}
+			return qr.toString();
 		}
-		 */
+		 
 		// Accept contract.
 		public int acceptContract(String contractId, UUID pUUID) throws Exception
 		{
