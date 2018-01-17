@@ -143,40 +143,12 @@ public class ReddconomyFrontend implements CommandListener{
     @Listener
     public void onInit(GameInitializationEvent event) {
     	logger.log(Level.INFO, "Reddxchange activated.");
-    	CommandSpec depositCmd = CommandSpec.builder()
-    			.description(Text.of("Deposit command"))
-    			.arguments(GenericArguments.onlyOne(GenericArguments.doubleNum(Text.of("amount"))))
-    			.executor(new CommandHandler("depositCmd",this))
+    	CommandSpec cmds = CommandSpec.builder()
+    			.description(Text.of("Command"))
+    			.executor(new CommandHandler(this))
+    			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
     			.build();
-    	game.getCommandManager().register(this, depositCmd, "deposit");
-    	CommandSpec balanceCmd = CommandSpec.builder()
-    			.description(Text.of("Show balance"))
-    			.arguments(GenericArguments.none())
-    			.executor(new CommandHandler("balanceCmd",this))
-    			.build();
-    	game.getCommandManager().register(this, balanceCmd, "balance");
-    	//TODO abilitare questo comando solo per testmode
-    	if (testmode)
-    	{
-	    	CommandSpec sendcoinsCmd = CommandSpec.builder()
-	    			.description(Text.of("Send coins to addr"))
-	    			.arguments(GenericArguments.seq(GenericArguments.string(Text.of("addr")), GenericArguments.doubleNum(Text.of("amount"))))
-	    			.executor(new CommandHandler("sendcoins",this))
-	    			.build();
-	    	game.getCommandManager().register(this, sendcoinsCmd, "sendcoins");
-    	}
-    	CommandSpec withdrawCmd = CommandSpec.builder()
-    			.description(Text.of("Withdraw money"))
-    			.arguments(GenericArguments.seq(GenericArguments.string(Text.of("addr")), GenericArguments.doubleNum(Text.of("amount"))))
-    			.executor(new CommandHandler("withdrawCmd",this))
-    			.build();
-    	game.getCommandManager().register(this, withdrawCmd, "withdraw");
-    	CommandSpec contractCmd = CommandSpec.builder()
-    			.description(Text.of("Create contract"))
-    			.arguments(GenericArguments.seq(GenericArguments.string(Text.of("method")), GenericArguments.string(Text.of("cIDorAmount"))))
-    			.executor(new CommandHandler("contractCmd",this))
-    			.build();
-    	game.getCommandManager().register(this, contractCmd, "contract");
+    	game.getCommandManager().register(this, cmds, "$","€","reddconomy","rdd");
     	
 
     }
@@ -338,98 +310,127 @@ public class ReddconomyFrontend implements CommandListener{
         } 
     }
     //TODO please retrieve data from sign for contracts it should be immutable something
-    
-    @Override
-	public CommandResult onCommand(CommandSource src,String command, CommandContext args) {
+
+	@Override
+	public boolean onCommand(CommandSource src, String command, String[] args) {
+		if (!(src instanceof Player))return true;
 		Player player = (Player) src;
 		UUID pUUID = player.getUniqueId();
-		if(src instanceof Player)
-		if (command.equals("depositCmd"))
-		{
-				// TODO QR Deposits
-				double text = ((Double) args.getOne("amount").get());
-				long amount = (long)(text*100000000L);
-				try {
-					String addr=api.getAddrDeposit(amount, pUUID);
-					if(apiQR.equalsIgnoreCase("enabled"))
-					{
-						player.sendMessage(Text.of(api.createQR(addr, apiCoin, args.getOne("amount").get().toString())));
-						player.sendMessage(Text.of("Deposit "+text+" "+apiCoin+" to this address: "+addr));
+		boolean is_admin = true; // TODO check if op
+		try{	
+			boolean invalid=false;
+			switch (command) {
+				case "deposit": {
+					if(args.length<1){
+						invalid=true;
+						break;
 					}
-					else if(apiQR.equalsIgnoreCase("link"))
-					{
-						player.sendMessage(Text.of("NOT READY")); //TODO QR Links
-						player.sendMessage(Text.of("Deposit "+text+" "+apiCoin+" to this address: "+addr));
+					// TODO QR Deposits
+					double damount = Double.parseDouble(args[0]);
+					long amount = (long) (damount * 100000000L);
+					String addr = api.getAddrDeposit(amount, pUUID);
+					if (apiQR.equalsIgnoreCase("enabled")) {
+						player.sendMessage(Text.of(api.createQR(addr, apiCoin, addr.toString())));
+					} else if (apiQR.equalsIgnoreCase("link")) {
+						player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
 					}
-					else
-					player.sendMessage(Text.of("Deposit "+text+" "+apiCoin+" to this address: "+addr));
-					
-					_PENDING_DEPOSITS.add(addr);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
 		
-		} else if (command.equals("balanceCmd"))
-		{
-			try {
-				player.sendMessage(Text.of("You have: " + api.getBalance(pUUID) + " " +apiCoin));
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else if (command.equals("sendcoins"))
-		{
-			double text = ((Double) args.getOne("amount").get());
-			String addr = args.getOne("addr").get().toString();
-			long amount = (long)(text*100000000L);
-			try {
-				api.sendCoins(addr, amount);
-				player.sendMessage(Text.of("It worked! Now please wait for the confirmation."));
-				player.sendMessage(Text.of("We're adding " + text + " to the address: " + addr));
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else if (command.equals("withdraw"))
-		{
-			double text = ((Double) args.getOne("amount").get());
-			String addr = args.getOne("addr").get().toString();
-			long amount = (long)(text*100000000L);
-			try {
-				api.withdraw(amount, addr, pUUID);
-				player.sendMessage(Text.of("Withdrawing.."));
-				player.sendMessage(Text.of("Ok, it should work, wait please."));
-			} catch (Exception e) {
-				player.sendMessage(Text.of("Something went wrong. Call an admin."));
-			}
-		} else if (command.equals("contract"))
-		{
-			String method = args.getOne("method").toString();
-			String text = args.getOne("cIDorAmount").get().toString();
-			if (method.equals("new"))
-			{
-				long amount = (long)(Double.parseDouble(text)*100000000L);
-				try {
-					player.sendMessage(Text.of("Share this Contract ID: " + api.createContract(amount, pUUID)));
-				} catch (Exception e) {
-					player.sendMessage(Text.of("Cannot create contract. Call an admin for more info."));
-					e.printStackTrace();
+					player.sendMessage(Text.of("Deposit " + damount + " " + apiCoin + " to this address: " + addr));
+					_PENDING_DEPOSITS.add(addr);
+					break;
 				}
-			} else if (method.equals("accept"))
-			{
-				String contractId = text;
-				try {
-					api.acceptContract(contractId, pUUID);
-					player.sendMessage(Text.of("Contract accepted."));
-					player.sendMessage(Text.of("You now have: " + api.getBalance(pUUID) + " RDD"));
-				} catch (Exception e) {
-					player.sendMessage(Text.of("Cannot accept contract. Are you sure that you haven't already accepted?"));
-					player.sendMessage(Text.of("Otherwise, call and admin for more info."));
-					e.printStackTrace();
+				case "balance": {
+					
+					player.sendMessage(Text.of("You have: " + api.getBalance(pUUID) + " " + apiCoin));		
+					break;
+				}
+				case "admin": {
+					if (is_admin) {
+						String action = args[0];
+						if(args.length<1){
+							invalid=true;
+							break;
+						}
+						switch (action) {
+							case "send": {
+								if(args.length<3){
+									invalid=true;
+									break;
+								}
+								double text = Double.parseDouble(args[1]);
+								String addr = args[2];
+								long amount = (long) (text * 100000000L);
+								api.sendCoins(addr, amount);
+								player.sendMessage(Text.of("Sending " + text + " to the address: " + addr));			
+								break;
+							}
+						}
+					} else {
+						player.sendMessage(Text.of("Forbidden"));
+					}
+					break;
+				}
+				case "withdraw": {
+					if(args.length<2){
+						invalid=true;
+						break;
+					}
+					double text = Double.parseDouble(args[0]);
+					String addr = args[1];
+					long amount = (long) (text * 100000000L);
+					api.withdraw(amount, addr, pUUID);
+					player.sendMessage(Text.of("Withdrawing.."));
+					player.sendMessage(Text.of("Ok, it should work, wait please."));		
+					break;
+				}
+				case "contract": {
+					if(args.length<2){
+						invalid=true;
+						break;
+					}
+					String method = args[0];
+					String text = args[1];
+					if (method.equals("new")) {
+						long amount = (long) (Double.parseDouble(text) * 100000000L);
+						player.sendMessage(Text.of("Share this Contract ID: " + api.createContract(amount, pUUID)));		
+					} else if (method.equals("accept")) {
+						String contractId = text;
+						int status = api.acceptContract(contractId, pUUID);
+						if (status == 200) {
+							player.sendMessage(Text.of("Contract accepted."));
+							player.sendMessage(Text.of("You now have: " + api.getBalance(pUUID) + " RDD"));
+						} else {
+							player.sendMessage(Text.of("Cannot accept contract. Are you sure that you haven't already accepted?"));
+							player.sendMessage(Text.of("Otherwise, call and admin for more info."));
+						}
+		
+					}
+					break;
+				}
+				default:
+				case "info":{
+					sendHelpText(player);
+					break;
 				}
 			}
+			
+			if(invalid){
+				player.sendMessage(Text.of("Invalid Command"));
+				sendHelpText(player);
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+			player.sendMessage(Text.of("Unexpected error"));
 		}
-		else src.sendMessage(Text.of("Only a player can execute this!"));
-		return CommandResult.success();
+		return true;
+	}
+
+	private void sendHelpText(Player player) {
+
+		// TODO
+		player.sendMessage(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino."));
+		player.sendMessage(Text.of("All rights reserved."));
+		player.sendMessage(Text.of("This plugin and all its components are released under ???? license."));
+		player.sendMessage(Text.of("See ???? for more info."));		
 	}
 }
