@@ -72,6 +72,7 @@ public class ReddconomyFrontend implements CommandListener{
 	private String apiCoin;
 	private String pluginCSigns;
 	private String apiUrl;
+	private String secret;
 	private boolean testmode;
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
 	ReddconomyApi api;
@@ -111,13 +112,14 @@ public class ReddconomyFrontend implements CommandListener{
                 getDefaultConfig().createNewFile();
                 this.config = getConfigManager().load();
 
-                this.config.getNode("ConfigVersion").setValue(2);
+                this.config.getNode("ConfigVersion").setValue(3);
 
                 this.config.getNode("url").setValue("http://reddconomy.frk.wf:8099");
                 this.config.getNode("qr").setValue("enabled");
                 this.config.getNode("coin").setValue("reddcoin");
                 this.config.getNode("csigns").setValue("enabled");
                 this.config.getNode("testmode").setValue("true");
+                this.config.getNode("secretkey").setValue("");
                 getConfigManager().save(this.config);
                 logger.log(Level.INFO, "Created default configuration, Reddxchange will not run until you have edited this file!");
                 //TODO a control on the default configuration
@@ -135,7 +137,8 @@ public class ReddconomyFrontend implements CommandListener{
 	    apiCoin = this.config.getNode("coin").getString();
 	    pluginCSigns = this.config.getNode("csigns").getString();
 	    testmode = this.config.getNode("testmode").getBoolean();
-	    api = new ReddconomyApi(apiUrl);
+	    secret = this.config.getNode("secretkey").getString();
+	    api = new ReddconomyApi(apiUrl, secret);
 		int version = this.config.getNode("ConfigVersion").getInt();
 		logger.log(Level.INFO, "Configfile version is " + version + ".");
 		
@@ -160,7 +163,7 @@ public class ReddconomyFrontend implements CommandListener{
     			.executor(new CommandHandler(this))
     			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
     			.build();
-    	game.getCommandManager().register(this, cmds, "$","€","reddconomy","rdd");
+    	game.getCommandManager().register(this, cmds, "$","ï¿½","reddconomy","rdd");
     	
 
     }

@@ -87,10 +87,12 @@ public class ReddconomyApi {
 		
 		final Gson _JSON;
 		final String _URL;
+		final String _SECRET;
 		
-		public ReddconomyApi(String apiUrl) {
+		public ReddconomyApi(String apiUrl, String secret) {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 			_URL = apiUrl;
+			_SECRET = secret;
 		}
 		
 		// Fundamental APIs for Reddconomy.
@@ -100,7 +102,7 @@ public class ReddconomyApi {
 			  String query = "/?action="+action;
 			  String urlString = _URL+query;
 			  URL url = new URL(urlString);
-			  String hash = Utils.hmac("SECRET123", query);
+			  String hash = Utils.hmac(_SECRET, query);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection();
 	          httpc.setRequestProperty("Hash",hash);
 			  //System.out.println(url); // only for debug
