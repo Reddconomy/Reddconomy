@@ -399,7 +399,7 @@ public class ReddconomyFrontend implements CommandListener{
 									invalid=true;
 									break;
 								}
-								double damount = Double.parseDouble(args[0]);
+								double damount = Double.parseDouble(args[1]);
 								long amount = (long)(damount*100000000L);
 								String addr = api.srvDeposit(amount);
 								if (addr!=null)
