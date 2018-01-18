@@ -75,7 +75,7 @@ public class Reddconomy {
 		config.putIfAbsent("versions","v1");// v1,v2,v3,...
 		config.putIfAbsent("secret",UUID.randomUUID().toString().replace("-",(int)(Math.random()*1000)+""));
 		config.putIfAbsent("blockchain_connector","bitcoind");
-		config.putIfAbsent("bitcoind-rpc_url","http://localhost:45443");
+		config.putIfAbsent("bitcoind-rpc_url","http://127.0.0.1:45443");
 		config.putIfAbsent("bitcoind-rpc_user","rpcuser");
 		config.putIfAbsent("bitcoind-rpc_password","rpcpassword");
 		

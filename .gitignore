@@ -11,3 +11,4 @@ gradlew.bat
 *.dll
 .DS_Store
 *.sqlite
+reddconomy.json

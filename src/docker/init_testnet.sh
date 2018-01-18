@@ -3,8 +3,8 @@
 
 
 echo "server=1
-rpcuser=test
-rpcpassword=test123
+rpcuser=rpcuser
+rpcpassword=rpcpassword
 rpcport=45443
 rpcallowip=0.0.0.0/0
 keypool=1500

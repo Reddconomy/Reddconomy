@@ -11,11 +11,14 @@ RUN \
     chmod +x /init_testnet.sh &&\
     chmod +x /init_reddconomy.sh &&\
     chmod +x /updater.sh &&\
-    apt-get -y install software-properties-common supervisor curl&&\
-    add-apt-repository -y ppa:webupd8team/java &&\
     apt-get update -y &&\
-    echo 'oracle-java8-installer shared/accepted-oracle-license-v1-1 boolean true' | debconf-set-selections  &&\
-    DEBIAN_FRONTEND=noninteractive apt-get -y install oracle-java8-installer &&\
+    apt-get -y install supervisor curl&&\
+    JDK_VERSION="`curl -s https://ci_public_deploy.frk.wf/jdk8_latest.txt`" && \
+    echo "Download java $JDK_VERSION" && \
+    curl "https://ci_deploy.frk.wf/jdk8_lin64-$JDK_VERSION.tar.gz" -o /tmp/jdk8.tar.gz && \
+    mkdir -p /opt/java &&\
+    tar -xzf /tmp/jdk8.tar.gz -C /opt/java &&\
+    ls /opt/java &&\
     mkdir /opt/reddconomy    &&\
     mkdir -p /data/
 
