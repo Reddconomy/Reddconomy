@@ -394,10 +394,29 @@ public class ReddconomyFrontend implements CommandListener{
 								else player.sendMessage(Text.of("Cannot request coins right now. Check the error in console"));
 								break;
 							}
-						}
-					} else {
-						player.sendMessage(Text.of("Forbidden for non-op"));
-					}
+							case "srvdeposit": {
+								if (args.length<1) {
+									invalid=true;
+									break;
+								}
+								double damount = Double.parseDouble(args[0]);
+								long amount = (long)(damount*100000000L);
+								String addr = api.srvDeposit(amount);
+								if (addr!=null)
+								{
+									if (apiQR.equalsIgnoreCase("enabled")) {
+										player.sendMessage(Text.of(api.createQR(addr, apiCoin, addr.toString())));
+									} else if (apiQR.equalsIgnoreCase("link")) {
+										player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
+									}
+						
+									player.sendMessage(Text.of("Deposit " + damount + " " + apiCoin + " to this address: " + addr));
+									_PENDING_DEPOSITS.add(addr);
+								} else player.sendMessage(Text.of("Cannot create deposit address right now. Check the server console."));
+								break;
+								}
+							}
+						} else player.sendMessage(Text.of("Forbidden for non-op"));
 					break;
 				}
 				// withdraw

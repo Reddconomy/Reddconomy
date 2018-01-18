@@ -138,6 +138,18 @@ public class ReddconomyApi {
 			 } else System.out.println("Cannot request balance."); return null;
 		}
 		
+		public String srvDeposit(long balance) throws Exception
+		{
+			String action = "deposit&wallid=[SRV]&amount=" + balance;
+			 ApiResponse r=apiCall(action);
+			 if (r.statusCode()==200)
+			 {
+				 Deposit deposit = r.data();
+				 String addr = deposit.addr;
+				 return addr;
+			 } else System.out.println("Cannot request balance."); return null;
+		}
+		
 		// Checking deposit status
 		public PendingDepositData getDepositStatus(String addr) throws Exception
 		{
