@@ -84,12 +84,17 @@ public class HttpGateway implements HttpHandler{
 		try{
 			
 			String uri=request.uri();
-					
+			
+			System.out.println("Use secret "+_SECRET);
+			
 			// Calculate expected hash of the request
 			String expected_hash=_SECRET.isEmpty()?"":Utils.hmac(_SECRET,uri);
 			
 			// Get sent hash
 			String hash=_SECRET.isEmpty()?"":request.header("Hash");			
+			
+			System.out.println("Calculated hash "+expected_hash);
+
 			
 			// If the two hashes are equals: the secret key is valid and the request is intact
 			if(expected_hash.equals(hash)){ 
@@ -140,6 +145,8 @@ public class HttpGateway implements HttpHandler{
 					response.end();
 				}
 			}else{
+				System.out.println("Error hash mismatch expectet "+expected_hash+ " sent " +hash);
+
 				System.err.println("Unauthorized");
 				response.status(401);
 				response.header("Content-type","application/json");				
