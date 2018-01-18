@@ -114,7 +114,7 @@ public class ReddconomyFrontend implements CommandListener{
 
                 this.config.getNode("ConfigVersion").setValue(3);
 
-                this.config.getNode("url").setValue("http://127.0.0.1:8099/v1");
+                this.config.getNode("url").setValue("http://127.0.0.1:8099");
                 this.config.getNode("qr").setValue("enabled");
                 this.config.getNode("coin").setValue("reddcoin");
                 this.config.getNode("csigns").setValue("enabled");
@@ -163,7 +163,7 @@ public class ReddconomyFrontend implements CommandListener{
     			.executor(new CommandHandler(this))
     			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
     			.build();
-    	game.getCommandManager().register(this, cmds, "$","�","reddconomy","rdd");
+    	game.getCommandManager().register(this, cmds, "$","reddconomy","rdd");
     	
 
     }
@@ -185,19 +185,21 @@ public class ReddconomyFrontend implements CommandListener{
 			String addr=it.next();
 			try{
 				final PendingDepositData deposit_data=api.getDepositStatus(addr);
-				final UUID pUUID=UUID.fromString(deposit_data.addr);
 				if(deposit_data.status!=1){
 					it.remove();
-					Task.builder().execute((new Runnable() {
-						public void run() {
-							(Sponge.getServer().getPlayer(pUUID)).get().sendMessage(Text.of(
-									deposit_data.status==0?"Deposit completed. Check your balance!":"Deposit expired! Request another one."
-							));
-						}		
-					}))
-						    .delay(0, TimeUnit.MILLISECONDS)
-						    .name("Fetch deposit status").submit(this);
-				}		
+
+					if(!deposit_data.addr.equals("[SRV]")){ // FIXME: Shouldn't be hardcoded
+						Task.builder().execute((new Runnable(){
+							public void run() {
+								final UUID pUUID=UUID.fromString(deposit_data.addr);
+								(Sponge.getServer().getPlayer(pUUID)).get()
+								.sendMessage(Text.of(deposit_data.status==0?
+										"Deposit completed. Check your balance!":"Deposit expired! Request another one."));
+							}
+						})).delay(0,TimeUnit.MILLISECONDS).name("Fetch deposit status").submit(this);
+					}
+
+				}
 			}catch(Exception e){
 				e.printStackTrace();
 			}
@@ -353,7 +355,7 @@ public class ReddconomyFrontend implements CommandListener{
 					if (addr!=null)
 					{
 						if (apiQR.equalsIgnoreCase("enabled")) {
-							player.sendMessage(Text.of(api.createQR(addr, apiCoin, addr.toString())));
+							player.sendMessage(Text.of(api.createQR(addr, apiCoin, damount)));
 						} else if (apiQR.equalsIgnoreCase("link")) {
 							player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
 						}
@@ -405,7 +407,7 @@ public class ReddconomyFrontend implements CommandListener{
 								if (addr!=null)
 								{
 									if (apiQR.equalsIgnoreCase("enabled")) {
-										player.sendMessage(Text.of(api.createQR(addr, apiCoin, addr.toString())));
+										player.sendMessage(Text.of(api.createQR(addr, apiCoin, damount)));
 									} else if (apiQR.equalsIgnoreCase("link")) {
 										player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
 									}
@@ -456,8 +458,7 @@ public class ReddconomyFrontend implements CommandListener{
 							player.sendMessage(Text.of("Contract accepted."));
 							player.sendMessage(Text.of("You now have: " + api.getBalance(pUUID) + " RDD"));
 						} else {
-							player.sendMessage(Text.of("Cannot accept contract. Are you sure that you haven't already accepted?"));
-							player.sendMessage(Text.of("Otherwise, call and admin for more info."));
+							player.sendMessage(Text.of("Cannot accept contract"));
 						}
 		
 					}

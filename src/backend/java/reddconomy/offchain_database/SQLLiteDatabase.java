@@ -174,6 +174,8 @@ public  class SQLLiteDatabase implements Database {
 		
 		out.createdby=walletid;
 		out.amount=amount;
+		out.id=id;
+		
 
 		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`amount`, `created`) VALUES('"+id+"','"+walletid+"','"+amount+"','"+System.currentTimeMillis()+"')",false,false);			
 		return out;

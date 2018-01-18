@@ -48,7 +48,7 @@ public class ApiResponse{
 		return _REGISTERED_DATA.get(type);
 	}
 	public static String getTypeByClass( Class<? extends Data> c) {
-		for(Entry<String, Class<? extends Data>> e:_REGISTERED_DATA.entrySet())	if(e.getClass()==c) return e.getKey();		
+		for(Entry<String, Class<? extends Data>> e:_REGISTERED_DATA.entrySet())	if(e.getValue()==c) return e.getKey();		
 		return null;
 	}
 	
@@ -119,7 +119,7 @@ public class ApiResponse{
 		Class<? extends Data> data_class=getClassByType(data_type);		
 		try{
 			Data data=data_class.newInstance();
-			data.fromMap(map);
+			data.fromMap((Map)map.get("data"));
 			DATA=data;
 		}catch(Exception e){
 			e.printStackTrace();

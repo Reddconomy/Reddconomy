@@ -116,7 +116,7 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 			case "deposit":{
 				try{
 					String addr=_WALLET.getNewAddress();
-					String wallet_id=_GET.get("wallet_id").toString();
+					String wallet_id=_GET.get("wallid").toString();
 					long balance=Long.parseLong(_GET.get("amount").toString());
 					Deposit data=_DATABASE.prepareForDeposit(addr,wallet_id,balance);
 					response.success(data);

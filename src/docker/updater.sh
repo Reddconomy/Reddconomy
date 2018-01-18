@@ -10,7 +10,7 @@ do
         supervisorctl stop reddconomy
 
         #HOTFIX : force kill
-        kill `jps|xargs`
+        #kill `jps|xargs`
 
         supervisorctl start reddconomy
     fi

@@ -93,13 +93,15 @@ public class ReddconomyApi {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 			_URL = apiUrl;
 			_SECRET = secret;
+			ApiResponse.registerAll("v1");
 		}
 		
 		// Fundamental APIs for Reddconomy.
 		@SuppressWarnings("rawtypes")
 		public ApiResponse apiCall(String action) throws Exception
 		{
-			  String query = "/?action="+action;
+			  String version="v1";
+			  String query = "/"+version+"/?action="+action;
 			  String urlString = _URL+query;
 			  URL url = new URL(urlString);
 			  System.out.println("SECRET KEY: "+_SECRET);
@@ -137,7 +139,7 @@ public class ReddconomyApi {
 				 Deposit deposit = r.data();
 				 String addr = deposit.addr;
 				 return addr;
-			 } else System.out.println("Cannot request balance."); return null;
+			 } else return null;
 		}
 		
 		public String srvDeposit(long balance) throws Exception
@@ -149,7 +151,7 @@ public class ReddconomyApi {
 				 Deposit deposit = r.data();
 				 String addr = deposit.addr;
 				 return addr;
-			 } else System.out.println("Cannot request balance."); return null;
+			 } else  return null;
 		}
 		
 		// Checking deposit status
@@ -168,14 +170,15 @@ public class ReddconomyApi {
 		@SuppressWarnings("rawtypes")
 		public double getBalance(UUID pUUID) throws Exception
 		{
-			String action = "balance&wallid=" + pUUID;
+			String action = "getwallet&wallid=" + pUUID;
 			ApiResponse r=apiCall(action);
 			if(r.statusCode()==200)
 			{
 				OffchainWallet wallet=r.data();
+				
 				long balance=wallet.balance;
-				return balance;
-			} else System.out.println("Cannot request balance."); return -1;
+				return balance/100000000.;
+			} else return -1;
 		}
 		
 		// Create contract.
@@ -189,7 +192,7 @@ public class ReddconomyApi {
 				OffchainContract contract=r.data();
 				String cId=contract.id;
 				return cId;
-			} else System.out.println("Cannot request balance."); return null;
+			} else  return null;
 		}
 		
 		// Hard-coded wallet for the server
@@ -202,15 +205,15 @@ public class ReddconomyApi {
 				OffchainContract contract=r.data();
 				String cId=contract.id;
 				return cId;
-			} else System.out.println("Cannot request balance."); return null;
+			} else  return null;
 		}
 		
 		// QR Engine
-		public String createQR (String addr, String coin, String amount) throws WriterException
+		public String createQR (String addr, String coin, double amount) throws WriterException
 		{
 			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
 			com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?
-					coin+":"+addr+"?amount="+amount:amount,ErrorCorrectionLevel.L,hint);
+					coin+":"+addr+"?amount="+amount:""+amount,ErrorCorrectionLevel.L,hint);
 			ByteMatrix matrix=code.getMatrix();
 			System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
 			StringBuilder qr=new StringBuilder();

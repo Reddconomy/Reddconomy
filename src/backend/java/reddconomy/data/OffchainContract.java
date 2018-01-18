@@ -62,7 +62,7 @@ public final class OffchainContract implements Data{
 	/**
 	 * Who accepted
 	 */
-	public String acceptedby;
+	public String acceptedby="";
 	
 	
 	
