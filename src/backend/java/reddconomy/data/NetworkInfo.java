@@ -23,37 +23,43 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package reddconomy.blockchain;
+package reddconomy.data;
 
-/**
- * Interface that describes a class used to query the blockchain 
- * @author Riccardo Balbo
- *
- */
-public interface BlockchainConnector{
-	/**
-	 * Get balance of specified address
-	 * @param addr A valid blockchain address
-	 * @return Amount of coins
-	 * @throws Throwable
-	 */
-	public long getReceivedByAddress(String addr) throws Throwable ;	
+import java.util.HashMap;
+import java.util.Map;
+
+public final class NetworkInfo implements Data{
 	
-	/**
-	 * Send coins to a specified address
-	 * @param addr A valid blockchain address
-	 * @param amount_long Amount to send 
-	 * @throws Throwable
-	 */
-	public void sendToAddress(String addr, long amount_long) throws Throwable;
+	public boolean testnet;	
 	
-	/**
-	 * Get new blockchain address
-	 * @return new address
-	 * @throws Throwable
-	 */
-	public String getNewAddress() throws Throwable ;
+	@Override
+	public String toString(){
+		StringBuilder sb=new StringBuilder();
+		sb.append("Network-").append("testnet=").append(testnet);
+		return sb.toString();
+	}
 	
-	public boolean isTestnet()  throws Throwable ;
+	
+
+	@Override
+	public Map<String,Object> toMap() {
+		Map<String,Object> out=new HashMap<String,Object>();
+		out.put("testnet",testnet);
+		return out;
+	}
+
+	@Override
+	public void fromMap(Map<String,Object> map) {
+		testnet=(Boolean)map.get("testnet");
+	}
+	
+	@Override
+	public boolean equals(Object w2o){
+		if(!(w2o instanceof NetworkInfo))return false;
+		NetworkInfo w2=(NetworkInfo)w2o;
+		return testnet==w2.testnet;
+	}
+	
+	
 	
 }

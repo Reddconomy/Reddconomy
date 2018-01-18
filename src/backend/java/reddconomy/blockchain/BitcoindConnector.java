@@ -54,12 +54,14 @@ public class BitcoindConnector implements BlockchainConnector{
 
 
 	}
-	
+
+	@Override
 	public synchronized long getReceivedByAddress(String addr) throws Throwable {
 		double v=(double)_CLIENT.invoke("getreceivedbyaddress",new Object[]{addr},Object.class);
 		return (long)(v*100000000L);
 	}
 	
+	@Override
 	public synchronized void sendToAddress(String addr, long amount_long) throws Throwable {
 		double amount = (amount_long)/100000000.0;
 		double balance=(double)_CLIENT.invoke("getbalance",new Object[]{},Object.class);
@@ -67,9 +69,15 @@ public class BitcoindConnector implements BlockchainConnector{
 		else throw new Exception("Not enough coins");
 	}
 
+	@Override
 	public synchronized String getNewAddress() throws Throwable {
 		String addr=(String)_CLIENT.invoke("getnewaddress",new Object[]{},Object.class);
 		return addr;
 	}
 	
+	@Override
+	public synchronized boolean isTestnet() throws Throwable{
+		Map<String,Object> info=(Map<String,Object>)_CLIENT.invoke("getinfo",new Object[]{},Object.class);
+		return (boolean)info.get("testnet");		
+	}
 }
