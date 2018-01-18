@@ -1,5 +1,6 @@
 /*
- * @author: Simone C., Riccardo B.;
+ * Copyright (c) 2018, Simone Cervino.
+ * 
  * This file is part of Reddconomy-sponge.
 
     Reddconomy-sponge is free software: you can redistribute it and/or modify
