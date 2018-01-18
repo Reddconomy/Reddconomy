@@ -1,5 +1,23 @@
 package webbit_lite.netty;
 
+import static org.jboss.netty.channel.Channels.pipeline;
+
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -21,23 +39,6 @@ import webbit_lite.handler.exceptions.PrintStackTraceExceptionHandler;
 import webbit_lite.handler.exceptions.SilentExceptionHandler;
 import webbit_lite.helpers.NamingThreadFactory;
 import webbit_lite.helpers.SslFactory;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import java.io.InputStream;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import static org.jboss.netty.channel.Channels.pipeline;
 
 public class NettyWebServer implements WebServer {
     private static final long DEFAULT_STALE_CONNECTION_TIMEOUT = 5000;

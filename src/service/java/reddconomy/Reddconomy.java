@@ -1,229 +1,65 @@
+/*
+ * Copyright (c) 2018, Riccardo Balbo
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package reddconomy;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import reddconomy.api.ApiEndpoints;
+import reddconomy.api.ApiResponse;
+import reddconomy.api.ReddconomyApiEndpointsV1;
+import reddconomy.blockchain.BitcoindConnector;
+import reddconomy.blockchain.BlockchainConnector;
+import reddconomy.http_gateway.HttpGateway;
+import reddconomy.offchain_database.Database;
+import reddconomy.offchain_database.SQLLiteDatabase;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+public class Reddconomy {
 
-import reddconomy.database.Database;
-import reddconomy.database.implementation.SQLLiteDatabase;
-
-public class Reddconomy extends Thread implements ActionListener{
-
-	private final Database _DATABASE;
-	private final Gson _JSON;
-	private CentralWallet _WALLET;
-	private boolean CLOSED=false;
-
+	private static HttpGateway HTTPD;
+	private static ApiEndpoints RDDE;
+	private static BlockchainConnector BLOCKCHAIN;
+	private static Database DATABASE;
+	
 	public static void main(String[] args) throws Throwable {
 		int port=8099;
 		String ip="0.0.0.0";
 		
-		CentralWallet wallet=new Reddcoind("http://reddconomy.frk.wf:45443/","test","test123");
-		Reddconomy reddconomy=new Reddconomy(wallet);
-		HttpGateway httpd=new HttpGateway("SECRET123",ip,port,reddconomy);
-		httpd.start();
-		reddconomy.start();
+		// Start local database
+		DATABASE=new SQLLiteDatabase("db.sqlite");
+		DATABASE.open();
+		// Connect to RPC daemon
+		BLOCKCHAIN=new BitcoindConnector("http://reddconomy.frk.wf:45443/","test","test123");
+		// Register api responses
+		ApiResponse.registerAll("v1");	
+		// Start api backend
+		RDDE=new ReddconomyApiEndpointsV1(BLOCKCHAIN,DATABASE);
+		RDDE.open();
+		// Start HTTP gateway
+		HTTPD=new HttpGateway("SECRET123",ip,port);
+		HTTPD.start();
+		//Add api endpoints to httpd
+		HTTPD.listeners().put("v1",RDDE);// Version 1
 		
 		System.out.println("Server started @ "+ip+":"+port);
-
-	}
-
-	public Reddconomy(CentralWallet wallet) throws Exception{
-		_JSON=new GsonBuilder().setPrettyPrinting().create();
-		_WALLET=wallet;
-
-		// Init LocalDB
-		_DATABASE=new SQLLiteDatabase("db.sqlite");
-		_DATABASE.open();
-
-		setDaemon(true);
-
-	}
-
-	public synchronized void stopNow() {
-		CLOSED=true;
-	}
-
-	public void run() {
-		long t=0;
-		while(!CLOSED){
-			long delta_t=t==0?0:System.currentTimeMillis()-t;
-			try{
-				Collection<Map<String,Object>> deposits=_DATABASE.getIncompletedDepositsAndUpdate(delta_t);
-				for(Map<String,Object> deposit:deposits){
-					String addr=deposit.get("addr").toString();
-					long expected_balance=(long)deposit.get("expected_balance");
-					try{
-						if(_WALLET.getReceivedByAddress(addr)>=expected_balance){
-							_DATABASE.completeDeposit(addr);
-						}
-					}catch(Throwable e){
-						e.printStackTrace();
-					}
-				}
-			}catch(Exception e){
-				e.printStackTrace();
-			}
-			t=System.currentTimeMillis();
-			try{
-				Thread.sleep(10000);
-			}catch(InterruptedException e){
-				e.printStackTrace();
-			}
-		}
-	}
-
-	public String performAction(String action, Map<String,String> _GET) {
-		Map<String,Object> resp_obj=new HashMap<String,Object>();
-		switch(action){			
-			// action=deposit&wallid=XXX&amount=XXXX
-			case "deposit":{
-				try{
-					Map<String,Object> data=new HashMap<String,Object>();
-					String addr=_WALLET.getNewAddress();
-					String wallet_id=_GET.get("wallid").toString();
-					long balance=Long.parseLong(_GET.get("amount").toString());
-					_DATABASE.prepareForDeposit(addr,wallet_id,balance);
-					data.put("addr",addr);
-					resp_obj.put("status",200);
-					resp_obj.put("data",data);
-				}catch(Throwable e){
-					String error=e.toString();
-					resp_obj.put("status",500);
-					resp_obj.put("error",error);
-					e.printStackTrace();
-				}
-				break;
-			}
-			//action=getdeposit&addr=XXXXXXXx
-			case "getdeposit":{
-				try{
-					String addr=_GET.get("addr").toString();
-					Map<String,Object> deposit=_DATABASE.getDeposit(addr);
-					resp_obj.put("status",200);
-					resp_obj.put("data",deposit);
-				}catch(Throwable e){
-					String error=e.toString();
-					resp_obj.put("status",500);
-					resp_obj.put("error",error);
-					e.printStackTrace();
-				}
-				break;
-			}
-			//action=withdraw&amount=XXXX&addr=XXXXXXXx
-			case "withdraw":{
-				long amount=Long.parseLong(_GET.get("amount").toString());
-				String addr=(String)_GET.get("addr");
-				String wallet_id=_GET.get("wallid").toString();
-				try{
-					Map<String,Object> wallet=_DATABASE.getWallet(wallet_id);
-					long balance=(long)wallet.get("balance");
-					if(balance>=amount){
-						_WALLET.sendToAddress(addr,amount);
-						_DATABASE.withdraw(wallet_id,amount);
-						resp_obj.put("status",200);
-						resp_obj.put("data",new HashMap<String,Object>());
-					}else{
-						resp_obj.put("status",500);
-						resp_obj.put("error","Not enough money");
-					}
-				}catch(Throwable e){
-					String error=e.toString();
-					resp_obj.put("status",500);
-					resp_obj.put("error",error);
-					e.printStackTrace();
-				}
-				break;
-			}
-			// action=balance&wallid=XXX
-			case "balance":{
-				try{
-					String wallet_id=_GET.get("wallid").toString();
-					Map<String,Object> data=_DATABASE.getWallet(wallet_id);
-					resp_obj.put("status",200);
-					resp_obj.put("data",data);
-				}catch(Throwable e){
-					String error=e.toString();
-					resp_obj.put("status",500);
-					resp_obj.put("error",error);
-					e.printStackTrace();
-				}
-
-				break;
-			}
-			// action=newcontract&wallid=XXX&amount=XXXX
-			case "newcontract":{
-				try{
-					Map<String,Object> data=new HashMap<String,Object>();
-					String wallet_id=_GET.get("wallid").toString();
-					long amount=Long.parseLong(_GET.get("amount").toString());
-					String contractId=_DATABASE.createContract(wallet_id,amount);
-					data.put("contractId",contractId);
-					resp_obj.put("status",200);
-					resp_obj.put("data",data);
-				}catch(Throwable e){
-					String error=e.toString();
-					resp_obj.put("status",500);
-					resp_obj.put("error",error);
-					e.printStackTrace();
-				}
-
-				break;
-			}
-			// action=acceptcontract&wallid=XXXX&contractid=XXXX
-			case "acceptcontract":{
-				try{
-					String wallet_id=_GET.get("wallid").toString();
-					String contractId=_GET.get("contractid").toString();
-					_DATABASE.acceptContract(contractId,wallet_id);
-					resp_obj.put("status",200);
-					resp_obj.put("data",new HashMap<String,Object>());
-				}catch(Throwable e){
-					String error=e.toString();
-					resp_obj.put("status",500);
-					resp_obj.put("error",error);
-					e.printStackTrace();
-				}
-
-				break;
-			}
-			case "sendcoins":{
-				try{
-					String addr=_GET.get("addr").toString();
-					long amount=Long.parseLong(_GET.get("amount").toString());
-					_WALLET.sendToAddress(addr,amount);
-					resp_obj.put("status",200);
-					resp_obj.put("data",new HashMap<String,Object>());
-				}catch(Throwable e){
-					String error=e.toString();
-					resp_obj.put("status",500);
-					resp_obj.put("error",error);
-					e.printStackTrace();
-				}
-				break;
-			}
-			// action=getcontract&contractid=XXXX
-			case "getcontract":{
-				try{
-					String contractId=_GET.get("contractid").toString();
-					Map<String,Object> contract=_DATABASE.getContract(contractId);
-					resp_obj.put("status",200);
-					resp_obj.put("data",contract);
-				}catch(Throwable e){
-					String error=e.toString();
-					resp_obj.put("status",500);
-					resp_obj.put("error",error);
-					e.printStackTrace();
-				}
-				break;
-			}
-			default:
-				resp_obj.put("status",500);
-				resp_obj.put("error","Invalid action");
-		}
-		return _JSON.toJson(resp_obj);
-
 	}
 }

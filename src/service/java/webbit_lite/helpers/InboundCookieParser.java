@@ -1,12 +1,12 @@
 package webbit_lite.helpers;
 
-import org.jboss.netty.handler.codec.http.Cookie;
-import org.jboss.netty.handler.codec.http.CookieDecoder;
-
 import java.net.HttpCookie;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import org.jboss.netty.handler.codec.http.Cookie;
+import org.jboss.netty.handler.codec.http.CookieDecoder;
 
 public class InboundCookieParser {
     public static List<HttpCookie> parse(List<String> headerValues) {

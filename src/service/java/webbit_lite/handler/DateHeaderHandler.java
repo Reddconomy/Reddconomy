@@ -1,13 +1,13 @@
 package webbit_lite.handler;
 
+import java.util.Date;
+
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 
 import webbit_lite.HttpControl;
 import webbit_lite.HttpHandler;
 import webbit_lite.HttpRequest;
 import webbit_lite.HttpResponse;
-
-import java.util.Date;
 
 /**
  * Handler that sets the HTTP 'Server' response header.

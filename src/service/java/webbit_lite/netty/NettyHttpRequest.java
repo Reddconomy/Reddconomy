@@ -1,5 +1,13 @@
 package webbit_lite.netty;
 
+import java.net.HttpCookie;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -7,11 +15,6 @@ import org.jboss.netty.util.CharsetUtil;
 
 import webbit_lite.helpers.InboundCookieParser;
 import webbit_lite.helpers.QueryParameters;
-
-import java.net.HttpCookie;
-import java.net.SocketAddress;
-import java.net.URI;
-import java.util.*;
 
 public class NettyHttpRequest implements webbit_lite.HttpRequest {
 

@@ -1,5 +1,8 @@
 package webbit_lite.netty;
 
+import java.util.Iterator;
+import java.util.concurrent.Executor;
+
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -10,10 +13,6 @@ import webbit_lite.HttpControl;
 import webbit_lite.HttpHandler;
 import webbit_lite.HttpRequest;
 import webbit_lite.HttpResponse;
-import webbit_lite.WebbitException;
-
-import java.util.Iterator;
-import java.util.concurrent.Executor;
 
 public class NettyHttpControl implements HttpControl {
 

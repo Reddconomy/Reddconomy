@@ -1,4 +1,29 @@
-package reddconomy.database.implementation;
+/*
+ * Copyright (c) 2018, Riccardo Balbo
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+package reddconomy.offchain_database;
 
 
 import java.sql.Connection;
@@ -9,15 +34,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-import reddconomy.database.Database;
+import reddconomy.data.Deposit;
+import reddconomy.data.OffchainContract;
+import reddconomy.data.OffchainWallet;
+import reddconomy.data.Withdraw;
 
 
 /**
- * DB implementation on SQLITE - NOT SAFE FOR PRODUCTION
+ * Test DB implementation on SQLITE - >>>> DO NOT USE THIS FOR ANYTHING OTHER THAN TESTING <<<< REALLY!
  * @author Riccardo Balbo
  */
 
@@ -66,8 +92,8 @@ public  class SQLLiteDatabase implements Database {
 					+ "`receiver` TEXT NOT NULL, "
 					+ "`amount` INTEGER DEFAULT 0, "
 					+ "`acceptor` TEXT DEFAULT '',"
-					+ "`created` DATETIME DEFAULT CURRENT_TIMESTAMP,"
-					+ "`accepted` DATETIME DEFAULT CURRENT_TIMESTAMP ,"
+					+ "`created` INTEGER NOT NULL,"
+					+ "`accepted`  INTEGER NOT NUL DEFAULT -1,"
 					+ "FOREIGN KEY(`receiver`) REFERENCES reddconomy_wallets(`id`), "
 					+ "FOREIGN KEY(`acceptor`) REFERENCES reddconomy_wallets(`id`) "
 					+ ");"
@@ -89,7 +115,7 @@ public  class SQLLiteDatabase implements Database {
 					+ "`receiver` TEXT NOT NULL, "
 					+ "`expected_balance` INTEGER DEFAULT 0, "
 					+ "`status` INTEGER DEFAULT 1,"
-					+ "`created` DATETIME DEFAULT CURRENT_TIMESTAMP,"
+					+ "`created INTEGER NOT NULL,"
 					+ "`expiring` INTEGER DEFAULT 172800000, "
 					+ "FOREIGN KEY(`receiver`) REFERENCES reddconomy_wallets(`id`) "
 					+ ");"
@@ -106,19 +132,17 @@ public  class SQLLiteDatabase implements Database {
 	
 	
 	@Override
-	public synchronized Map<String,Object> getWallet(String id) throws SQLException{
+	public synchronized OffchainWallet getOffchainWallet(String id) throws SQLException{
 		id=id.replaceAll("[^A-Za-z0-9_\\-]","_");
-		Map<String,Object> out=new HashMap<String,Object>();
-		out.put("id",id);
+		OffchainWallet out=new  OffchainWallet();
+		out.id=id;
 		SQLResult res=query("SELECT `status`,`balance` FROM `reddconomy_wallets` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
 		if(res!=null&&!res.isEmpty()){
-			Map<String,String> fetched=res.FetchAssoc();
-			out.put("status",Integer.parseInt(fetched.get("status")));
-			out.put("balance",Long.parseLong(fetched.get("balance")));
+			Map<String,Object> fetched=res.fetchAssoc();
+			out.status=((Number)fetched.get("status")).byteValue();
+			out.balance=((Number)fetched.get("balance")).longValue();
 		}else{
 			query("INSERT INTO reddconomy_wallets(`id`) VALUES('"+id+"')",false,false);
-			out.put("status",1);
-			out.put("balance",0l);
 		}
 		return out;
 	}
@@ -126,19 +150,19 @@ public  class SQLLiteDatabase implements Database {
 	
 	
 	@Override
-	public synchronized Map<String,Object> getContract(String id) throws SQLException{
+	public synchronized OffchainContract getContract(String id) throws SQLException{
 		id=id.replaceAll("[^A-Za-z0-9]","_");
-		Map<String,Object> out=new HashMap<String,Object>();
+		OffchainContract out=new OffchainContract();
 		SQLResult res=query("SELECT * FROM `reddconomy_contracts` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
 		if(res!=null&&!res.isEmpty()){
-			Map<String,String> fetched=res.FetchAssoc();
+			Map<String,Object> fetched=res.fetchAssoc();
 			System.out.println(fetched);
-			out.put("id",fetched.get("id"));
-			out.put("amount",Long.parseLong(fetched.get("amount")));
-			out.put("acceptor",fetched.get("acceptor"));
-			out.put("receiver",fetched.get("receiver"));
-			out.put("created",fetched.get("created"));
-			out.put("accepted",fetched.get("accepted"));
+			out.id=fetched.get("id").toString();
+			out.amount=((Number)fetched.get("amount")).longValue();
+			out.acceptedby=fetched.get("acceptor").toString();
+			out.createdby=fetched.get("receiver").toString();
+			out.created=((Number)fetched.get("created")).longValue();
+			out.accepted=((Number)fetched.get("accepted")).longValue();
 			return out;
 		}else{
 			return null;
@@ -147,37 +171,41 @@ public  class SQLLiteDatabase implements Database {
 	
 
 	@Override
-	public synchronized String createContract(String walletid,long amount) throws SQLException{
+	public synchronized OffchainContract createContract(String walletid,long amount) throws SQLException{
+		OffchainContract out=new OffchainContract();
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		String id="0c"+(System.currentTimeMillis()+"___"+walletid+"__"+amount).hashCode();
 		id=id.replaceAll("[^A-Za-z0-9]","_");
+		
+		out.createdby=walletid;
+		out.amount=amount;
 
-		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`amount`) VALUES('"+id+"','"+walletid+"','"+amount+"')",false,false);			
-		return id;
+		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`amount`, `created`) VALUES('"+id+"','"+walletid+"','"+amount+"','"+System.currentTimeMillis()+"')",false,false);			
+		return out;
 	}
 	
 
 	@Override
-	public synchronized void acceptContract(String contractid, String walletid) throws Exception {
+	public synchronized OffchainContract acceptContract(String contractid, String walletid) throws Exception {
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		contractid=contractid.replaceAll("[^A-Za-z0-9]","_");
-		Map<String,Object> contract=getContract(contractid);
+		OffchainContract contract=getContract(contractid);
 		if(contract!=null){
-			String accp=(String)contract.get("acceptor");
+			String accp=contract.acceptedby;
 			if(accp==null||accp.isEmpty()){
-				Map<String,Object> acc_wallet=getWallet(walletid);
-				String rcv_walletid=contract.get("receiver").toString();
-				Map<String,Object> rcv_wallet=getWallet(rcv_walletid);
+				OffchainWallet acc_wallet=getOffchainWallet(walletid);
+				String rcv_walletid=contract.createdby;
+				OffchainWallet rcv_wallet=getOffchainWallet(rcv_walletid);
 
-				long price=(long)contract.get("amount");
-				long acc_balance=(long)acc_wallet.get("balance");
-				long rcv_balance=(long)rcv_wallet.get("balance");
+				long price=contract.amount;
+				long acc_balance=acc_wallet.balance;
+				long rcv_balance=rcv_wallet.balance;
 				if((price>=0&&price<=acc_balance)||(price<0&&-price<=rcv_balance)){
 					acc_balance-=price;
 					rcv_balance+=price;
 					query("UPDATE reddconomy_wallets SET `balance`='"+acc_balance+"' WHERE `id`='"+walletid+"'",false,false);
 					query("UPDATE reddconomy_wallets SET `balance`='"+rcv_balance+"' WHERE `id`='"+rcv_walletid+"'",false,false);
-					query("UPDATE reddconomy_contracts SET `accepted`= CURRENT_TIMESTAMP ,`acceptor`='"+walletid+"' WHERE `id`='"+contractid+"'",false,false);
+					query("UPDATE reddconomy_contracts SET `accepted`= '"+System.currentTimeMillis()+"' ,`acceptor`='"+walletid+"' WHERE `id`='"+contractid+"'",false,false);
 				}else{
 					if(price>=0)throw new Exception("Not enough money. Wallet id "+walletid+" has balance "+acc_balance+" but contract requires "+price);
 					else throw new Exception("Not enough money. Wallet id "+rcv_walletid+" has balance "+rcv_balance+" but contract requires "+price);
@@ -190,20 +218,25 @@ public  class SQLLiteDatabase implements Database {
 			throw new Exception("Contract "+contractid+" doesn't exist");
 
 		}
+		return contract;
 	}
 	
 
 	@Override
-	public synchronized void withdraw(String walletid,long amount) throws Exception{
+	public synchronized Withdraw withdraw(String walletid,long amount) throws Exception{
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
-		Map<String,Object> wallet=getWallet(walletid);
-		long balance=(long)wallet.get("balance");
+		OffchainWallet wallet=getOffchainWallet(walletid);
+		long balance=wallet.balance;
 		if(balance>=amount){
 			balance-=amount;
 			query("UPDATE reddconomy_wallets SET `balance`='"+balance+"' WHERE `id`='"+walletid+"'",false,false);
 		}else{
 			throw new Exception("Requested withdraw of "+amount+" but only "+balance+" available");
 		}
+		Withdraw wt=new Withdraw();
+		wt.amount=amount;
+		wt.from_wallet=walletid;
+		return wt;
 	}
 	
 	
@@ -211,29 +244,30 @@ public  class SQLLiteDatabase implements Database {
 	
 	
 	@Override
-	public synchronized void prepareForDeposit(String deposit_addr,String walletid,long expected_balance)throws Exception{
+	public synchronized Deposit prepareForDeposit(String deposit_addr,String walletid,long expected_balance)throws Exception{
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		deposit_addr=deposit_addr.replaceAll("[^A-Za-z0-9]","_");
 		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `addr`='"+deposit_addr+"' LIMIT 0,1",true,false);
 		if(res!=null&&!res.isEmpty()){
 			throw new Exception("Cannot reuse deposit addresses");
 		}else
-			query("INSERT INTO reddconomy_deposits(`addr`,`receiver`,`expected_balance`) VALUES('"+deposit_addr+"','"+walletid+"','"+expected_balance+"')",false,false);
+			query("INSERT INTO reddconomy_deposits(`created`,`addr`,`receiver`,`expected_balance`) VALUES('"+System.currentTimeMillis()+"','"+deposit_addr+"','"+walletid+"','"+expected_balance+"')",false,false);
+		return getDeposit(deposit_addr);
 	}
 	
 
 	@Override
-	public synchronized Collection<Map<String,Object>> getIncompletedDepositsAndUpdate(long tms) throws Exception {
-		ArrayList<Map<String,Object>> out=new ArrayList<Map<String,Object>>();
+	public synchronized Collection<Deposit> getIncompletedDepositsAndUpdate(long tms) throws Exception {
+		ArrayList<Deposit> out=new ArrayList<Deposit>();
 		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `status`='1'",true,false);
 		if(res!=null&&!res.isEmpty()){
-			Map<String,String> fetch;
-			while(!(fetch=res.FetchAssoc()).isEmpty()){
+			Map<String,Object> fetch;
+			while(!(fetch=res.fetchAssoc()).isEmpty()){
 				
 
-				String addr=fetch.get("addr");
-				int status=Integer.parseInt(fetch.get("status"));
-				long exp=Integer.parseInt(fetch.get("expiring"));
+				String addr=fetch.get("addr").toString();
+				byte status=((Number)fetch.get("status")).byteValue();
+				long exp=((Number)fetch.get("expiring")).longValue();
 
 		
 				
@@ -241,13 +275,13 @@ public  class SQLLiteDatabase implements Database {
 				if(exp<=0){
 					status=-1;
 				}else{
-					Map<String,Object> deposit=new HashMap<String,Object>();
-					deposit.put("addr",addr);
-					deposit.put("receiver",fetch.get("receiver"));
-					deposit.put("expected_balance",Long.parseLong(fetch.get("expected_balance")));
-					deposit.put("status",status);
-					deposit.put("created",fetch.get("created"));
-					deposit.put("expiring",exp);
+					Deposit deposit=new Deposit();
+					deposit.addr=addr;
+					deposit.receiver_wallet_id=fetch.get("receiver").toString();
+					deposit.expected_balance=((Number)fetch.get("expected_balance")).longValue();
+					deposit.status=status;
+					deposit.created=((Number)fetch.get("created")).longValue();
+					deposit.expiring=((Number)exp).intValue();
 					out.add(deposit);
 				}
 				
@@ -260,7 +294,7 @@ public  class SQLLiteDatabase implements Database {
 	
 	
 	@Override
-	public synchronized void completeDeposit(String deposit_addr) throws Exception{
+	public synchronized Deposit completeDeposit(String deposit_addr) throws Exception{
 		deposit_addr=deposit_addr.replaceAll("[^A-Za-z0-9]","_");
 		SQLResult res=query("SELECT `receiver`,`expected_balance` FROM `reddconomy_deposits` WHERE `addr`='"+deposit_addr+"' LIMIT 0,1",true,false);
 		if(res==null){
@@ -268,32 +302,32 @@ public  class SQLLiteDatabase implements Database {
 		}else{
 			query("UPDATE reddconomy_deposits SET `status`='0' WHERE `addr`='"+deposit_addr+"'",false,false);
 			
-			Map<String,String> deposit=res.FetchAssoc();
-			long amount=Long.parseLong(deposit.get("expected_balance"));
-			String wallet_id=deposit.get("receiver");
-			Map<String,Object> wallet=this.getWallet(wallet_id);
-			long balance=(long)wallet.get("balance");
+			Map<String,Object> deposit=res.fetchAssoc();
+			long amount=((Number)deposit.get("expected_balance")).longValue();
+			String wallet_id=deposit.get("receiver").toString();
+			OffchainWallet wallet=this.getOffchainWallet(wallet_id);
+			long balance=wallet.balance;
 			balance+=amount;
 			query("UPDATE reddconomy_wallets SET `balance`='"+balance+"' WHERE `id`='"+wallet_id+"'",false,false);
 		}
-
+		return getDeposit(deposit_addr);
 	}
 	
 	@Override
-	public synchronized Map<String,Object> getDeposit(String deposit_addr) throws Exception{
-		Map<String,Object> resp=new HashMap<String,Object>();
+	public synchronized Deposit getDeposit(String deposit_addr) throws Exception{
+		Deposit resp=new Deposit();
 		deposit_addr=deposit_addr.replaceAll("[^A-Za-z0-9]","_");
 		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `addr`='"+deposit_addr+"' LIMIT 0,1",true,false);
 		if(res==null){
 			throw new Exception("Deposit is not ready");
 		}else{		
-			Map<String,String> deposit=res.FetchAssoc();
-			resp.put("addr",deposit_addr);
-			resp.put("receiver",deposit.get("receiver"));
-			resp.put("expected_balance",Long.parseLong(deposit.get("expected_balance")));
-			resp.put("status",Integer.parseInt(deposit.get("status")));
-			resp.put("created",(deposit.get("created")));
-			resp.put("expiring",Integer.parseInt(deposit.get("status")));
+			Map<String,Object> deposit=res.fetchAssoc();
+			resp.addr=deposit_addr;
+			resp.receiver_wallet_id=deposit.get("receiver").toString();
+			resp.expected_balance=((Number)deposit.get("expected_balance")).longValue();
+			resp.status=((Number)deposit.get("status")).byteValue();
+			resp.created=((Number)deposit.get("created")).longValue();
+			resp.expiring=((Number)deposit.get("status")).intValue();
 		}
 		return resp;
 	}

@@ -1,15 +1,15 @@
 package webbit_lite.helpers;
 
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.Security;
+
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import webbit_lite.WebbitException;
-
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.security.Security;
 
 public class SslFactory {
     private static final String PROTOCOL = "TLS";

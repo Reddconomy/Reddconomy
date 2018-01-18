@@ -1,15 +1,15 @@
 package webbit_lite.netty;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executor;
+
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 
 import webbit_lite.HttpConnection;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executor;
 
 public abstract class AbstractHttpConnection implements HttpConnection {
     private final Executor executor;

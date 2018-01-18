@@ -1,13 +1,13 @@
 package webbit_lite.netty;
 
+import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.Executor;
+
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 
 import webbit_lite.WebbitException;
-
-import java.nio.channels.ClosedChannelException;
-import java.util.concurrent.Executor;
 
 abstract class ConnectionHelper {
     protected final Executor executor;
