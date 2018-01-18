@@ -34,7 +34,7 @@ dependencies {
 	compile_reddconomyBackend group: 'com.github.briandilley.jsonrpc4j', name: 'jsonrpc4j', version: '1.5.2'
 	compile_reddconomyBackend group: 'com.google.code.gson', name: 'gson', version: '2.7'
 	
-	compile_reddconomySponge group: 'com.google.zxing', name: 'core', version: '3.3.1'
+	//compile_reddconomySponge group: 'com.google.zxing', name: 'core', version: '3.3.1'
 	compile_reddconomySponge group: 'com.github.kenglxn.QRGen', name: 'javase', version: '2.3.0'
 	compile_reddconomySponge group: 'com.google.code.gson', name: 'gson', version: '2.7'
 	provided_reddconomySponge group: 'org.spongepowered', name: 'spongeapi', version: '7.0.0'

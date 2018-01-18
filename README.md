@@ -1,4 +1,22 @@
-# Download
+# Reddconomy
+
+Reddcoin-based economy for minecraft.
+
+WORK IN PROGRESS
+
+DO NOT USE THIS WITH REAL COINS
+
+
+
+
+
+
+
+
+_____________________________
+
+
+## NOTE: THE FOLLOWING COMMANDS NEED TO BE UPDATED FOR THE PUBLIC RELEASE
 
 ## Linux
 ##### Requires:
