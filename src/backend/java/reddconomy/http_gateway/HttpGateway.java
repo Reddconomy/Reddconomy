@@ -57,7 +57,7 @@ public class HttpGateway implements HttpHandler{
 	private final Gson _JSON=new GsonBuilder().setPrettyPrinting().create();
 
 	public HttpGateway(String secret,String bind_ip,int bind_port) throws Exception{
-		_SECRET=secret;
+		_SECRET=secret==null?"":secret;
 
 		// Init webservice
 		ExecutorService thread_pool=Executors.newFixedThreadPool(1);
@@ -86,16 +86,20 @@ public class HttpGateway implements HttpHandler{
 			String uri=request.uri();
 					
 			// Calculate expected hash of the request
-			String expected_hash=Utils.hmac(_SECRET,uri);
+			String expected_hash=_SECRET.isEmpty()?"":Utils.hmac(_SECRET,uri);
 			
 			// Get sent hash
-			String hash=request.header("Hash");			
+			String hash=_SECRET.isEmpty()?"":request.header("Hash");			
 			
 			// If the two hashes are equals: the secret key is valid and the request is intact
 			if(expected_hash.equals(hash)){ 
 				// Get api version
-				String version=uri.substring(0,uri.indexOf("?")-1).substring(1);
+				String version="v1";
+				if(uri.contains("?"))version=uri.substring(0,uri.indexOf("?")-1);
+				if(version.startsWith("/"))version=version.substring(1);
 				if(version.endsWith("/"))version=version.substring(0,version.length()-1);
+				
+				System.out.println("Use version "+version);
 				
 				ApiEndpoints listener=_LISTENERS.get(version);
 				if(listener!=null){
@@ -120,7 +124,7 @@ public class HttpGateway implements HttpHandler{
 					System.out.println("Request: "+request.uri());
 					System.out.println("Get params: "+GET);
 		
-					String action=GET.get("action").toLowerCase();
+					String action=GET.getOrDefault("action","help").toLowerCase();
 					ApiResponse resp=listener.onRequest(action,GET);
 					String json_resp=_JSON.toJson(resp.toMap());
 					

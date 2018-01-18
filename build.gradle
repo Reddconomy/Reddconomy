@@ -9,7 +9,7 @@ targetCompatibility = '1.8'
 configurations {
     compile_reddconomySponge
     provided_reddconomySponge
-    compile_reddconomyService
+    compile_reddconomyBackend
 }
 
 
@@ -29,10 +29,10 @@ repositories {
 dependencies {
 	testCompile 'junit:junit:4.12'
    	
-	compile_reddconomyService group: 'org.xerial', name: 'sqlite-jdbc', version: '3.7.2'
-   	compile_reddconomyService group: 'io.netty', name: 'netty', version: '3.6.5.Final'
-	compile_reddconomyService group: 'com.github.briandilley.jsonrpc4j', name: 'jsonrpc4j', version: '1.5.2'
-	compile_reddconomyService group: 'com.google.code.gson', name: 'gson', version: '2.7'
+	compile_reddconomyBackend group: 'org.xerial', name: 'sqlite-jdbc', version: '3.7.2'
+   	compile_reddconomyBackend group: 'io.netty', name: 'netty', version: '3.6.5.Final'
+	compile_reddconomyBackend group: 'com.github.briandilley.jsonrpc4j', name: 'jsonrpc4j', version: '1.5.2'
+	compile_reddconomyBackend group: 'com.google.code.gson', name: 'gson', version: '2.7'
 	
 	compile_reddconomySponge group: 'com.google.zxing', name: 'core', version: '3.3.1'
 	compile_reddconomySponge group: 'com.github.kenglxn.QRGen', name: 'javase', version: '2.3.0'
@@ -45,26 +45,30 @@ dependencies {
 
 eclipse {
   classpath {
-    plusConfigurations += [   configurations.compile_reddconomySponge , configurations.provided_reddconomySponge , configurations.compile_reddconomyService]
+    plusConfigurations += [   configurations.compile_reddconomySponge , 
+    configurations.provided_reddconomySponge , configurations.compile_reddconomyBackend]
   }
 }
 
 sourceSets {
-    service {
-      compileClasspath = configurations.compile_reddconomyService
+    backend {
+      compileClasspath = configurations.compile_reddconomyBackend
       java {
-	   srcDir 'src/service/java'
+	   srcDir 'src/backend/java'
 	  }
 	  resources {
-	   srcDir 'src/service/resources'
+	   srcDir 'src/backend/resources'
 	  }
     }
     sponge {
       compileClasspath = configurations.compile_reddconomySponge
       compileClasspath += configurations.provided_reddconomySponge
+      compileClasspath += configurations.compile_reddconomyBackend
       
       java {
 	   srcDir 'src/sponge/java'
+	   	   srcDir 'src/backend/java'
+	   
 	  }
         resources {
 	   srcDir 'src/sponge/resources'
@@ -73,8 +77,8 @@ sourceSets {
 }
 
 
-task buildService(type: Jar) {
-    from(sourceSets.service.output) {
+task buildBackend(type: Jar) {
+    from(sourceSets.backend.output) {
         include '**/*'
     }
 
@@ -83,7 +87,7 @@ task buildService(type: Jar) {
     }
     baseName = project.name + '-fat'
     from { 
-		(configurations.compile_reddconomyService).collect { it.isDirectory() ? it : zipTree(it) }
+		(configurations.compile_reddconomyBackend).collect { it.isDirectory() ? it : zipTree(it) }
 	}
     with jar
 }

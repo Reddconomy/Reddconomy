@@ -46,9 +46,9 @@ public class ApiResponse{
 	}
 	
 	
-	private int STATUS_CODE;
-	private String STATUS;
-	private Data DATA;
+	private int STATUS_CODE=200;
+	private String STATUS="Ok";
+	private Data DATA=new EmptyData();
 	
 	public int statusCode(){
 		return STATUS_CODE;
@@ -72,7 +72,7 @@ public class ApiResponse{
 	public ApiResponse error(int code,String error){
 		STATUS_CODE=code;
 		STATUS=error;
-		DATA=null;
+		DATA=new EmptyData();
 		return this;
 	}
 	

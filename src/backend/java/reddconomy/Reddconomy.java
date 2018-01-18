@@ -24,6 +24,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package reddconomy;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import reddconomy.api.ApiEndpoints;
 import reddconomy.api.ApiResponse;
 import reddconomy.api.ReddconomyApiEndpointsV1;
@@ -39,23 +51,53 @@ public class Reddconomy {
 	private static ApiEndpoints RDDE;
 	private static BlockchainConnector BLOCKCHAIN;
 	private static Database DATABASE;
-	
+	private static final Gson _JSON=new GsonBuilder().setPrettyPrinting().create();
+
 	public static void main(String[] args) throws Throwable {
-		int port=8099;
-		String ip="0.0.0.0";
 		
+		File config_file=new File("reddconomy.json");		
+		if(args.length>0)config_file=new File(String.join(" ",args).replace("/",File.separator));
+		
+		Map<String,Object> config=new HashMap<String,Object>();
+
+		// Load config file if exists
+		if(config_file.exists()){
+			BufferedReader reader=new BufferedReader(new FileReader(config_file));
+			config=_JSON.fromJson(reader,Map.class);
+			reader.close();
+		}		
+		
+		// Add missing options
+		config.putIfAbsent("bind_ip","127.0.0.1");
+		config.putIfAbsent("bind_port",8099);
+		config.putIfAbsent("database","sqlite");
+		config.putIfAbsent("sqlite-path","db.sqlite");
+		config.putIfAbsent("versions","v1");// v1,v2,v3,...
+		config.putIfAbsent("secret",UUID.randomUUID().toString().replace("-",(int)(Math.random()*1000)+""));
+		config.putIfAbsent("blockchain_connector","bitcoind");
+		config.putIfAbsent("bitcoind-rpc_url","http://localhost:45443");
+		config.putIfAbsent("bitcoind-rpc_user","rpcuser");
+		config.putIfAbsent("bitcoind-rpc_password","rpcpassword");
+		
+		// Write updated config file
+		BufferedWriter writer=new BufferedWriter(new FileWriter(config_file));
+		_JSON.toJson(config,writer);
+		writer.close();
+				
 		// Start local database
-		DATABASE=new SQLLiteDatabase("db.sqlite");
+		DATABASE=new SQLLiteDatabase(config.get("sqlite-path").toString());
 		DATABASE.open();
 		// Connect to RPC daemon
-		BLOCKCHAIN=new BitcoindConnector("http://reddconomy.frk.wf:45443/","test","test123");
+		BLOCKCHAIN=new BitcoindConnector(config.get("bitcoind-rpc_url").toString(),config.get("bitcoind-rpc_user").toString(),config.get("bitcoind-rpc_password").toString());
 		// Register api responses
 		ApiResponse.registerAll("v1");	
 		// Start api backend
 		RDDE=new ReddconomyApiEndpointsV1(BLOCKCHAIN,DATABASE);
 		RDDE.open();
 		// Start HTTP gateway
-		HTTPD=new HttpGateway("SECRET123",ip,port);
+		String ip=config.get("bind_ip").toString();
+		int port=((Number)config.get("bind_port")).intValue();
+		HTTPD=new HttpGateway(config.get("secret").toString(),ip,port);
 		HTTPD.start();
 		//Add api endpoints to httpd
 		HTTPD.listeners().put("v1",RDDE);// Version 1
