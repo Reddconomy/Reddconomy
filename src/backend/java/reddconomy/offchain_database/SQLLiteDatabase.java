@@ -50,11 +50,6 @@ import reddconomy.data.Withdraw;
 public  class SQLLiteDatabase implements Database {
 	protected Connection CONNECTION;
 
-	/**
-	 * 
-	 * @param path File in cui salvare il db (es. db.sqlite)
-	 * @throws Exception
-	 */
 	public SQLLiteDatabase(String path) throws Exception{
 		Class.forName("org.sqlite.JDBC");
 		CONNECTION=DriverManager.getConnection("jdbc:sqlite:"+path);
@@ -64,16 +59,16 @@ public  class SQLLiteDatabase implements Database {
 	@Override
 	public synchronized void open() throws SQLException{
 		
-		// Inizializza db
+		// init db
 		SQLResult q;
 		
 		q=query("SELECT * FROM `reddconomy_wallets`",true,true);
 		if(q==null){
 			/*
-			 * id (string, walletid (univoco)) 
-			 * balance (int, schei)
-			 * status (1=attivo,0=disattivo)
-			 * expiring_time: tempo in ms al termine del quale l'account verrà eliminato ma solo se balance=0 e non ha mai accettato nessun contratto, ne fatto alcun deposito o ritiro
+			 * id (string, walletid (unique)) 
+			 * balance (int, coins)
+			 * status (1=active,0=deactive)
+			 * expiring_time: UNUSED/DEPRECATED
 			 */
 			query("CREATE TABLE `reddconomy_wallets` ( `id`  TEXT NOT NULL PRIMARY KEY,`balance` INTEGER DEFAULT 0, `status` INTEGER DEFAULT 1 , `expiring_time` INTEGER DEFAULT 172800000 );",false,false);
 		}
@@ -81,12 +76,12 @@ public  class SQLLiteDatabase implements Database {
 		q=query("SELECT * FROM `reddconomy_contracts`",true,true);
 		if(q==null){
 			/*
-			 * id : id del contratto (univoco)
-			 * receiver: beneficiario del contratto 
-			 * amount: $$ (i soldi si muovono da acceptor a receiver se + o il contrario se -)
-			 * acceptor : id di chi ha accettato, se vuoto = contratto non completato 
-			 * created: data in cui è stato creato
-			 * accepted: data in cui è stato accettato 
+			 * id : contract id (unique)
+			 * receiver: wallet id that created the contract
+			 * amount: coins
+			 * acceptor : wallet id that accepted (emptyu if nobody)
+			 * created: timestamp
+			 * accepted: timestamp
 			 */
 			query("CREATE TABLE `reddconomy_contracts` ( `id`  TEXT NOT NULL PRIMARY KEY,"
 					+ "`receiver` TEXT NOT NULL, "
@@ -103,12 +98,12 @@ public  class SQLLiteDatabase implements Database {
 		q=query("SELECT * FROM `reddconomy_deposits`",true,true);
 		if(q==null){
 			/**
-			 * addr (indirizzo redd su cui ricevere (univoco))
-			 * receiver (chi lo riceve)
-			 * expected_balance (quanti schei voi)
+			 * addr  deposit address (from BlockchainConnector) (unique) 
+			 * receiver walletid that will receive the coins
+			 * expected_balance expected amount of coins to deposit
 			 * status (1= pending, 0=completed, -1=expired),
-			 * created (datetime, quando è stato creato)
-			 * expiring (validità in ms che diminuisce con il passare del tempo, quando 0 -> status viene settato a -1)
+			 * created timestamp
+			 * expiring timestamp, will decrease overtime, when 0 -> status=-1
 			 * 
 			 */
 			query("CREATE TABLE `reddconomy_deposits` ( `addr`  TEXT  NOT NULL PRIMARY KEY,"
@@ -125,7 +120,7 @@ public  class SQLLiteDatabase implements Database {
 
 		q=query("SELECT * FROM `reddconomy_logs`",true,true);
 		if(q==null){
-			// WIP
+			//NOT IMPLEMENTED
 		}
 
 	}
@@ -335,8 +330,8 @@ public  class SQLLiteDatabase implements Database {
 	/**
 	 * Query sql
 	 * @param q query
-	 * @param expectoutput true se la query si aspetta un output
-	 * @param noerror se true, gli errori vengono totalmente ignorati
+	 * @param expectoutput true if an output is expected (slower)
+	 * @param noerror true to ignore errors
 	 * @return
 	 * @throws SQLException
 	 */
