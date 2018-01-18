@@ -1,5 +1,6 @@
 /*
- * @author: Simone C., Riccardo B.;
+ * Copyright (c) 2018, Simone Cervino.
+ * 
  * This file is part of Reddconomy-sponge.
 
     Reddconomy-sponge is free software: you can redistribute it and/or modify
@@ -76,33 +77,35 @@ import com.google.zxing.qrcode.encoder.ByteMatrix;
 import com.google.zxing.qrcode.encoder.Encoder;
 
 import net.glxn.qrgen.javase.QRCode;
+import reddconomy.api.ApiResponse;
+import reddconomy.data.Data;
+import reddconomy.data.Deposit;
+import reddconomy.data.OffchainContract;
+import reddconomy.data.OffchainWallet;
 
 public class ReddconomyApi {
 		
 		final Gson _JSON;
 		final String _URL;
+		final String _SECRET;
 		
-		public ReddconomyApi(String apiUrl) {
+		public ReddconomyApi(String apiUrl, String secret) {
 			_JSON = new GsonBuilder().setPrettyPrinting().create();
 			_URL = apiUrl;
+			_SECRET = secret;
 		}
-		
-
-		
-		
-	
 		
 		// Fundamental APIs for Reddconomy.
 		@SuppressWarnings("rawtypes")
-		public Map apiCall(String action) throws Exception
+		public ApiResponse apiCall(String action) throws Exception
 		{
 			  String query = "/?action="+action;
 			  String urlString = _URL+query;
 			  URL url = new URL(urlString);
-			  String hash = Utils.hmac("SECRET123", query);
-			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection(); //< la tua connessione
+			  String hash = Utils.hmac(_SECRET, query);
+			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection();
 	          httpc.setRequestProperty("Hash",hash);
-			  //System.out.println(url);
+			  //System.out.println(url); // only for debug
 	          byte chunk[]=new byte[1024*1024];
 	          int read;
 	          ByteArrayOutputStream bos=new ByteArrayOutputStream();
@@ -117,17 +120,7 @@ public class ReddconomyApi {
 			  String response=new String(bos.toByteArray(),"UTF-8");
 			 
 			  Map resp=_JSON.fromJson(response,Map.class);
-			  return resp;
-		}
-		
-		public PendingDepositData getDepositStatus(String addr) throws Exception
-		{
-			String action = "getdeposit&addr=" + addr;
-			Map data=(Map)apiCall(action).get("data");
-			PendingDepositData output=new PendingDepositData();
-			output.status=((Number) data.get("status")).intValue();
-			output.addr=data.get("receiver").toString();
-			return output;
+			  return ApiResponse.build().fromMap(resp);
 		}
 		
 		// Let's get that deposit address.
@@ -136,8 +129,25 @@ public class ReddconomyApi {
 		{
 			 
 			 String action = "deposit&wallid=" + pUUID + "&amount=" + balance;
-			 Map data=(Map)apiCall(action).get("data");
-			 return (String)data.get("addr");
+			 ApiResponse r=apiCall(action);
+			 if (r.statusCode()==200)
+			 {
+				 Deposit deposit = r.data();
+				 String addr = deposit.addr;
+				 return addr;
+			 } else System.out.println("Cannot request balance."); return null;
+		}
+		
+		// Checking deposit status
+		public PendingDepositData getDepositStatus(String addr) throws Exception
+		{
+			String action = "getdeposit&addr=" + addr;
+			ApiResponse r=apiCall(action);
+			Deposit deposit = r.data();
+			PendingDepositData output=new PendingDepositData();
+			output.status=deposit.status;
+			output.addr=deposit.receiver_wallet_id;
+			return output;
 		}
 		
 		// Get balance.
@@ -145,9 +155,13 @@ public class ReddconomyApi {
 		public double getBalance(UUID pUUID) throws Exception
 		{
 			String action = "balance&wallid=" + pUUID;
-			Map data=(Map)apiCall(action).get("data");
-			Number balance=(Number)data.get("balance");
-			return (balance.longValue())/100000000.0;
+			ApiResponse r=apiCall(action);
+			if(r.statusCode()==200)
+			{
+				OffchainWallet wallet=r.data();
+				long balance=wallet.balance;
+				return balance;
+			} else System.out.println("Cannot request balance."); return -1;
 		}
 		
 		// Create contract.
@@ -155,39 +169,29 @@ public class ReddconomyApi {
 		public String createContract(long amount, UUID pUUID) throws Exception
 		{
 			String action = "newcontract&wallid=" + pUUID + "&amount=" + amount;
-			Map data=(Map)apiCall(action).get("data");
-			return (String)data.get("contractId");
+			ApiResponse r=apiCall(action);
+			if(r.statusCode()==200)
+			{
+				OffchainContract contract=r.data();
+				String cId=contract.id;
+				return cId;
+			} else System.out.println("Cannot request balance."); return null;
 		}
 		
+		// Hard-coded wallet for the server
 		public String createServerContract(long amount) throws Exception
 		{
 			String action = "newcontract&wallid=[SRV]" + "&amount=" + amount;
-			Map data=(Map)apiCall(action).get("data");
-			return (String)data.get("contractId");
+			ApiResponse r=apiCall(action);
+			if(r.statusCode()==200)
+			{
+				OffchainContract contract=r.data();
+				String cId=contract.id;
+				return cId;
+			} else System.out.println("Cannot request balance."); return null;
 		}
 		
-		//implying that toggle is true)
-		public void RedstoneEngine(Location<World> location, boolean toggle)
-		{
-			BlockState state = location.getBlock();
-			BlockType blocktype = state.getType();
-			if (blocktype.equals(BlockTypes.STONE_BUTTON)) {
-				if (toggle) {
-					BlockState newstate = state.with(Keys.POWERED, true).get();
-					location.setBlock(newstate);
-				}
-				else {
-					BlockState newstate = state.with(Keys.POWERED, false).get();
-					location.setBlock(newstate);
-				}
-			}
-		}
-		
-		public void setRed(Location<World> location, BlockType type, String text)
-		{
-
-		}
-		
+		// QR Engine
 		public String createQR (String addr, String coin, String amount) throws WriterException
 		{
 			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
@@ -211,19 +215,23 @@ public class ReddconomyApi {
 		public int acceptContract(String contractId, UUID pUUID) throws Exception
 		{
 			String action = "acceptcontract&wallid=" + pUUID + "&contractid=" + contractId;
-			Number status=(Number)apiCall(action).get("status");
-			return status.intValue();
+			ApiResponse r=apiCall(action);
+			return r.statusCode();
 		}
 		
 		// Withdraw money
-		public void withdraw(long amount, String addr, UUID pUUID) throws Exception
+		public int withdraw(long amount, String addr, UUID pUUID) throws Exception
 		{
-			apiCall("withdraw&amount=" + amount + "&addr="+addr+"&wallid="+pUUID);
+			String action = "withdraw&amount=" + amount + "&addr="+addr+"&wallid="+pUUID;
+			ApiResponse r=apiCall(action);
+			return r.statusCode();
 		}
 		
 		// Test, test, test and moar test.
-		public void sendCoins(String addr, long amount) throws Exception
+		public int sendCoins(String addr, long amount) throws Exception
 		{
-			apiCall("sendcoins&addr=" + addr + "&amount=" + amount);
+			String action = "sendcoins&addr=" + addr + "&amount=" + amount;
+			ApiResponse r=apiCall(action);
+			return r.statusCode();
 		}
 }

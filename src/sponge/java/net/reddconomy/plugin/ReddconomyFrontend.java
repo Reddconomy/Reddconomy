@@ -1,5 +1,6 @@
 /*
- * @author: Simone C., Riccardo B.;
+ * Copyright (c) 2018, Simone Cervino.
+ * 
  * This file is part of Reddconomy-sponge.
 
     Reddconomy-sponge is free software: you can redistribute it and/or modify
@@ -62,7 +63,7 @@ import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 
-@Plugin(id = "reddxchange", name = "Reddxchange", version = "0.0.1")
+@Plugin(id = "reddconomy-sponge", name = "Reddconomy-sponge", version = "0.1")
 
 public class ReddconomyFrontend implements CommandListener{
 	
@@ -71,6 +72,7 @@ public class ReddconomyFrontend implements CommandListener{
 	private String apiCoin;
 	private String pluginCSigns;
 	private String apiUrl;
+	private String secret;
 	private boolean testmode;
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
 	ReddconomyApi api;
@@ -110,13 +112,14 @@ public class ReddconomyFrontend implements CommandListener{
                 getDefaultConfig().createNewFile();
                 this.config = getConfigManager().load();
 
-                this.config.getNode("ConfigVersion").setValue(1);
+                this.config.getNode("ConfigVersion").setValue(3);
 
                 this.config.getNode("url").setValue("http://reddconomy.frk.wf:8099");
                 this.config.getNode("qr").setValue("enabled");
                 this.config.getNode("coin").setValue("reddcoin");
                 this.config.getNode("csigns").setValue("enabled");
                 this.config.getNode("testmode").setValue("true");
+                this.config.getNode("secretkey").setValue("");
                 getConfigManager().save(this.config);
                 logger.log(Level.INFO, "Created default configuration, Reddxchange will not run until you have edited this file!");
                 //TODO a control on the default configuration
@@ -134,12 +137,20 @@ public class ReddconomyFrontend implements CommandListener{
 	    apiCoin = this.config.getNode("coin").getString();
 	    pluginCSigns = this.config.getNode("csigns").getString();
 	    testmode = this.config.getNode("testmode").getBoolean();
-	    api = new ReddconomyApi(apiUrl);
+	    secret = this.config.getNode("secretkey").getString();
+	    api = new ReddconomyApi(apiUrl, secret);
 		int version = this.config.getNode("ConfigVersion").getInt();
 		logger.log(Level.INFO, "Configfile version is " + version + ".");
 		
 	}
 	
+	// Useful function to check if a player is an Operator.
+	public boolean isOp(Player player)
+	{
+		if (player.hasPermission("Everything.everything"))
+		return true;
+		else return false;
+	}
 	
 	
 
@@ -152,7 +163,7 @@ public class ReddconomyFrontend implements CommandListener{
     			.executor(new CommandHandler(this))
     			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
     			.build();
-    	game.getCommandManager().register(this, cmds, "$","€","reddconomy","rdd");
+    	game.getCommandManager().register(this, cmds, "$","ï¿½","reddconomy","rdd");
     	
 
     }
@@ -320,15 +331,17 @@ public class ReddconomyFrontend implements CommandListener{
         } 
     }
 
+    // All the commands of Reddconomy
 	@Override
 	public boolean onCommand(CommandSource src, String command, String[] args) {
 		if (!(src instanceof Player))return true;
 		Player player = (Player) src;
 		UUID pUUID = player.getUniqueId();
-		boolean is_admin = true; // TODO check if op
+		boolean is_admin = isOp(player);
 		try{	
 			boolean invalid=false;
 			switch (command) {
+				// deposit
 				case "deposit": {
 					if(args.length<1){
 						invalid=true;
@@ -337,21 +350,28 @@ public class ReddconomyFrontend implements CommandListener{
 					double damount = Double.parseDouble(args[0]);
 					long amount = (long) (damount * 100000000L);
 					String addr = api.getAddrDeposit(amount, pUUID);
-					if (apiQR.equalsIgnoreCase("enabled")) {
-						player.sendMessage(Text.of(api.createQR(addr, apiCoin, addr.toString())));
-					} else if (apiQR.equalsIgnoreCase("link")) {
-						player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
-					}
-		
-					player.sendMessage(Text.of("Deposit " + damount + " " + apiCoin + " to this address: " + addr));
-					_PENDING_DEPOSITS.add(addr);
+					if (addr!=null)
+					{
+						if (apiQR.equalsIgnoreCase("enabled")) {
+							player.sendMessage(Text.of(api.createQR(addr, apiCoin, addr.toString())));
+						} else if (apiQR.equalsIgnoreCase("link")) {
+							player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
+						}
+			
+						player.sendMessage(Text.of("Deposit " + damount + " " + apiCoin + " to this address: " + addr));
+						_PENDING_DEPOSITS.add(addr);
+					} else player.sendMessage(Text.of("Cannot create deposit address right now. Contact an admin."));
 					break;
 				}
+				// balance
 				case "balance": {
-					
-					player.sendMessage(Text.of("You have: " + api.getBalance(pUUID) + " " + apiCoin));		
+					double balance = api.getBalance(pUUID);
+					if (balance!=-1)
+					player.sendMessage(Text.of("You have: " + balance + " " + apiCoin));
+					else player.sendMessage(Text.of("Cannot request balance right now. Contact an admin."));
 					break;
 				}
+				// commands for OPs: send
 				case "admin": {
 					if (is_admin) {
 						String action = args[0];
@@ -368,16 +388,19 @@ public class ReddconomyFrontend implements CommandListener{
 								double text = Double.parseDouble(args[1]);
 								String addr = args[2];
 								long amount = (long) (text * 100000000L);
-								api.sendCoins(addr, amount);
+								int status = api.sendCoins(addr, amount);
+								if (status==200)
 								player.sendMessage(Text.of("Sending " + text + " to the address: " + addr));			
+								else player.sendMessage(Text.of("Cannot request coins right now. Check the error in console"));
 								break;
 							}
 						}
 					} else {
-						player.sendMessage(Text.of("Forbidden"));
+						player.sendMessage(Text.of("Forbidden for non-op"));
 					}
 					break;
 				}
+				// withdraw
 				case "withdraw": {
 					if(args.length<2){
 						invalid=true;
@@ -386,11 +409,14 @@ public class ReddconomyFrontend implements CommandListener{
 					double text = Double.parseDouble(args[0]);
 					String addr = args[1];
 					long amount = (long) (text * 100000000L);
-					api.withdraw(amount, addr, pUUID);
-					player.sendMessage(Text.of("Withdrawing.."));
-					player.sendMessage(Text.of("Ok, it should work, wait please."));		
+					int status = api.withdraw(amount, addr, pUUID);
+					if (status==200)
+					{
+						player.sendMessage(Text.of("Withdrawing.. Wait at least 10 minutes"));	
+					} else player.sendMessage(Text.of("Cannot request a withdraw right now, contact an admin."));
 					break;
 				}
+				// contract
 				case "contract": {
 					if(args.length<2){
 						invalid=true;
@@ -400,7 +426,10 @@ public class ReddconomyFrontend implements CommandListener{
 					String text = args[1];
 					if (method.equals("new")) {
 						long amount = (long) (Double.parseDouble(text) * 100000000L);
-						player.sendMessage(Text.of("Share this Contract ID: " + api.createContract(amount, pUUID)));		
+						String cId = api.createContract(amount, pUUID);
+						if (cId!=null)
+						player.sendMessage(Text.of("Share this Contract ID: " + api.createContract(amount, pUUID)));	
+						else player.sendMessage(Text.of("Can't create contract right now. Contact an admin."));
 					} else if (method.equals("accept")) {
 						String contractId = text;
 						int status = api.acceptContract(contractId, pUUID);
@@ -416,7 +445,8 @@ public class ReddconomyFrontend implements CommandListener{
 					break;
 				}
 				default:
-				case "info":{
+				// help/info or no args
+				case "help":{
 					sendHelpText(player);
 					break;
 				}
@@ -433,12 +463,23 @@ public class ReddconomyFrontend implements CommandListener{
 		return true;
 	}
 
+	// Help message of Reddconomy
 	private void sendHelpText(Player player) {
 
-		// TODO
-		player.sendMessage(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino."));
-		player.sendMessage(Text.of("All rights reserved."));
-		player.sendMessage(Text.of("This plugin and all its components are released under GNU GPL license."));
-		player.sendMessage(Text.of("See ???? for more info."));		
+		// TODO finish the help message
+		player.sendMessage(Text.of("REDDCONOMY HELP"));
+		player.sendMessage(Text.of("=====[COMMANDS]====="));
+		player.sendMessage(Text.of("/$: shows info"));
+		player.sendMessage(Text.of("/$ help: shows this"));
+		player.sendMessage(Text.of("/$ deposit <amount>: Get the deposit address."));
+		player.sendMessage(Text.of("/$ balance: Shows your balance."));
+		player.sendMessage(Text.of("/$ withdraw <amount> <addr>: Withdraw money."));
+		player.sendMessage(Text.of("/$ contract new <amount>: Create contract. (- sign for giving, no sign for requesting)"));
+		player.sendMessage(Text.of("/$ contract accept <contractid>: Accept a contract."));
+		player.sendMessage(Text.of("====[CONTRACT SIGNS]===="));
+		player.sendMessage(Text.of("In order to make Contract Signs, you have to write in a sign:"));
+		player.sendMessage(Text.of("FIRST LINE: [CONTRACT] | SECOND LINE: <amount>"));
+		player.sendMessage(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino. This plugin and all its components are released under GNU GPL v3 and BSD-2-Clause license."));
+		player.sendMessage(Text.of("See ???? for more info."));	
 	}
 }
