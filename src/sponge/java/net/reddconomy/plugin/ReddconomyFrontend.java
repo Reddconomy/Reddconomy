@@ -24,6 +24,8 @@ import org.spongepowered.api.data.manipulator.mutable.entity.JoinData;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.action.TextActions;
+import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -52,6 +54,8 @@ import org.spongepowered.api.event.network.ClientConnectionEvent;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -253,9 +257,9 @@ public class ReddconomyFrontend implements CommandListener{
 	    			TileEntity tile = location.getTileEntity().get();
 	    			if (tile instanceof Dispenser || tile instanceof Dropper)
 	    			{
-		    			if (!Utils.canPlayerOpen(location, player.getName()))
+		    			if (!Utils.canPlayerOpen(location, player.getName()) || !isOp(player))
 		    			{
-		    				player.sendMessage(Text.of("[CONTRACT] Only the owner can open this container."));
+		    				player.sendMessage(Text.of(TextColors.DARK_RED, "[CONTRACT] Only the owner can open this container."));
 		    				event.setCancelled(true);
 		    			}
 	    			}
@@ -315,19 +319,19 @@ public class ReddconomyFrontend implements CommandListener{
 				    						}) .delay(5, TimeUnit.MILLISECONDS)	 .name("Powering off Redstone.").submit(this);
 				
 			    						} else {
-			    							player.sendMessage(Text.of("Check your balance. Cannot accept contract"));
+			    							player.sendMessage(Text.of(TextColors.DARK_RED, "Check your balance. Cannot accept contract"));
 			    						}
 		    						} else {
-		    							player.sendMessage(Text.of("You can't accept your own contract."));
+		    							player.sendMessage(Text.of(TextColors.DARK_RED, "You can't accept your own contract."));
 		    						}
 		    							 
 		    					} catch (Exception e) {
-		    						player.sendMessage(Text.of("Cannot create/accept contract. Call an admin for more info."));
+		    						player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot create/accept contract. Call an admin for more info."));
 		    						e.printStackTrace();
 		    					}
 		    				}
 		    				
-	    			} else if (pluginCSigns.equalsIgnoreCase("deactivated")) player.sendMessage(Text.of("Contract Signs aren't enabled. Sorry about that.")); 
+	    			} else if (pluginCSigns.equalsIgnoreCase("deactivated")) player.sendMessage(Text.of(TextColors.BLUE,"Contract Signs aren't enabled. Sorry about that.")); 
 	    		}
 	    	}
         } 
@@ -357,12 +361,12 @@ public class ReddconomyFrontend implements CommandListener{
 						if (apiQR.equalsIgnoreCase("enabled")) {
 							player.sendMessage(Text.of(api.createQR(addr, apiCoin, damount)));
 						} else if (apiQR.equalsIgnoreCase("link")) {
-							player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
+							player.sendMessage(Text.of(TextColors.GOLD,"TO BE IMPLEMENTED")); // TODO QR links
 						}
 			
 						player.sendMessage(Text.of("Deposit " + damount + " " + apiCoin + " to this address: " + addr));
 						_PENDING_DEPOSITS.add(addr);
-					} else player.sendMessage(Text.of("Cannot create deposit address right now. Contact an admin."));
+					} else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create deposit address right now. Contact an admin."));
 					break;
 				}
 				// balance
@@ -370,7 +374,7 @@ public class ReddconomyFrontend implements CommandListener{
 					double balance = api.getBalance(pUUID);
 					if (balance!=-1)
 					player.sendMessage(Text.of("You have: " + balance + " " + apiCoin));
-					else player.sendMessage(Text.of("Cannot request balance right now. Contact an admin."));
+					else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request balance right now. Contact an admin."));
 					break;
 				}
 				// commands for OPs: send
@@ -393,7 +397,7 @@ public class ReddconomyFrontend implements CommandListener{
 								int status = api.sendCoins(addr, amount);
 								if (status==200)
 								player.sendMessage(Text.of("Sending " + text + " to the address: " + addr));			
-								else player.sendMessage(Text.of("Cannot request coins right now. Check the error in console"));
+								else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request coins right now. Check the error in console"));
 								break;
 							}
 							case "srvdeposit": {
@@ -414,11 +418,11 @@ public class ReddconomyFrontend implements CommandListener{
 						
 									player.sendMessage(Text.of("Deposit " + damount + " " + apiCoin + " to this address: " + addr));
 									_PENDING_DEPOSITS.add(addr);
-								} else player.sendMessage(Text.of("Cannot create deposit address right now. Check the server console."));
+								} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot create deposit address right now. Check the server console."));
 								break;
 								}
 							}
-						} else player.sendMessage(Text.of("Forbidden for non-op"));
+						} else player.sendMessage(Text.of(TextColors.DARK_RED, "Forbidden for non-op"));
 					break;
 				}
 				// withdraw
@@ -433,8 +437,8 @@ public class ReddconomyFrontend implements CommandListener{
 					int status = api.withdraw(amount, addr, pUUID);
 					if (status==200)
 					{
-						player.sendMessage(Text.of("Withdrawing.. Wait at least 10 minutes"));	
-					} else player.sendMessage(Text.of("Cannot request a withdraw right now, contact an admin."));
+						player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing.. Wait at least 10 minutes"));	
+					} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request a withdraw right now, contact an admin."));
 					break;
 				}
 				// contract
@@ -450,15 +454,16 @@ public class ReddconomyFrontend implements CommandListener{
 						String cId = api.createContract(amount, pUUID);
 						if (cId!=null)
 						player.sendMessage(Text.of("Share this Contract ID: " + api.createContract(amount, pUUID)));	
-						else player.sendMessage(Text.of("Can't create contract right now. Contact an admin."));
+						else player.sendMessage(Text.of(TextColors.DARK_RED, "Can't create contract right now. Contact an admin."));
 					} else if (method.equals("accept")) {
 						String contractId = text;
 						int status = api.acceptContract(contractId, pUUID);
 						if (status == 200) {
-							player.sendMessage(Text.of("Contract accepted."));
+							player.sendMessage(Text.of(TextColors.GOLD,"Contract accepted."));
 							player.sendMessage(Text.of("You now have: " + api.getBalance(pUUID) + " RDD"));
 						} else {
-							player.sendMessage(Text.of("Cannot accept contract"));
+							player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot accept contract. Are you sure that you haven't already accepted?"));
+							player.sendMessage(Text.of(TextColors.GOLD,"Otherwise, call and admin for more info."));
 						}
 		
 					}
@@ -473,33 +478,36 @@ public class ReddconomyFrontend implements CommandListener{
 			}
 			
 			if(invalid){
-				player.sendMessage(Text.of("Invalid Command"));
+				player.sendMessage(Text.of(TextColors.DARK_RED, "Invalid Command"));
 				sendHelpText(player);
 			}
 		}catch(Exception e){
 			e.printStackTrace();
-			player.sendMessage(Text.of("Unexpected error"));
+			player.sendMessage(Text.of(TextColors.DARK_RED, "Unexpected error"));
 		}
 		return true;
 	}
 
 	// Help message of Reddconomy
-	private void sendHelpText(Player player) {
+	private void sendHelpText(Player player) throws MalformedURLException {
 
+		URL github = new URL("https://github.com/Reddconomy");
+		Text moreinfo = Text.builder("Click here for more info!").color(TextColors.GOLD).onClick(TextActions.openUrl(github)).build();
 		// TODO finish the help message
-		player.sendMessage(Text.of("REDDCONOMY HELP"));
-		player.sendMessage(Text.of("=====[COMMANDS]====="));
-		player.sendMessage(Text.of("/$: shows info"));
-		player.sendMessage(Text.of("/$ help: shows this"));
-		player.sendMessage(Text.of("/$ deposit <amount>: Get the deposit address."));
-		player.sendMessage(Text.of("/$ balance: Shows your balance."));
-		player.sendMessage(Text.of("/$ withdraw <amount> <addr>: Withdraw money."));
-		player.sendMessage(Text.of("/$ contract new <amount>: Create contract. (- sign for giving, no sign for requesting)"));
-		player.sendMessage(Text.of("/$ contract accept <contractid>: Accept a contract."));
-		player.sendMessage(Text.of("====[CONTRACT SIGNS]===="));
+		player.sendMessage(Text.of(TextColors.BLUE, "REDDCONOMY HELP"));
+		player.sendMessage(Text.of(TextColors.BLUE, "=====[COMMANDS]====="));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$", ": shows info"));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ help", ": shows this"));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ deposit <amount>", ": Get the deposit address."));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ balance", ": Shows your balance."));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ withdraw <amount> <addr>", ": Withdraw money."));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ contract new <amount>", ": Create contract. (- sign for giving, no sign for requesting)"));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ contract accept <contractid>", ": Accept a contract."));
+		player.sendMessage(Text.of(TextColors.BLUE, "===[CONTRACT SIGNS]==="));
 		player.sendMessage(Text.of("In order to make Contract Signs, you have to write in a sign:"));
-		player.sendMessage(Text.of("FIRST LINE: [CONTRACT] | SECOND LINE: <amount>"));
+		player.sendMessage(Text.of(TextColors.GOLD, "FIRST LINE:", " [CONTRACT] | ", TextColors.GOLD, "SECOND LINE: ","<amount>"));
+		player.sendMessage(Text.of(TextColors.BLUE, "========[INFOs]========"));
 		player.sendMessage(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino. This plugin and all its components are released under GNU GPL v3 and BSD-2-Clause license."));
-		player.sendMessage(Text.of("See ???? for more info."));	
+		player.sendMessage(moreinfo);	
 	}
 }
