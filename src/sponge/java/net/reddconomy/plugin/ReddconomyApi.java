@@ -102,7 +102,9 @@ public class ReddconomyApi {
 			  String query = "/?action="+action;
 			  String urlString = _URL+query;
 			  URL url = new URL(urlString);
+			  System.out.println("SECRET KEY: "+_SECRET);
 			  String hash = Utils.hmac(_SECRET, query);
+			  System.out.println("Hash: "+hash);
 			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection();
 	          httpc.setRequestProperty("Hash",hash);
 			  //System.out.println(url); // only for debug

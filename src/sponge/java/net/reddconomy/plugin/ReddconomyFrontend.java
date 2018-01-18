@@ -114,7 +114,7 @@ public class ReddconomyFrontend implements CommandListener{
 
                 this.config.getNode("ConfigVersion").setValue(3);
 
-                this.config.getNode("url").setValue("http://reddconomy.frk.wf:8099");
+                this.config.getNode("url").setValue("http://127.0.0.1:8099/v1");
                 this.config.getNode("qr").setValue("enabled");
                 this.config.getNode("coin").setValue("reddcoin");
                 this.config.getNode("csigns").setValue("enabled");
@@ -399,7 +399,7 @@ public class ReddconomyFrontend implements CommandListener{
 									invalid=true;
 									break;
 								}
-								double damount = Double.parseDouble(args[0]);
+								double damount = Double.parseDouble(args[1]);
 								long amount = (long)(damount*100000000L);
 								String addr = api.srvDeposit(amount);
 								if (addr!=null)
