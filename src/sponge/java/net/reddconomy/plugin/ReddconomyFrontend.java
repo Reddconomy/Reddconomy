@@ -1,36 +1,33 @@
 /*
- * @author Soxasora, Riccardo B.
+ * @author: Simone C., Riccardo B.;
+ * This file is part of Reddconomy-sponge.
+
+    Reddconomy-sponge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Reddconomy-sponge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Reddconomy-sponge.  If not, see <http://www.gnu.org/licenses/>.
  */
 package net.reddconomy.plugin;
-import org.spongepowered.api.data.Transaction;
-import org.spongepowered.api.data.key.Key;
+import net.reddconomy.plugin.ReddconomyApi;
+import com.google.inject.Inject;
 import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.data.manipulator.immutable.tileentity.ImmutableSignData;
 import org.spongepowered.api.data.manipulator.mutable.entity.JoinData;
-import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
-
-import com.google.inject.Inject;
-
-import net.reddconomy.plugin.ReddconomyApi;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -38,22 +35,28 @@ import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.Dispenser;
 import org.spongepowered.api.block.tileentity.carrier.Dropper;
-import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
-import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
-import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -63,16 +66,22 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 
 public class ReddconomyFrontend implements CommandListener{
 	
-	
+	// Declaring fundamental functions
 	private String apiQR;
 	private String apiCoin;
 	private String pluginCSigns;
 	private String apiUrl;
 	private boolean testmode;
-	ReddconomyApi api;
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
+	ReddconomyApi api;
 	
+	@Inject
+	Game game;
 	
+	@Inject
+	Logger logger;
+	
+	// CONFIG BLOCK
 	private ConfigurationNode config = null;
     @Inject
     @DefaultConfig(sharedRoot = true)
@@ -90,12 +99,7 @@ public class ReddconomyFrontend implements CommandListener{
         return this.configManager;
     }
     
-	@Inject
-	Game game;
-	
-	@Inject
-	Logger logger;
-	
+    // Declaring default configuration and loading configuration's settings.
 	@Listener
 	public void onPreInit(GamePreInitializationEvent event) throws IOException
 	{
@@ -115,7 +119,7 @@ public class ReddconomyFrontend implements CommandListener{
                 this.config.getNode("testmode").setValue("true");
                 getConfigManager().save(this.config);
                 logger.log(Level.INFO, "Created default configuration, Reddxchange will not run until you have edited this file!");
-
+                //TODO a control on the default configuration
             }
 
             this.config = getConfigManager().load();
@@ -139,7 +143,7 @@ public class ReddconomyFrontend implements CommandListener{
 	
 	
 
-	
+	// Register the Reddconomy command
     @Listener
     public void onInit(GameInitializationEvent event) {
     	logger.log(Level.INFO, "Reddxchange activated.");
@@ -148,10 +152,12 @@ public class ReddconomyFrontend implements CommandListener{
     			.executor(new CommandHandler(this))
     			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
     			.build();
-    	game.getCommandManager().register(this, cmds, "$","â‚¬","reddconomy","rdd");
+    	game.getCommandManager().register(this, cmds, "$","€","reddconomy","rdd");
     	
 
     }
+    
+    // Checking if the deposit has successfully happened.
     @Listener
     public void hasStarted(GameStartedServerEvent event) {
 		Task.builder().execute(() -> processPendingDeposits())
@@ -187,6 +193,7 @@ public class ReddconomyFrontend implements CommandListener{
 		}
 	}
     
+    // Give 1000 TEST coins to newbies.
     @Listener
     public void onPlayerFirstJoin(ClientConnectionEvent.Join event) throws Exception
     {
@@ -200,13 +207,12 @@ public class ReddconomyFrontend implements CommandListener{
 	    		long amount = (long)(money*100000000L);
 	    		String cId = api.createServerContract(amount);
 	    		api.acceptContract(cId, USER_ADDR);
-	    		player.sendMessage(Text.of("Doing some magic."));
-	    		player.sendMessage(Text.of("."));
-	    		player.sendMessage(Text.of("."));
+	    		player.sendMessage(Text.of("Wait please. We're processing the transaction."));
 	    		player.sendMessage(Text.of("Done! Check your balance with /balance"));
     		}
     }
     
+    // Forcing player name in order to avoid robbing
     @Listener
     public void onSignPlace (ChangeSignEvent event)
     {
@@ -218,9 +224,10 @@ public class ReddconomyFrontend implements CommandListener{
 		    	}
     		})
     		.delay(5, TimeUnit.MILLISECONDS)
-    		.name("Powering off Redstone.").submit(this);
+    		.name("Forcing player's name in the contract sign").submit(this);
     }
     
+    // Disabling dispenser/dropper access to other players than the owner.
     @Listener (order=Order.FIRST)
     public void onContainerAdjacentInteract (InteractBlockEvent.Secondary event)
     {
@@ -233,16 +240,17 @@ public class ReddconomyFrontend implements CommandListener{
 	    			TileEntity tile = location.getTileEntity().get();
 	    			if (tile instanceof Dispenser || tile instanceof Dropper)
 	    			{
-		    					if (!Utils.canPlayerOpen(location, player.getName()))
-		    					{
-		    						player.sendMessage(Text.of("This container is protected by The Contract Signs Law. Only the owner can open it."));
-		    						event.setCancelled(true);
-		    					}
+		    			if (!Utils.canPlayerOpen(location, player.getName()))
+		    			{
+		    				player.sendMessage(Text.of("[CONTRACT] Only the owner can open this container."));
+		    				event.setCancelled(true);
+		    			}
 	    			}
 	    		}
 	    	}
     }
     
+    // CONTRACT SIGNS BLOCK
     @Listener
     public void onSignInteract (InteractBlockEvent.Secondary event)
     {	    	
@@ -254,6 +262,7 @@ public class ReddconomyFrontend implements CommandListener{
 	    			TileEntity tile = location.getTileEntity().get();
 	    			if (tile instanceof Sign)
 	    			{
+	    				// Getting the original position of the block
 	    				Direction origdirection = location.get(Keys.DIRECTION).get();
 	    		    	Player player = (Player) event.getSource();
 	    		        if (pluginCSigns.equalsIgnoreCase("enabled"))
@@ -275,6 +284,7 @@ public class ReddconomyFrontend implements CommandListener{
 		    						{
 			    						String cID = api.createContract(ammount, sellerUUID);
 			    						int status = api.acceptContract(cID, pUUID);
+			    						// This activates the redstone only if the contract replied with 200
 			    						if (status==200)
 			    						{
 				    						player.sendMessage(Text.of("Contract ID: "+cID));
@@ -309,7 +319,6 @@ public class ReddconomyFrontend implements CommandListener{
 	    	}
         } 
     }
-    //TODO please retrieve data from sign for contracts it should be immutable something
 
 	@Override
 	public boolean onCommand(CommandSource src, String command, String[] args) {
@@ -325,7 +334,6 @@ public class ReddconomyFrontend implements CommandListener{
 						invalid=true;
 						break;
 					}
-					// TODO QR Deposits
 					double damount = Double.parseDouble(args[0]);
 					long amount = (long) (damount * 100000000L);
 					String addr = api.getAddrDeposit(amount, pUUID);
@@ -430,7 +438,7 @@ public class ReddconomyFrontend implements CommandListener{
 		// TODO
 		player.sendMessage(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino."));
 		player.sendMessage(Text.of("All rights reserved."));
-		player.sendMessage(Text.of("This plugin and all its components are released under ???? license."));
+		player.sendMessage(Text.of("This plugin and all its components are released under GNU GPL license."));
 		player.sendMessage(Text.of("See ???? for more info."));		
 	}
 }
