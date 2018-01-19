@@ -5,6 +5,7 @@ os:
 - linux
 notifications:
   email: true
+  slack: reddconomy-mc:RiN4W3ppblIP5C7u3Y7uX6oJ
 install:
 - gradle buildBackend buildSpongePlugin
 before_install:
