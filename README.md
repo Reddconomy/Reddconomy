@@ -24,14 +24,13 @@ _____________________________
 
 ##### SH:
 ```
-VERSION="`curl https://ci_deploy.frk.wf/Reddconomy_latest.txt`"
-PASSWORD="N2lMuG106fRM4yJRcQyozzUnzF13tJid"
+VERSION="`curl https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy_latest.txt`"
 
 #Download sponge plugin
-curl https://ci_deploy.frk.wf/Reddconomy-sponge.jar-$VERSION.aes256 | openssl aes-256-cbc  -md sha256 -d -out Reddconomy-sponge.jar -k $PASSWORD
+curl  https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-sponge-$VERSION.jar -o Reddconomy-sponge.jar
 
 #Download service
-curl https://ci_deploy.frk.wf/Reddconomy.jar-$VERSION.aes256 | openssl aes-256-cbc  -md sha256 -d -out Reddconomy.jar -k $PASSWORD
+curl  https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-$VERSION.jar -o Reddconomy.jar
 
 ```
 
