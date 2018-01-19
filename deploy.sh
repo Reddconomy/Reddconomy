@@ -38,8 +38,8 @@ then
         "https://api.bintray.com/content/reddconomy/Reddconomy/main/latest/Reddconomy-release_latest.txt?publish=1&override=1"
 
 else 
-    OLD_VERSION="`curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent \
-    https://api.bintray.com/content/reddconomy/Reddconomy/main/latest/Reddconomy_latest.txt`"
+    OLD_VERSION="`curl  --silent \
+    https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy_latest.txt`"
     if [ "$OLD_VERSION" != "" ];
     then
         echo "Delete old version"
