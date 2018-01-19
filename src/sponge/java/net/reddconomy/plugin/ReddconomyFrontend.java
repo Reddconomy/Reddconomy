@@ -257,9 +257,11 @@ public class ReddconomyFrontend implements CommandListener{
 	    			TileEntity tile = location.getTileEntity().get();
 	    			if (tile instanceof Dispenser || tile instanceof Dropper)
 	    			{
-		    			if (!Utils.canPlayerOpen(location, player.getName()) || !isOp(player))
+		    			if (!Utils.canPlayerOpen(location, player.getName())&&!isOp(player))
 		    			{
+		    				
 		    				player.sendMessage(Text.of(TextColors.DARK_RED, "[CONTRACT] Only the owner can open this container."));
+		    				if(isOp(player))player.sendMessage(Text.of("You're op btw."));
 		    				event.setCancelled(true);
 		    			}
 	    			}
