@@ -1,4 +1,4 @@
-# Reddconomy
+# Reddconomy [![Build Status](https://travis-ci.org/Reddconomy/Reddconomy.svg?branch=master)](https://travis-ci.org/Reddconomy/Reddconomy) [![Docker Build Status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=riccardoblb&repository=reddconomy_test&tag=amd64)](https://hub.docker.com/r/riccardoblb/reddconomy_test/builds/)
 
 Reddcoin-based economy for minecraft.
 
@@ -11,13 +11,13 @@ ___________________________________________________
 # Setting up the test environment
 The latest snapshot of the master branch can be downloaded from [HERE](https://dl.bintray.com/reddconomy/Reddconomy/) or automatically with the following script
 ```bash
-VERSION="`curl https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy_latest.txt`"
+VERSION="`curl -L  https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy_latest.txt`"
 
 #Download sponge plugin
-curl  https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-sponge-$VERSION.jar -o Reddconomy-sponge.jar
+curl -L https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-sponge-$VERSION.jar -o Reddconomy-sponge.jar
 
 #Download backend
-curl  https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-$VERSION.jar -o Reddconomy.jar
+curl -L https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-$VERSION.jar -o Reddconomy.jar
 ```
 
 To run reddconomy you'll need  four components:
