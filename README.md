@@ -1,4 +1,4 @@
-# Reddconomy
+# Reddconomy [![Build Status](https://travis-ci.org/Reddconomy/Reddconomy.svg?branch=master)](https://travis-ci.org/Reddconomy/Reddconomy) [![Docker Build Status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=riccardoblb&repository=reddconomy_test&tag=amd64)](https://hub.docker.com/r/riccardoblb/reddconomy_test/builds/)
 
 Reddcoin-based economy for minecraft.
 
