@@ -42,11 +42,11 @@ else
     https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy_latest.txt`"
     if [ "$OLD_VERSION" != "" ];
     then
-        echo "Delete old version"
+        echo "Delete old version $OLD_VERSION"
         curl -X DELETE   -u$BINTRAY_USER:$BINTRAY_API_KEY\
-        "https://api.bintray.com/content/reddconomy/Reddconomy/backend/$OLD_VERSION/Reddconomy-$OLD_VERSION.jar?publish=1&override=1"
+        "https://api.bintray.com/packages/reddconomy/Reddconomy/backend/versions/$OLD_VERSION"
         curl -X DELETE   -u$BINTRAY_USER:$BINTRAY_API_KEY\
-        "https://api.bintray.com/content/reddconomy/Reddconomy/sponge/$OLD_VERSION/Reddconomy-sponge-$OLD_VERSION.jar?publish=1&override=1"
+        "https://api.bintray.com/packages/reddconomy/Reddconomy/sponge/versions/$OLD_VERSION"
     fi
     echo $VERSION > Reddconomy_latest.txt
     curl -X PUT   -T  Reddconomy_latest.txt -u$BINTRAY_USER:$BINTRAY_API_KEY\
