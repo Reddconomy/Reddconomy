@@ -241,7 +241,7 @@ public class ReddconomyFrontend implements CommandListener{
 		    	}
     		})
     		.delay(5, TimeUnit.MILLISECONDS)
-    		.name("Forcing player's name in the contract sign").submit(this);
+    		.name("Forcing player name in the contract sign").submit(this);
     }
     
     // Disabling dispenser/dropper access to other players than the owner.
