@@ -11,13 +11,13 @@ ___________________________________________________
 # Setting up the test environment
 The latest snapshot of the master branch can be downloaded from [HERE](https://dl.bintray.com/reddconomy/Reddconomy/) or automatically with the following script
 ```bash
-VERSION="`curl https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy_latest.txt`"
+VERSION="`curl -L  https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy_latest.txt`"
 
 #Download sponge plugin
-curl  https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-sponge-$VERSION.jar -o Reddconomy-sponge.jar
+curl -L https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-sponge-$VERSION.jar -o Reddconomy-sponge.jar
 
 #Download backend
-curl  https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-$VERSION.jar -o Reddconomy.jar
+curl -L https://dl.bintray.com/reddconomy/Reddconomy/Reddconomy-$VERSION.jar -o Reddconomy.jar
 ```
 
 To run reddconomy you'll need  four components:
