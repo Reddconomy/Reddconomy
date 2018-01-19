@@ -237,6 +237,7 @@ public class ReddconomyFrontend implements CommandListener{
 	    		TileEntity tile = event.getTargetTile();
 		    	Player player = (Player) event.getSource();
 		    	if (Utils.getLine(tile,0).equals("[CONTRACT]")){
+		    		if(!isOp(player))
 		    		Utils.setLine(tile, 3, Text.of(player.getName()));	
 		    	}
     		})
