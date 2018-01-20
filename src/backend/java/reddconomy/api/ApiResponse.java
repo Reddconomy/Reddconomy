@@ -32,7 +32,7 @@ import java.util.Map.Entry;
 import reddconomy.data.Data;
 import reddconomy.data.Deposit;
 import reddconomy.data.EmptyData;
-import reddconomy.data.NetworkInfo;
+import reddconomy.data.Info;
 import reddconomy.data.OffchainContract;
 import reddconomy.data.OffchainWallet;
 import reddconomy.data.Withdraw;
@@ -59,7 +59,7 @@ public class ApiResponse{
 			ApiResponse.register("OffchainContract",OffchainContract.class);
 			ApiResponse.register("OffchainWallet",OffchainWallet.class);
 			ApiResponse.register("Withdraw",Withdraw.class);	
-			ApiResponse.register("NetworkInfo",NetworkInfo.class);	
+			ApiResponse.register("Info",Info.class);	
 		}
 	}
 	

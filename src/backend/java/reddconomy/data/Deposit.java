@@ -66,6 +66,8 @@ public final class Deposit implements Data{
 	 * and the deposit cancelled.
 	 */
 	public int expiring=172800000;
+
+	public long paid_in_fees=0;
 	
 	
 	
@@ -76,7 +78,9 @@ public final class Deposit implements Data{
 		.append(" expected_balance=").append(expected_balance)
 		.append(" status=").append(status)
 		.append(" created=").append(created)
-		.append(" expiring=").append(expiring);
+		.append(" expiring=").append(expiring)
+		.append(" paid_in_fees=").append(paid_in_fees);
+
 		return sb.toString();
 	}
 	
@@ -90,7 +94,8 @@ public final class Deposit implements Data{
 				&&expected_balance==d2.expected_balance
 				&&status==d2.status
 				&&created==d2.created
-				&&expiring==d2.expiring;
+				&&expiring==d2.expiring&&
+				paid_in_fees==d2.paid_in_fees;
 	}
 	
 
@@ -103,6 +108,7 @@ public final class Deposit implements Data{
 		out.put("status",status);
 		out.put("created",created);
 		out.put("expiring",expiring);
+		out.put("paid_in_fees",paid_in_fees);
 		return out;
 	}
 
@@ -113,6 +119,7 @@ public final class Deposit implements Data{
 		expected_balance=((Number)map.get("expected_balance")).longValue();
 		status=((Number)map.get("status")).byteValue();
 		created=((Number)map.get("created")).longValue();
-		created=((Number)map.get("expiring")).longValue();
+		expiring=((Number)map.get("expiring")).intValue();
+		paid_in_fees=((Number)map.get("paid_in_fees")).longValue();
 	}
 }

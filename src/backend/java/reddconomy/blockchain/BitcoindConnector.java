@@ -32,6 +32,8 @@ import java.util.Map;
 
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 
+import reddconomy.Utils;
+
 /**
  * Connects to a local or remote bitcoind daemon or fork (reddcoind, dogecoind ...) via RPC 
  * @author Riccardo Balbo
@@ -52,18 +54,25 @@ public class BitcoindConnector implements BlockchainConnector{
 		_CLIENT=new JsonRpcHttpClient(new URL(rpc_url));
 		_CLIENT.setHeaders(headers);
 
-
+	}
+	
+	protected double convertToBitcoindRep(long v){
+		return Utils.convertToUserFriendly(v);
+	}
+	
+	protected long convertFromBitcoindRep(double v){
+		return Utils.convertToInternal(v);
 	}
 
 	@Override
 	public synchronized long getReceivedByAddress(String addr) throws Throwable {
 		double v=(double)_CLIENT.invoke("getreceivedbyaddress",new Object[]{addr},Object.class);
-		return (long)(v*100000000L);
+		return convertFromBitcoindRep(v);
 	}
 	
 	@Override
 	public synchronized void sendToAddress(String addr, long amount_long) throws Throwable {
-		double amount = (amount_long)/100000000.0;
+		double amount = convertToBitcoindRep(amount_long);
 		double balance=(double)_CLIENT.invoke("getbalance",new Object[]{},Object.class);
 		if (balance>amount)_CLIENT.invoke("sendtoaddress",new Object[]{addr,amount},Object.class);
 		else throw new Exception("Not enough coins");
@@ -79,5 +88,31 @@ public class BitcoindConnector implements BlockchainConnector{
 	public synchronized boolean isTestnet() throws Throwable{
 		Map<String,Object> info=(Map<String,Object>)_CLIENT.invoke("getinfo",new Object[]{},Object.class);
 		return (boolean)info.get("testnet");		
+	}
+
+	@Override
+	public boolean hasEnoughCoins(long v) throws Throwable {
+		double dv=(double)_CLIENT.invoke("getbalance",new Object[]{},Object.class);
+		return convertFromBitcoindRep(dv)>=v;
+	}
+	
+	@Override
+	public void waitForSync(){
+		boolean ready=false;
+		System.out.println("Wait for blockchain...");
+
+		do{
+			try{
+				hasEnoughCoins(0);
+				ready=true;
+				System.out.println("Blockchain ready.");
+			}catch(Throwable e){
+				try{
+					Thread.sleep(100);
+				}catch(InterruptedException e1){
+					e1.printStackTrace();
+				}
+			}
+		}while(!ready);
 	}
 }

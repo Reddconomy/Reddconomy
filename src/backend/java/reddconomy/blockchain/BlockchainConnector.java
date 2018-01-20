@@ -56,4 +56,7 @@ public interface BlockchainConnector{
 	
 	public boolean isTestnet()  throws Throwable ;
 	
+	public boolean hasEnoughCoins(long v) throws Throwable;
+	
+	public void waitForSync();
 }

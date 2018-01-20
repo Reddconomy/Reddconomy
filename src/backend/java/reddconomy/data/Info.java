@@ -28,14 +28,38 @@ package reddconomy.data;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class NetworkInfo implements Data{
+import reddconomy.offchain.fees.Fees;
+
+public final class Info implements Data{
+
 	
-	public boolean testnet;	
+	public boolean testnet;
+	public String coin_short;
+	public String coin;
+	public long welcome_tip;
+
+	public String welcome_funds_wallid;
+	public String generic_wallid;
+	public String fees_collector_wallid;
+
+	public Fees fees;
+
+	
 	
 	@Override
 	public String toString(){
 		StringBuilder sb=new StringBuilder();
-		sb.append("Network-").append("testnet=").append(testnet);
+		sb.append("Info-")
+		.append("testnet=").append(testnet)
+		.append("coin_short=").append(coin_short)
+		.append("coin=").append(coin)
+		.append("welcome_tip=").append(welcome_tip)
+		.append("welcome_funds_wallid=").append(welcome_funds_wallid)
+		.append("generic_wallid=").append(generic_wallid)
+		.append("fees_collector_wallid=").append(fees_collector_wallid)
+		.append("fees=").append(fees)		
+		;
+		
 		return sb.toString();
 	}
 	
@@ -45,19 +69,43 @@ public final class NetworkInfo implements Data{
 	public Map<String,Object> toMap() {
 		Map<String,Object> out=new HashMap<String,Object>();
 		out.put("testnet",testnet);
+		out.put("coin_short",coin_short);
+		out.put("coin",coin);
+		out.put("welcome_tip",welcome_tip);
+		out.put("welcome_funds_wallid",welcome_funds_wallid);
+		out.put("generic_wallid",generic_wallid);
+		out.put("fees_collector_wallid",fees_collector_wallid);
+		out.put("fees",fees.toMap(false));
 		return out;
 	}
 
 	@Override
 	public void fromMap(Map<String,Object> map) {
 		testnet=(Boolean)map.get("testnet");
+		coin_short=map.get("coin_short").toString();
+		coin=map.get("coin").toString();
+		welcome_tip=((Number)map.get("welcome_tip")).longValue();
+		welcome_funds_wallid=map.get("welcome_funds_wallid").toString();
+		generic_wallid=map.get("generic_wallid").toString();
+		fees_collector_wallid=map.get("fees_collector_wallid").toString();
+		Map<String,Object> fees=(Map<String,Object>)map.get("fees");
+		this.fees=new Fees().fromMap(fees,false);		
 	}
 	
 	@Override
 	public boolean equals(Object w2o){
-		if(!(w2o instanceof NetworkInfo))return false;
-		NetworkInfo w2=(NetworkInfo)w2o;
-		return testnet==w2.testnet;
+		if(!(w2o instanceof Info))return false;
+		Info w2=(Info)w2o;
+		return testnet==w2.testnet
+				&& coin_short.equals(w2.coin_short)		
+				&& coin.equals(w2.coin)		
+				&& welcome_tip==w2.welcome_tip
+				&& welcome_funds_wallid.equals(w2.welcome_funds_wallid)		
+				&& generic_wallid.equals(w2.generic_wallid)		
+				&& fees_collector_wallid.equals(w2.fees_collector_wallid)	
+				&& fees.equals(w2.fees)
+				
+				;
 	}
 	
 	

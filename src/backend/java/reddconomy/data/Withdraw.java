@@ -48,12 +48,15 @@ public final class Withdraw implements Data{
 	 */
 	public long amount;
 	
+	public long paid_in_fees=0;
+	
 		
 	
 	@Override
 	public String toString(){
 		StringBuilder sb=new StringBuilder();
-		sb.append("Withdraw-").append(from_wallet).append(": ammount=").append(amount);
+		sb.append("Withdraw-").append(from_wallet).append(": ammount=").append(amount)		
+		.append(" paid_in_fees=").append(paid_in_fees);
 		return sb.toString();
 	}
 	
@@ -64,6 +67,7 @@ public final class Withdraw implements Data{
 		Map<String,Object> out=new HashMap<String,Object>();
 		out.put("from_wallet",from_wallet);
 		out.put("amount",amount);
+		out.put("paid_in_fees",paid_in_fees);
 		return out;
 	}
 
@@ -71,13 +75,15 @@ public final class Withdraw implements Data{
 	public void fromMap(Map<String,Object> map) {
 		from_wallet=map.get("from_wallet").toString();
 		amount=((Number)map.get("amount")).longValue();
+		paid_in_fees=((Number)map.get("paid_in_fees")).longValue();
+
 	}
 	
 	@Override
 	public boolean equals(Object w2o){
 		if(!(w2o instanceof Withdraw))return false;
 		Withdraw w2=(Withdraw)w2o;
-		return from_wallet.equals(w2.from_wallet)&&amount==w2.amount;
+		return from_wallet.equals(w2.from_wallet)&&amount==w2.amount&&paid_in_fees==w2.paid_in_fees;
 	}
 	
 	

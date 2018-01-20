@@ -23,7 +23,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package reddconomy.offchain_database;
+package reddconomy.offchain.sql;
 
 
 import java.sql.Connection;
@@ -40,6 +40,9 @@ import reddconomy.data.Deposit;
 import reddconomy.data.OffchainContract;
 import reddconomy.data.OffchainWallet;
 import reddconomy.data.Withdraw;
+import reddconomy.data.OffchainContract.TransactionDirection;
+import reddconomy.offchain.Offchain;
+import reddconomy.offchain.fees.Fees;
 
 
 /**
@@ -47,69 +50,63 @@ import reddconomy.data.Withdraw;
  * @author Riccardo Balbo
  */
 
-public  class SQLLiteDatabase implements Database {
+public  class SQLiteOffchainDatabase implements Offchain {
 	protected Connection CONNECTION;
-
-	public SQLLiteDatabase(String path) throws Exception{
+	protected Fees FEES;
+	protected String FEES_WALLET,WELCOME_WALLET,GENERIC_WALLET;
+	protected long WELCOME_TIP;
+	
+	public SQLiteOffchainDatabase(String path) throws Exception{
 		Class.forName("org.sqlite.JDBC");
 		CONNECTION=DriverManager.getConnection("jdbc:sqlite:"+path);
 	}
 
-	
 	@Override
-	public synchronized void open() throws SQLException{
+	public void open(Fees fees,String feescollector_wallet,String welcomefunds_wallet,String generic_wallet,
+			long welcome_tip) throws Exception{
+		FEES=fees;
+		FEES_WALLET=feescollector_wallet;
+		WELCOME_WALLET=welcomefunds_wallet;
+		GENERIC_WALLET=generic_wallet;
+		WELCOME_TIP=welcome_tip;
 		
-		// init db
-		SQLResult q;
 		
-		q=query("SELECT * FROM `reddconomy_wallets`",true,true);
-		if(q==null){
-			/*
-			 * id (string, walletid (unique)) 
-			 * balance (int, coins)
-			 * status (1=active,0=deactive)
-			 * expiring_time: UNUSED/DEPRECATED
-			 */
-			query("CREATE TABLE `reddconomy_wallets` ( `id`  TEXT NOT NULL PRIMARY KEY,`balance` INTEGER DEFAULT 0, `status` INTEGER DEFAULT 1 , `expiring_time` INTEGER DEFAULT 172800000 );",false,false);
+		
+SQLResult q;
+		
+		q=query("SELECT * FROM `reddconomy_wallets`",true,false);
+		if(q==null||q.isEmpty()){
+			query("CREATE TABLE `reddconomy_wallets` ( "
+					+ "`id`  TEXT NOT NULL PRIMARY KEY,"
+					+ "`balance` INTEGER DEFAULT 0, "
+					+ "`status` INTEGER DEFAULT 1 "
+					+ " );",false,false);
 		}
 		
-		q=query("SELECT * FROM `reddconomy_contracts`",true,true);
-		if(q==null){
-			/*
-			 * id : contract id (unique)
-			 * receiver: wallet id that created the contract
-			 * amount: coins
-			 * acceptor : wallet id that accepted (emptyu if nobody)
-			 * created: timestamp
-			 * accepted: timestamp
-			 */
-			query("CREATE TABLE `reddconomy_contracts` ( `id`  TEXT NOT NULL PRIMARY KEY,"
-					+ "`receiver` TEXT NOT NULL, "
+		q=query("SELECT * FROM `reddconomy_contracts`",true,false);
+		if(q==null||q.isEmpty()){
+			query("CREATE TABLE `reddconomy_contracts` ( "
+					+ "`id`  TEXT NOT NULL PRIMARY KEY,"
+					+ "`createdby` TEXT NOT NULL, "
 					+ "`amount` INTEGER DEFAULT 0, "
-					+ "`acceptor` TEXT DEFAULT '',"
+					+ "`acceptedby` TEXT DEFAULT '',"
 					+ "`created` INTEGER NOT NULL,"
+					+ "`paid_in_fees` INTEGER NOT NULL DEFAULT 0,"
 					+ "`accepted`  INTEGER NOT NULL DEFAULT -1,"
-					+ "FOREIGN KEY(`receiver`) REFERENCES reddconomy_wallets(`id`), "
-					+ "FOREIGN KEY(`acceptor`) REFERENCES reddconomy_wallets(`id`) "
+					+ "FOREIGN KEY(`createdby`) REFERENCES reddconomy_wallets(`id`), "
+					+ "FOREIGN KEY(`acceptedby`) REFERENCES reddconomy_wallets(`id`) "
 					+ ");"
 			,false,false);
 		}
 		
-		q=query("SELECT * FROM `reddconomy_deposits`",true,true);
-		if(q==null){
-			/**
-			 * addr  deposit address (from BlockchainConnector) (unique) 
-			 * receiver walletid that will receive the coins
-			 * expected_balance expected amount of coins to deposit
-			 * status (1= pending, 0=completed, -1=expired),
-			 * created timestamp
-			 * expiring timestamp, will decrease overtime, when 0 -> status=-1
-			 * 
-			 */
-			query("CREATE TABLE `reddconomy_deposits` ( `addr`  TEXT  NOT NULL PRIMARY KEY,"
+		q=query("SELECT * FROM `reddconomy_deposits`",true,false);
+		if(q==null||q.isEmpty()){
+			query("CREATE TABLE `reddconomy_deposits` ( "
+					+ "`addr`  TEXT  NOT NULL PRIMARY KEY,"
 					+ "`receiver` TEXT NOT NULL, "
 					+ "`expected_balance` INTEGER DEFAULT 0, "
 					+ "`status` INTEGER DEFAULT 1,"
+					+ "`paid_in_fees` INTEGER NOT NULL DEFAULT 0,"
 					+ "`created` INTEGER NOT NULL,"
 					+ "`expiring` INTEGER DEFAULT 172800000, "
 					+ "FOREIGN KEY(`receiver`) REFERENCES reddconomy_wallets(`id`) "
@@ -123,7 +120,44 @@ public  class SQLLiteDatabase implements Database {
 			//NOT IMPLEMENTED
 		}
 
+		// Initialize wallets
+		getFeesCollectorWallet();
+		getWelcomeFundsWallet();
+		getGenericWallet();
+	
 	}
+	
+	public long getWelcomeTip(){
+		return WELCOME_TIP;
+	}
+	
+	public Fees getFees(){
+		return FEES;
+	}
+	
+	@Override
+	public OffchainWallet getFeesCollectorWallet() throws SQLException{
+		return getOffchainWallet(FEES_WALLET);
+	}
+	
+	@Override
+	public OffchainWallet getWelcomeFundsWallet() throws SQLException{
+		return getOffchainWallet(WELCOME_WALLET);
+	}
+
+	@Override
+	public OffchainWallet getGenericWallet() throws SQLException{
+		return getOffchainWallet(GENERIC_WALLET);
+	}
+	
+	protected boolean isAServerWallet(String wallid){
+		return (wallid.equals(GENERIC_WALLET)||
+			wallid.equals(WELCOME_WALLET)
+			||wallid.equals(FEES_WALLET)
+				);
+	}
+	
+
 	
 	
 	@Override
@@ -131,13 +165,25 @@ public  class SQLLiteDatabase implements Database {
 		id=id.replaceAll("[^A-Za-z0-9_\\-]","_");
 		OffchainWallet out=new  OffchainWallet();
 		out.id=id;
-		SQLResult res=query("SELECT `status`,`balance` FROM `reddconomy_wallets` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
+		SQLResult res=query("SELECT "
+				+ "`status`,`balance` "
+				+ "FROM `reddconomy_wallets` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
 		if(res!=null&&!res.isEmpty()){
 			Map<String,Object> fetched=res.fetchAssoc();
 			out.status=((Number)fetched.get("status")).byteValue();
 			out.balance=((Number)fetched.get("balance")).longValue();
-		}else{
+		}else{ // NEW WALLET
 			query("INSERT INTO reddconomy_wallets(`id`) VALUES('"+id+"')",false,false);
+			
+			if(!isAServerWallet(id)&&getWelcomeTip()>0){
+				// Add welcome funds
+				try{
+					OffchainContract contract=createContract(getWelcomeFundsWallet().id,WELCOME_TIP);
+					acceptContract(contract.id,id);
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+			}
 		}
 		return out;
 	}
@@ -154,9 +200,10 @@ public  class SQLLiteDatabase implements Database {
 			System.out.println(fetched);
 			out.id=fetched.get("id").toString();
 			out.amount=((Number)fetched.get("amount")).longValue();
-			out.acceptedby=fetched.get("acceptor").toString();
-			out.createdby=fetched.get("receiver").toString();
+			out.acceptedby=fetched.get("acceptedby").toString();
+			out.createdby=fetched.get("createdby").toString();
 			out.created=((Number)fetched.get("created")).longValue();
+			out.paid_in_fees=((Number)fetched.get("paid_in_fees")).longValue();
 			out.accepted=((Number)fetched.get("accepted")).longValue();
 			return out;
 		}else{
@@ -177,37 +224,79 @@ public  class SQLLiteDatabase implements Database {
 		out.id=id;
 		
 
-		query("INSERT INTO  reddconomy_contracts(`id`,`receiver`,`amount`, `created`) VALUES('"+id+"','"+walletid+"','"+amount+"','"+System.currentTimeMillis()+"')",false,false);			
+		query("INSERT INTO  reddconomy_contracts(`id`,`createdby`,`amount`, `created`) VALUES('"+id+"','"+walletid+"','"+amount+"','"+System.currentTimeMillis()+"')",false,false);			
 		return out;
 	}
 	
 
 	@Override
-	public synchronized OffchainContract acceptContract(String contractid, String walletid) throws Exception {
-		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
+	public synchronized OffchainContract acceptContract(String contractid, String acceptedby_walletid) throws Exception {
+		acceptedby_walletid=acceptedby_walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		contractid=contractid.replaceAll("[^A-Za-z0-9]","_");
 		OffchainContract contract=getContract(contractid);
 		if(contract!=null){
 			String accp=contract.acceptedby;
 			if(accp==null||accp.isEmpty()){
-				OffchainWallet acc_wallet=getOffchainWallet(walletid);
-				String rcv_walletid=contract.createdby;
-				OffchainWallet rcv_wallet=getOffchainWallet(rcv_walletid);
+				OffchainWallet acceptedby_wallet=getOffchainWallet(acceptedby_walletid);
+				String createdby_walletid=contract.createdby;
+				OffchainWallet createdby_wallet=getOffchainWallet(createdby_walletid);
 
-				long price=contract.amount;
-				long acc_balance=acc_wallet.balance;
-				long rcv_balance=rcv_wallet.balance;
-				if((price>=0&&price<=acc_balance)||(price<0&&-price<=rcv_balance)){
-					acc_balance-=price;
-					rcv_balance+=price;
-					query("UPDATE reddconomy_wallets SET `balance`='"+acc_balance+"' WHERE `id`='"+walletid+"'",false,false);
-					query("UPDATE reddconomy_wallets SET `balance`='"+rcv_balance+"' WHERE `id`='"+rcv_walletid+"'",false,false);
-					query("UPDATE reddconomy_contracts SET `accepted`= '"+System.currentTimeMillis()+"' ,`acceptor`='"+walletid+"' WHERE `id`='"+contractid+"'",false,false);
-				}else{
-					if(price>=0)throw new Exception("Not enough money. Wallet id "+walletid+" has balance "+acc_balance+" but contract requires "+price);
-					else throw new Exception("Not enough money. Wallet id "+rcv_walletid+" has balance "+rcv_balance+" but contract requires "+price);
+				long amount=contract.amount; if(amount<0)amount=-amount;
+			
+				long acceptedby_balance=acceptedby_wallet.balance;
+				long createdby_balance=createdby_wallet.balance;
+				long tare=0;
+				
+				if(TransactionDirection.get(contract)==TransactionDirection.ACCEPTEDBY2CREATEDBY){
+					if(acceptedby_balance>=amount){
+						acceptedby_balance-=amount;
+						
+						// Fee 
+						long net=FEES.getTransactionFee().apply(amount);
+						tare=amount-net;
+						if(!isAServerWallet(acceptedby_walletid)&&!isAServerWallet(createdby_walletid)){							
+							OffchainWallet fees_wallet=getFeesCollectorWallet();
+							fees_wallet.balance+=tare;
+							query("UPDATE reddconomy_wallets SET "
+									+ "`balance`='"+fees_wallet.balance+"' WHERE `id`='"+fees_wallet.id+"'",false,false);
+						}
+						amount=net;
+						//
+						
+						createdby_balance+=amount;
+						query("UPDATE reddconomy_wallets SET `balance`='"+acceptedby_balance+"' WHERE "
+								+ "`id`='"+acceptedby_walletid+"'",false,false);
+						query("UPDATE reddconomy_wallets SET `balance`='"+createdby_balance+"' WHERE "
+								+ "`id`='"+createdby_walletid+"'",false,false);
+					}					
+				}else if(TransactionDirection.get(contract)==TransactionDirection.CREATEDBY2ACCEPTEDBY){
+					if(createdby_balance>=amount){
+						createdby_balance-=amount;
+						
+						// Fee 
+						long net=FEES.getTransactionFee().apply(amount);
+						tare=amount-net;
+						if(!isAServerWallet(acceptedby_walletid)&&!isAServerWallet(createdby_walletid)){							
+							OffchainWallet fees_wallet=getFeesCollectorWallet();
+							fees_wallet.balance+=tare;
+							query("UPDATE reddconomy_wallets SET "
+									+ "`balance`='"+fees_wallet.balance+"' WHERE `id`='"+fees_wallet.id+"'",false,false);
+						}
+						amount=net;
+						//
+
+						acceptedby_balance+=amount;
+						query("UPDATE reddconomy_wallets SET `balance`='"+acceptedby_balance+"' WHERE "
+								+ "`id`='"+acceptedby_walletid+"'",false,false);
+						query("UPDATE reddconomy_wallets SET `balance`='"+createdby_balance+"' WHERE "
+								+ "`id`='"+createdby_walletid+"'",false,false);
+					}
 				}
-					
+			
+				query("UPDATE reddconomy_contracts SET `accepted`= '"+System.currentTimeMillis()+"' ,"
+						+" `paid_in_fees`='"+tare+"',"
+						+ "`acceptedby`='"+acceptedby_walletid+"' WHERE `id`='"+contractid+"'",false,false);
+
 			}else{
 				throw new Exception("Contract already accepted by "+accp);
 			}
@@ -221,17 +310,32 @@ public  class SQLLiteDatabase implements Database {
 
 	@Override
 	public synchronized Withdraw withdraw(String walletid,long amount) throws Exception{
+		long net=FEES.getWithdrawFee().apply(amount);
+		long tare=amount-net;
+		
 		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
 		OffchainWallet wallet=getOffchainWallet(walletid);
 		long balance=wallet.balance;
 		if(balance>=amount){
 			balance-=amount;
 			query("UPDATE reddconomy_wallets SET `balance`='"+balance+"' WHERE `id`='"+walletid+"'",false,false);
+			
+			if(!isAServerWallet(walletid)){
+				OffchainWallet fees_wallet=this.getFeesCollectorWallet();
+				fees_wallet.balance+=tare;
+				query("UPDATE reddconomy_wallets SET `balance`='"+fees_wallet.balance+"' WHERE `id`='"+fees_wallet.id+"'",false,false);
+				amount=net;
+			}else{
+				tare=0;
+			}
+			
 		}else{
 			throw new Exception("Requested withdraw of "+amount+" but only "+balance+" available");
 		}
+		
 		Withdraw wt=new Withdraw();
 		wt.amount=amount;
+		wt.paid_in_fees=tare;
 		wt.from_wallet=walletid;
 		return wt;
 	}
@@ -297,11 +401,29 @@ public  class SQLLiteDatabase implements Database {
 		if(res==null){
 			throw new Exception("Deposit is not ready");
 		}else{
-			query("UPDATE reddconomy_deposits SET `status`='0' WHERE `addr`='"+deposit_addr+"'",false,false);
 			
 			Map<String,Object> deposit=res.fetchAssoc();
 			long amount=((Number)deposit.get("expected_balance")).longValue();
+			
 			String wallet_id=deposit.get("receiver").toString();
+			
+			long net=FEES.getDepositFee().apply(amount);
+			long tare=amount-net;
+			
+			if(!isAServerWallet(wallet_id)){
+				
+				OffchainWallet fees_wallet=this.getFeesCollectorWallet();
+				fees_wallet.balance+=tare;
+				query("UPDATE reddconomy_wallets SET `balance`='"+fees_wallet.balance+"' WHERE `id`='"+fees_wallet.id+"'",false,false);
+
+				amount=net;
+			}else{
+				tare=0;
+			}
+			
+			query("UPDATE reddconomy_deposits SET `status`='0',`paid_in_fees`='"+tare+"' WHERE `addr`='"+deposit_addr+"'",false,false);
+
+			
 			OffchainWallet wallet=this.getOffchainWallet(wallet_id);
 			long balance=wallet.balance;
 			balance+=amount;
@@ -325,6 +447,8 @@ public  class SQLLiteDatabase implements Database {
 			resp.status=((Number)deposit.get("status")).byteValue();
 			resp.created=((Number)deposit.get("created")).longValue();
 			resp.expiring=((Number)deposit.get("status")).intValue();
+			resp.paid_in_fees=((Number)deposit.get("paid_in_fees")).longValue();
+
 		}
 		return resp;
 	}
@@ -368,6 +492,9 @@ public  class SQLLiteDatabase implements Database {
 		}
 		return false;
 	}
+
+
+
 	
 	
 }

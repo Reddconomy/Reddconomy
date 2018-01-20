@@ -37,6 +37,25 @@ import javax.crypto.spec.SecretKeySpec;
 
 
 public class Utils{
+	
+	/**
+	 * Convert value to internal representation (long)
+	 * @param value
+	 * @return
+	 */
+	public static long convertToInternal(double value){
+		return (long)(value*100000000L);
+	}
+	
+	/**
+	 * Convert to user friendly (double) representation 
+	 * @param value
+	 * @return
+	 */
+	public static double convertToUserFriendly(long value){
+		return (value/100000000.);
+	}
+	
 	public static String hmac(String key, String data) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
 		Mac sha256_HMAC=Mac.getInstance("HmacSHA256");
 		SecretKeySpec secret_key=new SecretKeySpec(key.getBytes("UTF-8"),"HmacSHA256");

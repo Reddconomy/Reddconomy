@@ -24,7 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package reddconomy.offchain_database;
+package reddconomy.offchain;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -33,19 +33,38 @@ import reddconomy.data.Deposit;
 import reddconomy.data.OffchainContract;
 import reddconomy.data.OffchainWallet;
 import reddconomy.data.Withdraw;
+import reddconomy.offchain.fees.Fees;
 
 /**
- * This interface represent an internal database used to handle off-chain transactions 
+ * This interface represent an internal class used to handle off-chain transactions 
  * Note: No blockchain operations should be handled by classes that implement this interface
  * @author Riccardo Balbo
  *
  */
-public interface Database{
+public interface Offchain{
 	// 
-	void open() throws SQLException;
 	boolean close();
+
+	/**
+	 * Initialize offchain
+	 * @param fees 
+	 * @param feescollector_wallet
+	 * @param welcomefunds_wallet
+	 * @param generic_wallet
+	 * @param welcome_tip
+	 */
+	void open(Fees fees,String feescollector_wallet,String welcomefunds_wallet,String generic_wallet,long welcome_tip) throws Exception;
+	
 	//	
 
+	
+	public OffchainWallet getFeesCollectorWallet() throws Exception;
+	public OffchainWallet getWelcomeFundsWallet() throws Exception;
+	public OffchainWallet getGenericWallet() throws Exception;
+	public long getWelcomeTip();
+
+	
+	public Fees getFees();
 
 	/**
 	 * Get an offchain wallet, create if does not exist

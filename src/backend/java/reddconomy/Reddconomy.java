@@ -42,17 +42,20 @@ import reddconomy.api.ReddconomyApiEndpointsV1;
 import reddconomy.blockchain.BitcoindConnector;
 import reddconomy.blockchain.BlockchainConnector;
 import reddconomy.http_gateway.HttpGateway;
-import reddconomy.offchain_database.Database;
-import reddconomy.offchain_database.SQLLiteDatabase;
+import reddconomy.offchain.Offchain;
+import reddconomy.offchain.fees.Fees;
+import reddconomy.offchain.sql.SQLiteOffchainDatabase;
 
 public class Reddconomy {
 
 	private static HttpGateway HTTPD;
 	private static ApiEndpoints RDDE;
 	private static BlockchainConnector BLOCKCHAIN;
-	private static Database DATABASE;
+	private static Offchain OFFCHAIN;
 	private static final Gson _JSON=new GsonBuilder().setPrettyPrinting().create();
-
+	private static Fees FEES=new Fees();
+	
+	
 	public static void main(String[] args) throws Throwable {
 		
 		File config_file=new File("reddconomy.json");		
@@ -78,21 +81,45 @@ public class Reddconomy {
 		config.putIfAbsent("bitcoind-rpc_url","http://127.0.0.1:45443");
 		config.putIfAbsent("bitcoind-rpc_user","rpcuser");
 		config.putIfAbsent("bitcoind-rpc_password","rpcpassword");
+		// Server wallets
+		config.putIfAbsent("welcomefunds_walletid","[WELCOME]");
+		config.putIfAbsent("feescollector_walletid","[FEES]");
+		config.putIfAbsent("generic_wallet","[SERVER]");
+		// Fees, can be either fixed or %
+		config.putIfAbsent("transaction_fee","5%"); 
+		config.putIfAbsent("deposit_fee","0%"); 
+		config.putIfAbsent("withdraw_fee","10"); 
+		// Coin info
+		config.putIfAbsent("coin","reddcoin");
+		config.putIfAbsent("coin_short","rdd");
+		// Coins that the offchain wallets will receive upon creation
+		config.putIfAbsent("welcome_tip",0.0);
+
+
 		
 		// Write updated config file
 		BufferedWriter writer=new BufferedWriter(new FileWriter(config_file));
 		_JSON.toJson(config,writer);
 		writer.close();
-				
-		// Start local database
-		DATABASE=new SQLLiteDatabase(config.get("sqlite-path").toString());
-		DATABASE.open();
+		
 		// Connect to RPC daemon
 		BLOCKCHAIN=new BitcoindConnector(config.get("bitcoind-rpc_url").toString(),config.get("bitcoind-rpc_user").toString(),config.get("bitcoind-rpc_password").toString());
+		BLOCKCHAIN.waitForSync();
+		// Load fees
+		FEES.fromMap(config,true);
+		// Convert welcome tip to internal representation
+		long welcome_tip=Utils.convertToInternal(((Number)config.get("welcome_tip")).doubleValue());
+		// Start local database
+		OFFCHAIN=new SQLiteOffchainDatabase(config.get("sqlite-path").toString());
+		// Init offchain
+		OFFCHAIN.open(FEES,		config.get("feescollector_walletid").toString(),
+				config.get("welcomefunds_walletid").toString(),
+				config.get("generic_wallet").toString(),
+				welcome_tip);
 		// Register api responses
 		ApiResponse.registerAll("v1");	
 		// Start api backend
-		RDDE=new ReddconomyApiEndpointsV1(BLOCKCHAIN,DATABASE);
+		RDDE=new ReddconomyApiEndpointsV1(config,BLOCKCHAIN,OFFCHAIN);
 		RDDE.open();
 		// Start HTTP gateway
 		String ip=config.get("bind_ip").toString();
