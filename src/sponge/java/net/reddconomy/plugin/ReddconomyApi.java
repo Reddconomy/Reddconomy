@@ -80,7 +80,7 @@ import net.glxn.qrgen.javase.QRCode;
 import reddconomy.api.ApiResponse;
 import reddconomy.data.Data;
 import reddconomy.data.Deposit;
-import reddconomy.data.NetworkInfo;
+import reddconomy.data.Info;
 import reddconomy.data.OffchainContract;
 import reddconomy.data.OffchainWallet;
 
@@ -127,15 +127,15 @@ public class ReddconomyApi {
 			  Map resp=_JSON.fromJson(response,Map.class);
 			  return ApiResponse.build().fromMap(resp);
 		}
-		
-		public String getInfo() throws Exception
+		public Info getInfo() throws Exception
 		{
 			String action = "info";
 			ApiResponse r=apiCall(action);
 			if (r.statusCode()==200)
 			{
-
-			}
+				Info info = r.data();
+				return info;
+			} else return null;
 		}
 		
 		// Let's get that deposit address.

@@ -66,6 +66,8 @@ import java.util.logging.Logger;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
+import reddconomy.data.Info;
+import reddconomy.offchain.fees.Fee;
 
 @Plugin(id = "reddconomy-sponge", name = "Reddconomy-sponge", version = "0.1.1")
 
@@ -73,16 +75,17 @@ public class ReddconomyFrontend implements CommandListener{
 	
 	// Declaring fundamental functions
 	private String apiQR;
-	private String apiCoin;
 	private String pluginCSigns;
 	private String apiUrl;
 	private String secret;
 	private boolean canRun = true;
-	private boolean testmode;
+	private boolean debug;
 	private boolean ifnewgift;
 	private double gift;
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
 	ReddconomyApi api;
+	Info INFO;
+	
 	
 	@Inject
 	Game game;
@@ -110,7 +113,7 @@ public class ReddconomyFrontend implements CommandListener{
     
     // Declaring default configuration and loading configuration's settings.
 	@Listener
-	public void onPreInit(GamePreInitializationEvent event) throws IOException
+	public void onPreInit(GamePreInitializationEvent event) throws Exception
 	{
 		try {
 
@@ -123,9 +126,8 @@ public class ReddconomyFrontend implements CommandListener{
 
                 this.config.getNode("url").setValue("http://changeme:8099");
                 this.config.getNode("qr").setValue("enabled");
-                this.config.getNode("coin").setValue("reddcoin");
                 this.config.getNode("csigns").setValue("enabled");
-                this.config.getNode("testmode").setValue("true");
+                this.config.getNode("debug").setValue("false");
                 this.config.getNode("secretkey").setValue("");
                 this.config.getNode("ifnewgift").setValue("false");
                 this.config.getNode("gift").setValue("1000.0");
@@ -142,9 +144,8 @@ public class ReddconomyFrontend implements CommandListener{
         }
 		apiUrl = this.config.getNode("url").getString();
 	    apiQR = this.config.getNode("qr").getString();
-	    apiCoin = this.config.getNode("coin").getString();
 	    pluginCSigns = this.config.getNode("csigns").getString();
-	    testmode = this.config.getNode("testmode").getBoolean();
+	    debug = this.config.getNode("debug").getBoolean();
 	    secret = this.config.getNode("secretkey").getString();
 	    ifnewgift = this.config.getNode("ifnewgift").getBoolean();
 	    gift = this.config.getNode("gift").getDouble();
@@ -158,6 +159,7 @@ public class ReddconomyFrontend implements CommandListener{
         } else {
         	canRun = true;
         }
+        INFO=api.getInfo();
 	}
 	
 	// Useful function to check if a player is an Operator.
@@ -326,7 +328,7 @@ public class ReddconomyFrontend implements CommandListener{
 		    					
 		    				  	long ammount = (long)(Double.parseDouble(line1)*100000000L);
 		    					try {
-		    						if (player != seller || testmode==true)
+		    						if (player != seller || debug)
 		    						{
 			    						String cID = api.createContract(ammount, sellerUUID);
 			    						int status = api.acceptContract(cID, pUUID);
@@ -388,12 +390,12 @@ public class ReddconomyFrontend implements CommandListener{
 					if (addr!=null)
 					{
 						if (apiQR.equalsIgnoreCase("enabled")) {
-							player.sendMessage(Text.of(api.createQR(addr, apiCoin, damount)));
+							player.sendMessage(Text.of(api.createQR(addr, INFO.coin, damount)));
 						} else if (apiQR.equalsIgnoreCase("link")) {
 							player.sendMessage(Text.of(TextColors.GOLD,"TO BE IMPLEMENTED")); // TODO QR links
 						}
 			
-						player.sendMessage(Text.of("Deposit " + damount + " " + apiCoin + " to this address: " + addr));
+						player.sendMessage(Text.of("Deposit " + damount + " " +(INFO.testnet?"testnet ":" ")+ INFO.coin_short + " to this address: " + addr));
 						_PENDING_DEPOSITS.add(addr);
 					} else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create deposit address right now. Contact an admin."));
 					break;
@@ -402,8 +404,12 @@ public class ReddconomyFrontend implements CommandListener{
 				case "balance": {
 					double balance = api.getBalance(pUUID);
 					if (balance!=-1)
-					player.sendMessage(Text.of("You have: " + balance + " " + apiCoin));
+					player.sendMessage(Text.of("You have: " + balance + " " + (INFO.testnet?"testnet ":" ") + INFO.coin_short));
 					else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request balance right now. Contact an admin."));
+					break;
+				}
+				case "info": {
+					showInfos(player);
 					break;
 				}
 				// commands for OPs: send
@@ -420,7 +426,8 @@ public class ReddconomyFrontend implements CommandListener{
 								break;
 							}
 							case "info":{
-								
+								showAdminInfos(player);
+								break;
 							}
 							case "send": {
 								if(args.length<3){
@@ -448,12 +455,12 @@ public class ReddconomyFrontend implements CommandListener{
 								if (addr!=null)
 								{
 									if (apiQR.equalsIgnoreCase("enabled")) {
-										player.sendMessage(Text.of(api.createQR(addr, apiCoin, damount)));
+										player.sendMessage(Text.of(api.createQR(addr, INFO.coin, damount)));
 									} else if (apiQR.equalsIgnoreCase("link")) {
 										player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
 									}
 						
-									player.sendMessage(Text.of("Deposit " + damount + " " + apiCoin + " to this address: " + addr));
+									player.sendMessage(Text.of("Deposit " + damount + " " +(INFO.testnet?"testnet ":" ")+ INFO.coin_short + " to this address: " + addr));
 									_PENDING_DEPOSITS.add(addr);
 								} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot create deposit address right now. Check the server console."));
 								break;
@@ -491,7 +498,7 @@ public class ReddconomyFrontend implements CommandListener{
 					int status = api.withdraw(amount, addr, pUUID);
 					if (status==200)
 					{
-						player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing.. Wait at least 10 minutes"));	
+						player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing "+damount+" "+(INFO.testnet?"testnet ":" ")+INFO.coin_short+".. Wait at least 10 minutes"));	
 					} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request a withdraw right now, contact an admin."));
 					break;
 				}
@@ -513,8 +520,8 @@ public class ReddconomyFrontend implements CommandListener{
 						int status = api.acceptContract(cId, userUUID);
 						if (status==200)
 						{
-							player.sendMessage(Text.of(TextColors.GOLD, damount+" "+apiCoin+" sent to the user "+args[0]));
-							receiver.sendMessage(Text.of(TextColors.GOLD, player.getName()+" sent you a tip worth " + args[1] + " "+apiCoin+"!"));
+							player.sendMessage(Text.of(TextColors.GOLD, damount+" "+(INFO.testnet?"testnet ":" ")+INFO.coin_short+" sent to the user "+args[0]));
+							receiver.sendMessage(Text.of(TextColors.GOLD, player.getName()+" sent you a tip worth " + args[1] + " "+(INFO.testnet?"testnet ":" ")+INFO.coin_short+"!"));
 						} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot send tip, check your balance or contact an admin."));
 					} else player.sendMessage(Text.of(TextColors.DARK_RED, "Something went wrong, contact an admin."));
 				}
@@ -584,6 +591,28 @@ public class ReddconomyFrontend implements CommandListener{
 		}
 		return true;
 	}
+	
+	private void showInfos(Player player)
+	{
+		player.sendMessage(Text.of(TextColors.GOLD, "On testnet? ",TextColors.WHITE, INFO.testnet));
+		player.sendMessage(Text.of(TextColors.GOLD, "Coin: ",TextColors.WHITE, INFO.coin));
+		player.sendMessage(Text.of(TextColors.GOLD, "Deposit fee: ",TextColors.WHITE,INFO.fees.getDepositFee().toString()));
+		player.sendMessage(Text.of(TextColors.GOLD, "Withdraw fee: ",TextColors.WHITE,INFO.fees.getWithdrawFee().toString()));
+		player.sendMessage(Text.of(TextColors.GOLD, "Transaction fee: ",TextColors.WHITE,INFO.fees.getTransactionFee().toString()));
+	}
+	
+	private void showAdminInfos(Player player)
+	{
+		player.sendMessage(Text.of(TextColors.GOLD, "On testnet? ",TextColors.WHITE, INFO.testnet));
+		player.sendMessage(Text.of(TextColors.GOLD, "Coin: ",TextColors.WHITE, INFO.coin));
+		player.sendMessage(Text.of(TextColors.GOLD, "Welcome Tip: ",TextColors.WHITE,reddconomy.Utils.convertToUserFriendly(INFO.welcome_tip)));
+		player.sendMessage(Text.of(TextColors.GOLD, "Welcome Tip wallet id: ",TextColors.WHITE,INFO.welcome_funds_wallid));
+		player.sendMessage(Text.of(TextColors.GOLD, "Generic Wallet id: ",TextColors.WHITE,INFO.generic_wallid));
+		player.sendMessage(Text.of(TextColors.GOLD, "Fee Wallet id: ",TextColors.WHITE,INFO.fees_collector_wallid));
+		player.sendMessage(Text.of(TextColors.GOLD, "Deposit fee: ",TextColors.WHITE,INFO.fees.getDepositFee().toString()));
+		player.sendMessage(Text.of(TextColors.GOLD, "Withdraw fee: ",TextColors.WHITE,INFO.fees.getWithdrawFee().toString()));
+		player.sendMessage(Text.of(TextColors.GOLD, "Transaction fee: ",TextColors.WHITE,INFO.fees.getTransactionFee().toString()));
+	}
 
 	// Help message of Reddconomy
 	private void sendHelpText(Player player) throws MalformedURLException {
@@ -611,6 +640,7 @@ public class ReddconomyFrontend implements CommandListener{
 	private void sendAdminHelpText(Player player) {
 		player.sendMessage(Text.of(TextColors.BLUE, "REDDCONOMY HELP"));
 		player.sendMessage(Text.of(TextColors.BLUE, "=====[COMMANDS]====="));
+		player.sendMessage(Text.of(TextColors.BLUE, "/$ admin help", TextColors.WHITE,": Shows this"));
 		player.sendMessage(Text.of(TextColors.GOLD, "/$ admin send <amount> <addr>", TextColors.WHITE,": Send coins from the backend."));
 		player.sendMessage(Text.of(TextColors.GOLD, "/$ admin deposit_raw <amount> <wallid>", TextColors.WHITE,": Deposit into wallid."));
 		player.sendMessage(Text.of(TextColors.GOLD, "/$ admin withdraw_raw <amount> <wallid> <addr>", TextColors.WHITE,": Withdraw from wallid."));
