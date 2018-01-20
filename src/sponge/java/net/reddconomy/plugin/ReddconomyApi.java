@@ -80,6 +80,7 @@ import net.glxn.qrgen.javase.QRCode;
 import reddconomy.api.ApiResponse;
 import reddconomy.data.Data;
 import reddconomy.data.Deposit;
+import reddconomy.data.Info;
 import reddconomy.data.OffchainContract;
 import reddconomy.data.OffchainWallet;
 
@@ -122,9 +123,20 @@ public class ReddconomyApi {
 			  is.close();
 			  
 			  String response=new String(bos.toByteArray(),"UTF-8");
-			 
+			  System.out.println("Response: " + response);
 			  Map resp=_JSON.fromJson(response,Map.class);
 			  return ApiResponse.build().fromMap(resp);
+		}
+		
+		public Info getInfo() throws Exception
+		{
+			String action = "info";
+			ApiResponse r=apiCall(action);
+			if (r.statusCode()==200)
+			{
+				Info info = r.data();
+				return info;
+			} else return null;
 		}
 		
 		// Let's get that deposit address.
@@ -142,9 +154,9 @@ public class ReddconomyApi {
 			 } else return null;
 		}
 		
-		public String srvDeposit(long balance) throws Exception
+		public String deposit_Raw (long balance, String wallid) throws Exception
 		{
-			String action = "deposit&wallid=[SRV]&amount=" + balance;
+			String action = "deposit&wallid="+wallid+"&amount=" + balance;
 			 ApiResponse r=apiCall(action);
 			 if (r.statusCode()==200)
 			 {
@@ -258,7 +270,7 @@ public class ReddconomyApi {
 		}
 		
 		// Tips withdraw
-		public int tipWithdraw(long amount, String addr, String wallid) throws Exception
+		public int withdraw_Raw (long amount, String addr, String wallid) throws Exception
 		{
 			String action = "withdraw&amount=" + amount + "&addr=" + addr + "&wallid=" + wallid;
 			ApiResponse r=apiCall(action);
