@@ -67,7 +67,7 @@ import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 
-@Plugin(id = "reddconomy-sponge", name = "Reddconomy-sponge", version = "0.1")
+@Plugin(id = "reddconomy-sponge", name = "Reddconomy-sponge", version = "0.1.1")
 
 public class ReddconomyFrontend implements CommandListener{
 	
@@ -77,7 +77,10 @@ public class ReddconomyFrontend implements CommandListener{
 	private String pluginCSigns;
 	private String apiUrl;
 	private String secret;
+	private boolean canRun = true;
 	private boolean testmode;
+	private boolean ifnewgift;
+	private double gift;
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
 	ReddconomyApi api;
 	
@@ -116,17 +119,18 @@ public class ReddconomyFrontend implements CommandListener{
                 getDefaultConfig().createNewFile();
                 this.config = getConfigManager().load();
 
-                this.config.getNode("ConfigVersion").setValue(3);
+                this.config.getNode("ConfigVersion").setValue(5);
 
-                this.config.getNode("url").setValue("http://127.0.0.1:8099");
+                this.config.getNode("url").setValue("http://changeme:8099");
                 this.config.getNode("qr").setValue("enabled");
                 this.config.getNode("coin").setValue("reddcoin");
                 this.config.getNode("csigns").setValue("enabled");
                 this.config.getNode("testmode").setValue("true");
                 this.config.getNode("secretkey").setValue("");
+                this.config.getNode("ifnewgift").setValue("false");
+                this.config.getNode("gift").setValue("1000.0");
                 getConfigManager().save(this.config);
                 logger.log(Level.INFO, "Created default configuration, Reddxchange will not run until you have edited this file!");
-                //TODO a control on the default configuration
             }
 
             this.config = getConfigManager().load();
@@ -142,10 +146,18 @@ public class ReddconomyFrontend implements CommandListener{
 	    pluginCSigns = this.config.getNode("csigns").getString();
 	    testmode = this.config.getNode("testmode").getBoolean();
 	    secret = this.config.getNode("secretkey").getString();
+	    ifnewgift = this.config.getNode("ifnewgift").getBoolean();
+	    gift = this.config.getNode("gift").getDouble();
 	    api = new ReddconomyApi(apiUrl, secret);
 		int version = this.config.getNode("ConfigVersion").getInt();
 		logger.log(Level.INFO, "Configfile version is " + version + ".");
-		
+        if (this.config.getNode("url").getString().equals("http://changeme:8099"))
+        {
+        	logger.log(Level.SEVERE, "Reddconomy-sponge will not start until you modify the generated config.");
+        	canRun = false;
+        } else {
+        	canRun = true;
+        }
 	}
 	
 	// Useful function to check if a player is an Operator.
@@ -161,15 +173,16 @@ public class ReddconomyFrontend implements CommandListener{
 	// Register the Reddconomy command
     @Listener
     public void onInit(GameInitializationEvent event) {
-    	logger.log(Level.INFO, "Reddxchange activated.");
-    	CommandSpec cmds = CommandSpec.builder()
-    			.description(Text.of("Command"))
-    			.executor(new CommandHandler(this))
-    			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
-    			.build();
-    	game.getCommandManager().register(this, cmds, "$","reddconomy","rdd");
-    	
-
+    	if (canRun)
+    	{
+	    	logger.log(Level.INFO, "Reddconomy-sponge is now activated.");
+	    	CommandSpec cmds = CommandSpec.builder()
+	    			.description(Text.of("Command"))
+	    			.executor(new CommandHandler(this))
+	    			.arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args"))))
+	    			.build();
+	    	game.getCommandManager().register(this, cmds, "$","reddconomy","rdd");
+    	} else logger.log(Level.SEVERE, "Reddconomy-sponge is deactivated, modify the config.");
     }
     
     // Checking if the deposit has successfully happened.
@@ -210,24 +223,37 @@ public class ReddconomyFrontend implements CommandListener{
 		}
 	}
     
-    // Give 1000 TEST coins to newbies.
-    @Listener
+    // CURRENTLY DISABLED DUE TO SPONGEAPI BUG
+    // Bug description: firstPlayed and lastPlayed slightly differs breaking the hasPlayedBefore method.
+    // Give configurable TEST coins to newbies.
+    /*@Listener
     public void onPlayerFirstJoin(ClientConnectionEvent.Join event) throws Exception
     {
-    		Player player = event.getTargetEntity();
-    		if (!(player.get(JoinData.class).isPresent()))
+    		System.out.println("Welcome bonus status: "+ifnewgift);
+    		if (ifnewgift)
     		{
-	    		UUID USER_ADDR = player.getUniqueId();
-	    		player.sendMessage(Text.of("Welcome to the Reddconomy Public Test Environment!"));
-	    		player.sendMessage(Text.of("We're going to give you 1000 TEST-RDDs so you can test the server."));
-	    		double money = -1000.0;
-	    		long amount = (long)(money*100000000L);
-	    		String cId = api.createServerContract(amount);
-	    		api.acceptContract(cId, USER_ADDR);
-	    		player.sendMessage(Text.of("Wait please. We're processing the transaction."));
-	    		player.sendMessage(Text.of("Done! Check your balance with /balance"));
+    			Player player = event.getTargetEntity();
+    			System.out.println(player.firstPlayed());
+    			System.out.println(player.lastPlayed());
+    			if (player.firstPlayed().equals(player.lastPlayed()))
+    			{
+    				System.out.println("They do equal.");
+    			} else System.out.println("They don't equal");
+    			System.out.println("well at least it loads the config");
+	    		
+	    		if (!player.hasPlayedBefore())
+	    		{
+		    		UUID USER_ADDR = player.getUniqueId();
+		    		player.sendMessage(Text.of("Welcome to the Reddconomy Public Test Environment!"));
+		    		player.sendMessage(Text.of("We're going to give you 1000 TEST-RDDs so you can test the server."));
+		    		long amount = (long)(-gift*100000000L);
+		    		String cId = api.createServerContract(amount);
+		    		api.acceptContract(cId, USER_ADDR);
+		    		player.sendMessage(Text.of("Wait please. We're processing the transaction."));
+		    		player.sendMessage(Text.of("Done! Check your balance with /balance"));
+	    		} else if (player.hasPlayedBefore()) System.out.println("This player isn't new or the method isn't working");
     		}
-    }
+    }*/
     
     // Forcing player name in order to avoid robbing
     @Listener
@@ -423,8 +449,24 @@ public class ReddconomyFrontend implements CommandListener{
 									_PENDING_DEPOSITS.add(addr);
 								} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot create deposit address right now. Check the server console."));
 								break;
+							}
+							case "tipwithdraw": {
+								if (args.length<2) {
+									invalid=true;
+									break;
+								}
+									double damount = Double.parseDouble(args[0]);
+									String addr = args[1];
+									long amount = (long)(damount*100000000L);
+									int status = api.tipWithdraw(amount, addr, "[TIPS]");
+									if (status==200)
+									{
+										player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing.. Wait at least 10 minutes"));	
+									} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request a withdraw right now, check the Reddconomy Service error."));
+									break;
 								}
 							}
+						
 						} else player.sendMessage(Text.of(TextColors.DARK_RED, "Forbidden for non-op"));
 					break;
 				}
@@ -434,9 +476,9 @@ public class ReddconomyFrontend implements CommandListener{
 						invalid=true;
 						break;
 					}
-					double text = Double.parseDouble(args[0]);
+					double damount = Double.parseDouble(args[0]);
 					String addr = args[1];
-					long amount = (long) (text * 100000000L);
+					long amount = (long) (damount * 100000000L);
 					int status = api.withdraw(amount, addr, pUUID);
 					if (status==200)
 					{
@@ -472,6 +514,26 @@ public class ReddconomyFrontend implements CommandListener{
 					}
 					break;
 				}
+				case "tipsrv": {
+					if (args.length<1) {
+						invalid=true;
+						break;
+					}
+					double damount = Double.parseDouble(args[0]);
+					if (damount>=0)
+					{
+						long amount = (long)(damount*100000000L);
+			    		String cId = api.createTipContract(amount);
+			    		if (cId!=null)
+			    		{
+				    		int status = api.acceptContract(cId, pUUID);
+				    		if (status==200)
+							player.sendMessage(Text.of(TextColors.GOLD, "On behalf of the owners, thank you for the tip!"));
+				    		else player.sendMessage(Text.of(TextColors.DARK_RED, "Are you sure that you have enough coins?"));
+			    		} else player.sendMessage(Text.of(TextColors.DARK_RED, "Something went wrong, call an admin."));
+					}
+					
+				}
 				default:
 				// help/info or no args
 				case "help":{
@@ -496,7 +558,6 @@ public class ReddconomyFrontend implements CommandListener{
 
 		URL github = new URL("https://github.com/Reddconomy");
 		Text moreinfo = Text.builder("Click here for more info!").color(TextColors.GOLD).onClick(TextActions.openUrl(github)).build();
-		// TODO finish the help message
 		player.sendMessage(Text.of(TextColors.BLUE, "REDDCONOMY HELP"));
 		player.sendMessage(Text.of(TextColors.BLUE, "=====[COMMANDS]====="));
 		player.sendMessage(Text.of(TextColors.GOLD, "/$", ": shows info"));

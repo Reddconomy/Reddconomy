@@ -166,6 +166,7 @@ public class ReddconomyApi {
 			return output;
 		}
 		
+		
 		// Get balance.
 		@SuppressWarnings("rawtypes")
 		public double getBalance(UUID pUUID) throws Exception
@@ -193,6 +194,18 @@ public class ReddconomyApi {
 				String cId=contract.id;
 				return cId;
 			} else  return null;
+		}
+		
+		public String createTipContract(long amount) throws Exception
+		{
+			String action = "newcontract&wallid=[TIPS]" + "&amount=" + amount;
+			ApiResponse r=apiCall(action);
+			if (r.statusCode()==200)
+			{
+				OffchainContract contract = r.data();
+				String cId = contract.id;
+				return cId;
+			} else return null;
 		}
 		
 		// Hard-coded wallet for the server
@@ -240,6 +253,14 @@ public class ReddconomyApi {
 		public int withdraw(long amount, String addr, UUID pUUID) throws Exception
 		{
 			String action = "withdraw&amount=" + amount + "&addr="+addr+"&wallid="+pUUID;
+			ApiResponse r=apiCall(action);
+			return r.statusCode();
+		}
+		
+		// Tips withdraw
+		public int tipWithdraw(long amount, String addr, String wallid) throws Exception
+		{
+			String action = "withdraw&amount=" + amount + "&addr=" + addr + "&wallid=" + wallid;
 			ApiResponse r=apiCall(action);
 			return r.statusCode();
 		}
