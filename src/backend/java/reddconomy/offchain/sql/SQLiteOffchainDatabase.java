@@ -72,10 +72,10 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		
 		
 		
-SQLResult q;
+		SQLResult q;
 		
-		q=query("SELECT * FROM `reddconomy_wallets`",true,false);
-		if(q==null||q.isEmpty()){
+		q=query("SELECT * FROM `reddconomy_wallets`",true,true);
+		if(q==null){
 			query("CREATE TABLE `reddconomy_wallets` ( "
 					+ "`id`  TEXT NOT NULL PRIMARY KEY,"
 					+ "`balance` INTEGER DEFAULT 0, "
@@ -83,8 +83,8 @@ SQLResult q;
 					+ " );",false,false);
 		}
 		
-		q=query("SELECT * FROM `reddconomy_contracts`",true,false);
-		if(q==null||q.isEmpty()){
+		q=query("SELECT * FROM `reddconomy_contracts`",true,true);
+		if(q==null){
 			query("CREATE TABLE `reddconomy_contracts` ( "
 					+ "`id`  TEXT NOT NULL PRIMARY KEY,"
 					+ "`createdby` TEXT NOT NULL, "
@@ -99,8 +99,8 @@ SQLResult q;
 			,false,false);
 		}
 		
-		q=query("SELECT * FROM `reddconomy_deposits`",true,false);
-		if(q==null||q.isEmpty()){
+		q=query("SELECT * FROM `reddconomy_deposits`",true,true);
+		if(q==null){
 			query("CREATE TABLE `reddconomy_deposits` ( "
 					+ "`addr`  TEXT  NOT NULL PRIMARY KEY,"
 					+ "`receiver` TEXT NOT NULL, "
