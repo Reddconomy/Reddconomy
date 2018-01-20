@@ -415,6 +415,13 @@ public class ReddconomyFrontend implements CommandListener{
 							break;
 						}
 						switch (action) {
+							case "help":{
+								sendAdminHelpText(player);
+								break;
+							}
+							case "info":{
+								
+							}
 							case "send": {
 								if(args.length<3){
 									invalid=true;
@@ -429,14 +436,15 @@ public class ReddconomyFrontend implements CommandListener{
 								else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request coins right now. Check the error in console"));
 								break;
 							}
-							case "srvdeposit": {
-								if (args.length<1) {
+							case "deposit_raw": {
+								if (args.length<3) {
 									invalid=true;
 									break;
 								}
+								String wallid = args[2];
 								double damount = Double.parseDouble(args[1]);
 								long amount = (long)(damount*100000000L);
-								String addr = api.srvDeposit(amount);
+								String addr = api.deposit_Raw(amount, wallid);
 								if (addr!=null)
 								{
 									if (apiQR.equalsIgnoreCase("enabled")) {
@@ -450,15 +458,16 @@ public class ReddconomyFrontend implements CommandListener{
 								} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot create deposit address right now. Check the server console."));
 								break;
 							}
-							case "tipwithdraw": {
-								if (args.length<2) {
+							case "withdraw_raw": {
+								if (args.length<4) {
 									invalid=true;
 									break;
 								}
-									double damount = Double.parseDouble(args[0]);
-									String addr = args[1];
+									String wallid = args[2];
+									String addr = args[3];
+									double damount = Double.parseDouble(args[1]);
 									long amount = (long)(damount*100000000L);
-									int status = api.tipWithdraw(amount, addr, "[TIPS]");
+									int status = api.withdraw_Raw(amount, addr, wallid);
 									if (status==200)
 									{
 										player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing.. Wait at least 10 minutes"));	
@@ -485,6 +494,29 @@ public class ReddconomyFrontend implements CommandListener{
 						player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing.. Wait at least 10 minutes"));	
 					} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request a withdraw right now, contact an admin."));
 					break;
+				}
+				// tip
+				case "tip": {
+					if (args.length<2) {
+						invalid=true;
+						break;
+					}
+					
+					double damount = Double.parseDouble(args[1]);
+					long amount = (long)(damount*100000000L);
+					Player receiver = (Player) Sponge.getServer().getPlayer(args[0]).get();
+					UUID userUUID = receiver.getUniqueId();
+					
+					String cId = api.createContract(-amount, pUUID);
+					if (cId!=null)
+					{
+						int status = api.acceptContract(cId, userUUID);
+						if (status==200)
+						{
+							player.sendMessage(Text.of(TextColors.GOLD, damount+" "+apiCoin+" sent to the user "+args[0]));
+							receiver.sendMessage(Text.of(TextColors.GOLD, player.getName()+" sent you a tip worth " + args[1] + " "+apiCoin+"!"));
+						} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot send tip, check your balance or contact an admin."));
+					} else player.sendMessage(Text.of(TextColors.DARK_RED, "Something went wrong, contact an admin."));
 				}
 				// contract
 				case "contract": {
@@ -573,5 +605,15 @@ public class ReddconomyFrontend implements CommandListener{
 		player.sendMessage(Text.of(TextColors.BLUE, "========[INFOs]========"));
 		player.sendMessage(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino. This plugin and all its components are released under GNU GPL v3 and BSD-2-Clause license."));
 		player.sendMessage(moreinfo);	
+	}
+	
+	// Admin help message of Reddconomy
+	private void sendAdminHelpText(Player player) {
+		player.sendMessage(Text.of(TextColors.BLUE, "REDDCONOMY HELP"));
+		player.sendMessage(Text.of(TextColors.BLUE, "=====[COMMANDS]====="));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ admin send <amount> <addr>", TextColors.WHITE,": Send coins from the backend."));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ admin deposit_raw <amount> <wallid>", TextColors.WHITE,": Deposit into wallid."));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ admin withdraw_raw <amount> <wallid> <addr>", TextColors.WHITE,": Withdraw from wallid."));
+		player.sendMessage(Text.of(TextColors.GOLD, "/$ admin info", TextColors.WHITE, ": Shows info and status about the backend."));
 	}
 }
