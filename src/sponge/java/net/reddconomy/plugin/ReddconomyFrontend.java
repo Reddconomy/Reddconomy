@@ -374,10 +374,7 @@ public class ReddconomyFrontend implements CommandListener{
 							break;
 						}
 						switch(action){
-							case "help":{
-								sendAdminHelpText(player);
-								break;
-							}
+							
 							case "info":{
 								showAdminInfos(player);
 								break;
@@ -436,6 +433,11 @@ public class ReddconomyFrontend implements CommandListener{
 								else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot request a withdraw right now, check the Reddconomy Service error."));
 								break;
 							}
+							default:
+							case "help":{
+								sendAdminHelpText(player);
+								break;
+							}
 						}
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Forbidden for non-op"));
 					break;
@@ -487,6 +489,7 @@ public class ReddconomyFrontend implements CommandListener{
 						}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot send tip, "
 								+ "check your balance or contact an admin."));
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Something went wrong, contact an admin."));
+					break;
 				}
 				// contract
 				case "contract":{
