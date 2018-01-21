@@ -254,6 +254,8 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 					response.error(500,error);
 					e.printStackTrace();
 				}
+				break;
+
 			}
 			default:
 				response.error(405,"Invalid action");
