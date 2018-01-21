@@ -19,6 +19,7 @@
 package net.reddconomy.plugin;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -114,4 +115,10 @@ public class Utils {
 		}
 		return qr.toString();
 	}
+	
+	public static String createQRLink(String API_LINK, String addr, String coin, long amount) {
+		double damount = reddconomy.Utils.convertToUserFriendly(amount);
+		return API_LINK.replace("{PAYDATA}", (coin!=null&&!coin.isEmpty()?coin+":"+addr+"?amount="+damount:""+damount));
+	}
 }
+

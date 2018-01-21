@@ -112,7 +112,7 @@ public class ReddconomyFrontend implements CommandListener{
 				getDefaultConfig().createNewFile();
 				this.CONFIG=getConfigManager().load();
 
-				this.CONFIG.getNode("ConfigVersion").setValue(5);
+				this.CONFIG.getNode("ConfigVersion").setValue(6);
 
 				this.CONFIG.getNode("url").setValue("http://changeme:8099");
 				this.CONFIG.getNode("qr").setValue("enabled");
@@ -343,12 +343,12 @@ public class ReddconomyFrontend implements CommandListener{
 					long amount=(long)(damount*100000000L);
 					String addr=ReddconomyApi.getAddrDeposit(amount,pUUID);
 					if(addr!=null){
-						if(API_QR.equalsIgnoreCase("enabled")){
-							player.sendMessage(Text.of(Utils.createQR(addr,ReddconomyApi.getInfo().coin,amount)));
-						}else if(API_QR.equalsIgnoreCase("link")){
-							player.sendMessage(Text.of(TextColors.GOLD,"TO BE IMPLEMENTED")); // TODO QR links
+						if(API_QR.equalsIgnoreCase("true")) player.sendMessage(Text.of(Utils.createQR(addr,ReddconomyApi.getInfo().coin,amount)));
+						else if(!API_QR.equalsIgnoreCase("false")){
+							URL qrlink = new URL(Utils.createQRLink(API_QR, addr,ReddconomyApi.getInfo().coin,amount));
+							Text qrlink_text=Text.builder("Click me to get the QR code").color(TextColors.GOLD).onClick(TextActions.openUrl(qrlink)).build();
+							player.sendMessage(Text.of(qrlink_text));
 						}
-
 						player.sendMessage(Text.of("Deposit "+damount+" "+(ReddconomyApi.getInfo().testnet?"testnet ":" ")+ReddconomyApi.getInfo().coin_short+" to this address: "+addr));
 						_PENDING_DEPOSITS.add(addr);
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create deposit address right now. Contact an admin."));
@@ -402,8 +402,12 @@ public class ReddconomyFrontend implements CommandListener{
 								long amount=(long)(damount*100000000L);
 								String addr=ReddconomyApi.getAddrDeposit(amount,wallid);
 								if(addr!=null){
-									if(API_QR.equalsIgnoreCase("enabled")) player.sendMessage(Text.of(Utils.createQR(addr,ReddconomyApi.getInfo().coin,amount)));
-									else if(API_QR.equalsIgnoreCase("link")) player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
+									if(API_QR.equalsIgnoreCase("true")) player.sendMessage(Text.of(Utils.createQR(addr,ReddconomyApi.getInfo().coin,amount)));
+									else if(!API_QR.equalsIgnoreCase("false")){
+										URL qrlink = new URL(Utils.createQRLink(API_QR, addr,ReddconomyApi.getInfo().coin,amount));
+										Text qrlink_text=Text.builder("Click me to get the QR code").color(TextColors.GOLD).onClick(TextActions.openUrl(qrlink)).build();
+										player.sendMessage(Text.of(qrlink_text));
+									}
 									player.sendMessage(Text.of("Deposit "+damount+" "+(ReddconomyApi.getInfo().testnet?"testnet ":" ")+ReddconomyApi.getInfo().coin_short+" to this address: "+addr));
 								}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create deposit address right now. Check the server console."));
 								break;
