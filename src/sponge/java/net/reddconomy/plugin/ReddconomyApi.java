@@ -84,216 +84,146 @@ import reddconomy.data.Info;
 import reddconomy.data.OffchainContract;
 import reddconomy.data.OffchainWallet;
 
-public class ReddconomyApi {
-		
-		final Gson _JSON;
-		final String _URL;
-		final String _SECRET;
-		
-		public ReddconomyApi(String apiUrl, String secret) {
-			_JSON = new GsonBuilder().setPrettyPrinting().create();
-			_URL = apiUrl;
-			_SECRET = secret;
-			ApiResponse.registerAll("v1");
-		}
-		
-		// Fundamental APIs for Reddconomy.
-		@SuppressWarnings("rawtypes")
-		public ApiResponse apiCall(String action) throws Exception
-		{
-			  String version="v1";
-			  String query = "/"+version+"/?action="+action;
-			  String urlString = _URL+query;
-			  URL url = new URL(urlString);
-			  System.out.println("SECRET KEY: "+_SECRET);
-			  String hash = Utils.hmac(_SECRET, query);
-			  System.out.println("Hash: "+hash);
-			  HttpURLConnection httpc=(HttpURLConnection)url.openConnection();
-	          httpc.setRequestProperty("Hash",hash);
-			  //System.out.println(url); // only for debug
-	          byte chunk[]=new byte[1024*1024];
-	          int read;
-	          ByteArrayOutputStream bos=new ByteArrayOutputStream();
-	          InputStream is=(httpc.getInputStream());
-	          
-	          while((read=is.read(chunk))!=-1){
-	        	  bos.write(chunk,0,read);
-	          }
-			  
-			  is.close();
-			  
-			  String response=new String(bos.toByteArray(),"UTF-8");
-			  System.out.println("Response: " + response);
-			  Map resp=_JSON.fromJson(response,Map.class);
-			  return ApiResponse.build().fromMap(resp);
-		}
-		public Info getInfo() throws Exception
-		{
-			String action = "info";
-			ApiResponse r=apiCall(action);
-			if (r.statusCode()==200)
-			{
-				Info info = r.data();
-				return info;
-			} else return null;
-		}
-		
-		// Let's get that deposit address.
-		@SuppressWarnings("rawtypes")
-		public String getAddrDeposit(long balance, UUID pUUID) throws Exception
-		{
-			 
-			 String action = "deposit&wallid=" + pUUID + "&amount=" + balance;
-			 ApiResponse r=apiCall(action);
-			 if (r.statusCode()==200)
-			 {
-				 Deposit deposit = r.data();
-				 String addr = deposit.addr;
-				 return addr;
-			 } else return null;
-		}
-		
-		public String deposit_Raw (long balance, String wallid) throws Exception
-		{
-			String action = "deposit&wallid="+wallid+"&amount=" + balance;
-			 ApiResponse r=apiCall(action);
-			 if (r.statusCode()==200)
-			 {
-				 Deposit deposit = r.data();
-				 String addr = deposit.addr;
-				 return addr;
-			 } else  return null;
-		}
-		
-		// Checking deposit status
-		public PendingDepositData getDepositStatus(String addr) throws Exception
-		{
-			String action = "getdeposit&addr=" + addr;
-			ApiResponse r=apiCall(action);
-			Deposit deposit = r.data();
-			PendingDepositData output=new PendingDepositData();
-			output.status=deposit.status;
-			output.addr=deposit.receiver_wallet_id;
-			return output;
-		}
-		
-		
-		// Get balance.
-		@SuppressWarnings("rawtypes")
-		public double getBalance(UUID pUUID) throws Exception
-		{
-			String action = "getwallet&wallid=" + pUUID;
-			ApiResponse r=apiCall(action);
-			if(r.statusCode()==200)
-			{
-				OffchainWallet wallet=r.data();
-				
-				long balance=wallet.balance;
-				return balance/100000000.;
-			} else return -1;
-		}
-		
-		public double balance_Raw(String wallid) throws Exception
-		{
-			String action = "getwallet&wallid="+wallid;
-			ApiResponse r=apiCall(action);
-			if(r.statusCode()==200)
-			{
-				OffchainWallet wallet=r.data();
-				
-				long balance=wallet.balance;
-				return balance/100000000.;
-			} else return -1;
-		}
-		
-		// Create contract.
-		@SuppressWarnings("rawtypes")
-		public String createContract(long amount, UUID pUUID) throws Exception
-		{
-			String action = "newcontract&wallid=" + pUUID + "&amount=" + amount;
-			ApiResponse r=apiCall(action);
-			if(r.statusCode()==200)
-			{
-				OffchainContract contract=r.data();
-				String cId=contract.id;
-				return cId;
-			} else  return null;
-		}
-		
-		public String createTipContract(long amount) throws Exception
-		{
-			String action = "newcontract&wallid=[TIPS]" + "&amount=" + amount;
-			ApiResponse r=apiCall(action);
-			if (r.statusCode()==200)
-			{
-				OffchainContract contract = r.data();
-				String cId = contract.id;
-				return cId;
-			} else return null;
-		}
-		
-		// Hard-coded wallet for the server
-		public String createServerContract(long amount) throws Exception
-		{
-			String action = "newcontract&wallid=[SRV]" + "&amount=" + amount;
-			ApiResponse r=apiCall(action);
-			if(r.statusCode()==200)
-			{
-				OffchainContract contract=r.data();
-				String cId=contract.id;
-				return cId;
-			} else  return null;
-		}
-		
-		// QR Engine
-		public String createQR (String addr, String coin, double amount) throws WriterException
-		{
-			Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
-			com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?
-					coin+":"+addr+"?amount="+amount:""+amount,ErrorCorrectionLevel.L,hint);
-			ByteMatrix matrix=code.getMatrix();
-			System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
-			StringBuilder qr=new StringBuilder();
-			for(int y=0;y<matrix.getHeight();y++){
-				for(int x=0;x<matrix.getWidth();x++){
-					if(matrix.get(x,y)==0)qr.append("\u00A7f\u2588");
-                    else qr.append("\u00A70\u2588");
+public class ReddconomyApi{
 
-				}
-				qr.append("\n");
+	private static final Gson _JSON=new GsonBuilder().setPrettyPrinting().create();
+	private static  String URL;
+	private static  String SECRET;
+	private static Info INFO;
+
+	public static void init(String apiUrl,String secret){
+		URL=apiUrl;
+		SECRET=secret;
+		ApiResponse.registerAll("v1");
+	}
+
+	// Fundamental APIs for Reddconomy.
+	private static  ApiResponse apiCall(String action) throws Exception {
+		String version="v1";
+		String query="/"+version+"/?action="+action;
+		String urlString=URL+query;
+		URL url=new URL(urlString);
+		System.out.println("SECRET KEY: "+SECRET);
+		String hash=Utils.hmac(SECRET,query);
+		System.out.println("Hash: "+hash);
+		HttpURLConnection httpc=(HttpURLConnection)url.openConnection();
+		httpc.setRequestProperty("Hash",hash);
+		//System.out.println(url); // only for debug
+		byte chunk[]=new byte[1024*1024];
+		int read;
+		ByteArrayOutputStream bos=new ByteArrayOutputStream();
+		InputStream is=(httpc.getInputStream());
+
+		while((read=is.read(chunk))!=-1)	bos.write(chunk,0,read);
+
+		is.close();
+
+		String response=new String(bos.toByteArray(),"UTF-8");
+		System.out.println("Response: "+response);
+		Map resp=_JSON.fromJson(response,Map.class);
+		return ApiResponse.build().fromMap(resp);
+	}
+
+	public static void updateInfo(){
+		try{
+			String action="info";
+			ApiResponse r=apiCall(action);
+			if(r.statusCode()==200){
+				Info info=r.data();
+				INFO=info;
 			}
-			return qr.toString();
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		 
-		// Accept contract.
-		public int acceptContract(String contractId, UUID pUUID) throws Exception
-		{
-			String action = "acceptcontract&wallid=" + pUUID + "&contractid=" + contractId;
-			ApiResponse r=apiCall(action);
-			return r.statusCode();
+	}
+	
+	public static  Info getInfo() throws Exception {
+		if(INFO==null)updateInfo();
+		return INFO;
+	}
+
+
+	public static String getAddrDeposit(long balance, Object wallid) throws Exception {
+		String action="deposit&wallid="+wallid+"&amount="+balance;
+		ApiResponse r=apiCall(action);
+		if(r.statusCode()==200){
+			Deposit deposit=r.data();
+			String addr=deposit.addr;
+			return addr;
+		}else return null;
+	}
+
+	// Checking deposit status
+	public static PendingDepositData getDepositStatus(String addr) throws Exception {
+		String action="getdeposit&addr="+addr;
+		ApiResponse r=apiCall(action);
+		Deposit deposit=r.data();
+		PendingDepositData output=new PendingDepositData();
+		output.status=deposit.status;
+		output.addr=deposit.receiver_wallet_id;
+		return output;
+	}
+
+	// Get balance.
+	public static double getBalance(Object wallid) throws Exception {
+		String action="getwallet&wallid="+wallid;
+		ApiResponse r=apiCall(action);
+		if(r.statusCode()==200){
+			OffchainWallet wallet=r.data();
+			long balance=wallet.balance;
+			return balance/100000000.;
+		}else return -1;
+	}
+
+
+	// Create contract.
+	public static String createContract(long amount, Object wallid) throws Exception {
+		String action="newcontract&wallid="+wallid+"&amount="+amount;
+		ApiResponse r=apiCall(action);
+		if(r.statusCode()==200){
+			OffchainContract contract=r.data();
+			String cId=contract.id;
+			return cId;
+		}else return null;
+	}
+
+
+	// QR Engine
+	public static String createQR(String addr, String coin, double amount) throws WriterException {
+		Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
+		com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?coin+":"+addr+"?amount="+amount:""+amount,ErrorCorrectionLevel.L,hint);
+		ByteMatrix matrix=code.getMatrix();
+		System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
+		StringBuilder qr=new StringBuilder();
+		for(int y=0;y<matrix.getHeight();y++){
+			for(int x=0;x<matrix.getWidth();x++){
+				if(matrix.get(x,y)==0) qr.append("\u00A7f\u2588");
+				else qr.append("\u00A70\u2588");
+			}
+			qr.append("\n");
 		}
-		
-		// Withdraw money
-		public int withdraw(long amount, String addr, UUID pUUID) throws Exception
-		{
-			String action = "withdraw&amount=" + amount + "&addr="+addr+"&wallid="+pUUID;
-			ApiResponse r=apiCall(action);
-			return r.statusCode();
-		}
-		
-		// Tips withdraw
-		public int withdraw_Raw (long amount, String addr, String wallid) throws Exception
-		{
-			String action = "withdraw&amount=" + amount + "&addr=" + addr + "&wallid=" + wallid;
-			ApiResponse r=apiCall(action);
-			return r.statusCode();
-		}
-		
-		// Test, test, test and moar test.
-		public int sendCoins(String addr, long amount) throws Exception
-		{
-			String action = "sendcoins&addr=" + addr + "&amount=" + amount;
-			ApiResponse r=apiCall(action);
-			return r.statusCode();
-		}
+		return qr.toString();
+	}
+
+	// Accept contract.
+	public static int acceptContract(String contractId, Object wallid) throws Exception {
+		String action="acceptcontract&wallid="+wallid+"&contractid="+contractId;
+		ApiResponse r=apiCall(action);
+		return r.statusCode();
+	}
+
+	// Withdraw money
+	public static int withdraw(long amount, String addr, Object wallid) throws Exception {
+		String action="withdraw&amount="+amount+"&addr="+addr+"&wallid="+wallid;
+		ApiResponse r=apiCall(action);
+		return r.statusCode();
+	}
+
+
+	// Test, test, test and moar test.
+	public static int sendCoins(String addr, long amount) throws Exception {
+		String action="sendcoins&addr="+addr+"&amount="+amount;
+		ApiResponse r=apiCall(action);
+		return r.statusCode();
+	}
 }
