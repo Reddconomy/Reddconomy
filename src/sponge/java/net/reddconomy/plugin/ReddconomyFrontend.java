@@ -491,6 +491,7 @@ public class ReddconomyFrontend implements CommandListener{
 						}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot send tip, "
 								+ "check your balance or contact an admin."));
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Something went wrong, contact an admin."));
+					break;
 				}
 				// contract
 				case "contract":{
