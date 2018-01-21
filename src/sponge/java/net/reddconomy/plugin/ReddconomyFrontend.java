@@ -465,6 +465,19 @@ public class ReddconomyFrontend implements CommandListener{
 								} else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot create deposit address right now. Check the server console."));
 								break;
 							}
+							case "balance_raw":{
+								if (args.length<2) {
+								invalid = true;
+								break;}
+								
+								String wallid=args[2];
+								double balance = api.balance_Raw(wallid);
+								if (balance!=-1)
+								player.sendMessage(Text.of("You have: " + balance + " " + (INFO.testnet?"testnet ":" ") + INFO.coin_short));
+								else player.sendMessage(Text.of(TextColors.DARK_RED, "Cannot request balance right now. Contact an admin."));
+								break;
+								
+							}
 							case "withdraw_raw": {
 								if (args.length<4) {
 									invalid=true;

@@ -193,6 +193,19 @@ public class ReddconomyApi {
 			} else return -1;
 		}
 		
+		public double balance_Raw(String wallid) throws Exception
+		{
+			String action = "getwallet&wallid="+wallid;
+			ApiResponse r=apiCall(action);
+			if(r.statusCode()==200)
+			{
+				OffchainWallet wallet=r.data();
+				
+				long balance=wallet.balance;
+				return balance/100000000.;
+			} else return -1;
+		}
+		
 		// Create contract.
 		@SuppressWarnings("rawtypes")
 		public String createContract(long amount, UUID pUUID) throws Exception
