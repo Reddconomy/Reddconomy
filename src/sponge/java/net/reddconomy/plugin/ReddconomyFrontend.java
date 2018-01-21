@@ -21,7 +21,6 @@ package net.reddconomy.plugin;
 import net.reddconomy.plugin.ReddconomyApi;
 import com.google.inject.Inject;
 import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.data.manipulator.mutable.entity.JoinData;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
@@ -51,7 +50,6 @@ import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
-import org.spongepowered.api.event.network.ClientConnectionEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,8 +65,6 @@ import java.util.logging.Logger;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
-import reddconomy.data.Info;
-import reddconomy.offchain.fees.Fee;
 
 @Plugin(id="reddconomy-sponge", name="Reddconomy-sponge", version="0.1.1")
 

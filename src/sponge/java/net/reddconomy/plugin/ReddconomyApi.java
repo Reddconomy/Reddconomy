@@ -18,56 +18,12 @@
  */
 package net.reddconomy.plugin;
 
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.imageio.ImageIO;
-
-import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockState;
-import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.tileentity.Sign;
-import org.spongepowered.api.block.tileentity.TileEntity;
-import org.spongepowered.api.block.tileentity.TileEntityTypes;
-import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.data.manipulator.immutable.block.ImmutableRedstonePoweredData;
-import org.spongepowered.api.data.manipulator.mutable.block.RedstonePoweredData;
-import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
-import org.spongepowered.api.data.value.BaseValue;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.cause.Cause;
-import org.spongepowered.api.scheduler.Task;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.serializer.TextSerializers;
-import org.spongepowered.api.util.Direction;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.zxing.EncodeHintType;
@@ -76,9 +32,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.google.zxing.qrcode.encoder.ByteMatrix;
 import com.google.zxing.qrcode.encoder.Encoder;
 
-import net.glxn.qrgen.javase.QRCode;
 import reddconomy.api.ApiResponse;
-import reddconomy.data.Data;
 import reddconomy.data.Deposit;
 import reddconomy.data.Info;
 import reddconomy.data.OffchainContract;
@@ -98,6 +52,7 @@ public class ReddconomyApi{
 	}
 
 	// Fundamental APIs for Reddconomy.
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private static  ApiResponse apiCall(String action) throws Exception {
 		String version="v1";
 		String query="/"+version+"/?action="+action;
