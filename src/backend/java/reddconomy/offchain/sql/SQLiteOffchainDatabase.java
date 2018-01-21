@@ -168,21 +168,32 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		SQLResult res=query("SELECT "
 				+ "`status`,`balance` "
 				+ "FROM `reddconomy_wallets` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
+		boolean welcome_tip=false;
 		if(res!=null&&!res.isEmpty()){
 			Map<String,Object> fetched=res.fetchAssoc();
 			out.status=((Number)fetched.get("status")).byteValue();
 			out.balance=((Number)fetched.get("balance")).longValue();
 		}else{ // NEW WALLET
+			System.out.println("Create new wallet");
 			query("INSERT INTO reddconomy_wallets(`id`) VALUES('"+id+"')",false,false);
 			
+			welcome_tip=true;
+		}
+		if(welcome_tip){
+			System.out.println("Welcome tip: "+getWelcomeTip());
 			if(!isAServerWallet(id)&&getWelcomeTip()>0){
 				// Add welcome funds
+				System.out.println("Create welcome contract");
 				try{
-					OffchainContract contract=createContract(getWelcomeFundsWallet().id,WELCOME_TIP);
+					OffchainContract contract=createContract(getWelcomeFundsWallet().id,-WELCOME_TIP);
 					acceptContract(contract.id,id);
+					out.balance=WELCOME_TIP;
 				}catch(Exception e){
 					e.printStackTrace();
 				}
+			}else{
+				System.out.println("Not elegible");
+
 			}
 		}
 		return out;
@@ -197,7 +208,6 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		SQLResult res=query("SELECT * FROM `reddconomy_contracts` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
 		if(res!=null&&!res.isEmpty()){
 			Map<String,Object> fetched=res.fetchAssoc();
-			System.out.println(fetched);
 			out.id=fetched.get("id").toString();
 			out.amount=((Number)fetched.get("amount")).longValue();
 			out.acceptedby=fetched.get("acceptedby").toString();
@@ -235,6 +245,7 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		contractid=contractid.replaceAll("[^A-Za-z0-9]","_");
 		OffchainContract contract=getContract(contractid);
 		if(contract!=null){
+			System.out.println("Accept contract "+contract+"from wallid "+acceptedby_walletid);
 			String accp=contract.acceptedby;
 			if(accp==null||accp.isEmpty()){
 				OffchainWallet acceptedby_wallet=getOffchainWallet(acceptedby_walletid);
@@ -248,20 +259,25 @@ public  class SQLiteOffchainDatabase implements Offchain {
 				long tare=0;
 				
 				if(TransactionDirection.get(contract)==TransactionDirection.ACCEPTEDBY2CREATEDBY){
+					System.out.println("Type 1");
 					if(acceptedby_balance>=amount){
+						System.out.println("Amount to deduct from "+acceptedby_walletid+ " = "+amount);
+
 						acceptedby_balance-=amount;
 						
 						// Fee 
 						long net=FEES.getTransactionFee().apply(amount);
-						tare=amount-net;
 						if(!isAServerWallet(acceptedby_walletid)&&!isAServerWallet(createdby_walletid)){							
+							tare=amount-net;
 							OffchainWallet fees_wallet=getFeesCollectorWallet();
 							fees_wallet.balance+=tare;
 							query("UPDATE reddconomy_wallets SET "
 									+ "`balance`='"+fees_wallet.balance+"' WHERE `id`='"+fees_wallet.id+"'",false,false);
+							amount=net;
 						}
-						amount=net;
 						//
+						System.out.println("Amount to add to "+createdby_walletid+ " = "+amount+ " (net)");
+						System.out.println("Paid in fees "+tare);
 						
 						createdby_balance+=amount;
 						query("UPDATE reddconomy_wallets SET `balance`='"+acceptedby_balance+"' WHERE "
@@ -270,27 +286,38 @@ public  class SQLiteOffchainDatabase implements Offchain {
 								+ "`id`='"+createdby_walletid+"'",false,false);
 					}					
 				}else if(TransactionDirection.get(contract)==TransactionDirection.CREATEDBY2ACCEPTEDBY){
+					System.out.println("Type 2");
+
 					if(createdby_balance>=amount){
+						System.out.println("Amount to deduct from "+createdby_walletid+ " = "+amount);
+
 						createdby_balance-=amount;
 						
 						// Fee 
 						long net=FEES.getTransactionFee().apply(amount);
-						tare=amount-net;
 						if(!isAServerWallet(acceptedby_walletid)&&!isAServerWallet(createdby_walletid)){							
+							tare=amount-net;
+
 							OffchainWallet fees_wallet=getFeesCollectorWallet();
 							fees_wallet.balance+=tare;
 							query("UPDATE reddconomy_wallets SET "
 									+ "`balance`='"+fees_wallet.balance+"' WHERE `id`='"+fees_wallet.id+"'",false,false);
-						}
-						amount=net;
-						//
+							amount=net;
 
+						}
+						//
+						System.out.println("Amount to add to "+acceptedby_walletid+ " = "+amount+ " (net)");
+						System.out.println("Paid in fees "+tare);
+				
 						acceptedby_balance+=amount;
 						query("UPDATE reddconomy_wallets SET `balance`='"+acceptedby_balance+"' WHERE "
 								+ "`id`='"+acceptedby_walletid+"'",false,false);
 						query("UPDATE reddconomy_wallets SET `balance`='"+createdby_balance+"' WHERE "
 								+ "`id`='"+createdby_walletid+"'",false,false);
 					}
+				}else{
+					System.out.println("Type Invalid");
+
 				}
 			
 				query("UPDATE reddconomy_contracts SET `accepted`= '"+System.currentTimeMillis()+"' ,"
