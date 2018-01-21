@@ -344,7 +344,7 @@ public class ReddconomyFrontend implements CommandListener{
 					String addr=ReddconomyApi.getAddrDeposit(amount,pUUID);
 					if(addr!=null){
 						if(API_QR.equalsIgnoreCase("enabled")){
-							player.sendMessage(Text.of(ReddconomyApi.createQR(addr,ReddconomyApi.getInfo().coin,damount)));
+							player.sendMessage(Text.of(Utils.createQR(addr,ReddconomyApi.getInfo().coin,amount)));
 						}else if(API_QR.equalsIgnoreCase("link")){
 							player.sendMessage(Text.of(TextColors.GOLD,"TO BE IMPLEMENTED")); // TODO QR links
 						}
@@ -402,7 +402,7 @@ public class ReddconomyFrontend implements CommandListener{
 								long amount=(long)(damount*100000000L);
 								String addr=ReddconomyApi.getAddrDeposit(amount,wallid);
 								if(addr!=null){
-									if(API_QR.equalsIgnoreCase("enabled")) player.sendMessage(Text.of(ReddconomyApi.createQR(addr,ReddconomyApi.getInfo().coin,damount)));
+									if(API_QR.equalsIgnoreCase("enabled")) player.sendMessage(Text.of(Utils.createQR(addr,ReddconomyApi.getInfo().coin,amount)));
 									else if(API_QR.equalsIgnoreCase("link")) player.sendMessage(Text.of("TO BE IMPLEMENTED")); // TODO QR links
 									player.sendMessage(Text.of("Deposit "+damount+" "+(ReddconomyApi.getInfo().testnet?"testnet ":" ")+ReddconomyApi.getInfo().coin_short+" to this address: "+addr));
 								}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create deposit address right now. Check the server console."));

@@ -24,6 +24,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.crypto.Mac;
@@ -36,6 +38,12 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
+
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import com.google.zxing.qrcode.encoder.ByteMatrix;
+import com.google.zxing.qrcode.encoder.Encoder;
 
 public class Utils {
 	public static String getLine(TileEntity position, int line)	{
@@ -88,4 +96,22 @@ public class Utils {
         sha256_HMAC.init(secret_key);
         return new String(Base64.getEncoder().encode(sha256_HMAC.doFinal(data.getBytes("UTF-8"))),"UTF-8");
     }
+	
+	// QR Engine
+	public static String createQR(String addr, String coin, long amount) throws WriterException {
+		double damount = reddconomy.Utils.convertToUserFriendly(amount);
+		Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
+		com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?coin+":"+addr+"?amount="+damount:""+damount,ErrorCorrectionLevel.L,hint);
+		ByteMatrix matrix=code.getMatrix();
+		System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
+		StringBuilder qr=new StringBuilder();
+		for(int y=0;y<matrix.getHeight();y++){
+			for(int x=0;x<matrix.getWidth();x++){
+				if(matrix.get(x,y)==0) qr.append("\u00A7f\u2588");
+				else qr.append("\u00A70\u2588");
+			}
+			qr.append("\n");
+		}
+		return qr.toString();
+	}
 }

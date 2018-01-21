@@ -142,24 +142,6 @@ public class ReddconomyApi{
 		}else return null;
 	}
 
-
-	// QR Engine
-	public static String createQR(String addr, String coin, double amount) throws WriterException {
-		Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
-		com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?coin+":"+addr+"?amount="+amount:""+amount,ErrorCorrectionLevel.L,hint);
-		ByteMatrix matrix=code.getMatrix();
-		System.out.println(matrix.getWidth()+"x"+matrix.getHeight());
-		StringBuilder qr=new StringBuilder();
-		for(int y=0;y<matrix.getHeight();y++){
-			for(int x=0;x<matrix.getWidth();x++){
-				if(matrix.get(x,y)==0) qr.append("\u00A7f\u2588");
-				else qr.append("\u00A70\u2588");
-			}
-			qr.append("\n");
-		}
-		return qr.toString();
-	}
-
 	// Accept contract.
 	public static int acceptContract(String contractId, Object wallid) throws Exception {
 		String action="acceptcontract&wallid="+wallid+"&contractid="+contractId;
