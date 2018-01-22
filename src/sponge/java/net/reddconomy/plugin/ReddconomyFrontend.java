@@ -59,8 +59,10 @@ import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -92,8 +94,8 @@ public class ReddconomyFrontend implements CommandListener{
 	Logger logger;
 
 	@Inject
-	@ConfigDir(sharedRoot=false)
-	private File configDir;
+	@ConfigDir(sharedRoot=true)
+	private File CONFIG_DIR;
 	
 	
 	// Declaring default configuration and loading configuration's settings.
@@ -101,7 +103,7 @@ public class ReddconomyFrontend implements CommandListener{
 	@Listener
 	public void onPreInit(GamePreInitializationEvent event) throws Exception {
 		
-		File config_file=new File(configDir,"reddconomy-sponge.json");
+		File config_file=new File(CONFIG_DIR,"reddconomy-sponge.json");
 		Map<String,Object> config=new HashMap<String,Object>();
 		
 		// Load config file if exists
@@ -111,13 +113,26 @@ public class ReddconomyFrontend implements CommandListener{
 			reader.close();
 		}		
 		
-		// Avoiding missing config parameters
+		// Add missing config parameters
 		config.putIfAbsent("ConfigVersion",8);
-		config.putIfAbsent("url","http://changeme:8099");
-		config.putIfAbsent("secretkey","");
+		config.putIfAbsent("url","http://127.0.0.1:8099");
+		config.putIfAbsent("secretkey","changeme");
 		config.putIfAbsent("qr","true");
-		config.putIfAbsent("csigns","true");
-		config.putIfAbsent("debug", "false");
+		config.putIfAbsent("csigns",true);
+		config.putIfAbsent("debug", false);
+		
+		// Write config
+		BufferedWriter config_writer=new BufferedWriter(new FileWriter(config_file));
+		_JSON.toJson(config,config_writer);
+		config_writer.close();
+		
+		// Reddconomy-sponge can't start if the config is still the default one.
+		if(config.get("secretkey").toString().equals("changeme")){
+			logger.log(Level.SEVERE,"Reddconomy-sponge will not start until you modify the config.");
+			CAN_RUN=false;
+		}else{
+			CAN_RUN=true;
+		}
 		
 		// Initializing Reddconomy APIs
 		ReddconomyApi.init(config.get("url").toString(),config.get("secretkey").toString());
@@ -134,13 +149,7 @@ public class ReddconomyFrontend implements CommandListener{
 		int version=(int)config.get("ConfigVersion");
 		logger.log(Level.INFO,"Configfile version is "+version+".");
 		
-		// Reddconomy-sponge can't start if the config is still the default one.
-		if(config.get("url").toString().equals("http://changeme:8099")){
-			logger.log(Level.SEVERE,"Reddconomy-sponge will not start until you modify the config.");
-			CAN_RUN=false;
-		}else{
-			CAN_RUN=true;
-		}
+		
 	}
 
 	// Registering the Reddconomy functionalities
@@ -175,7 +184,6 @@ public class ReddconomyFrontend implements CommandListener{
 				if(deposit_data.status!=1){
 					it.remove();
 
-					if(!deposit_data.addr.equals("[SRV]")){ // FIXME: Shouldn't be hardcoded
 						Task.builder().execute((new Runnable(){
 							public void run() {
 								final UUID pUUID=UUID.fromString(deposit_data.addr);
@@ -185,7 +193,7 @@ public class ReddconomyFrontend implements CommandListener{
 						.delay(0,TimeUnit.MILLISECONDS)
 						.name("Fetch deposit status")
 						.submit(this);
-					}
+					
 
 				}
 			}catch(Exception e){
