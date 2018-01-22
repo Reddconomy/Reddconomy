@@ -24,6 +24,8 @@ import net.reddconomy.plugin.commands.CommandListener;
 import net.reddconomy.plugin.utils.FrontendUtils;
 import net.reddconomy.plugin.utils.Help;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.plugin.Plugin;
@@ -46,7 +48,7 @@ import org.spongepowered.api.block.tileentity.carrier.Dropper;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
-import org.spongepowered.api.config.DefaultConfig;
+import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
@@ -56,19 +58,18 @@ import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
+import java.io.FileReader;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.loader.ConfigurationLoader;
 
 @Plugin(id="reddconomy-sponge", name="Reddconomy-sponge", version="0.1.1")
 
@@ -76,12 +77,13 @@ public class ReddconomyFrontend implements CommandListener{
 
 	// Declaring fundamental functions
 	private String API_QR;
-	private String PLUGIN_CONTRACT_SIGNS;
+	private boolean PLUGIN_CONTRACT_SIGNS;
 	private boolean CAN_RUN=true;
 	private boolean DEBUG;
-	// CONFIG BLOCK
-	private ConfigurationNode CONFIG=null;
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
+	
+	// CONFIG BLOCK
+	private static final Gson _JSON=new GsonBuilder().setPrettyPrinting().create();
 
 	@Inject
 	Game game;
@@ -89,54 +91,36 @@ public class ReddconomyFrontend implements CommandListener{
 	@Inject
 	Logger logger;
 
+	@Inject
+	@ConfigDir(sharedRoot=false)
+	private File configDir;
 	
-	@Inject
-	@DefaultConfig(sharedRoot=true)
-	private File defaultConfig;
-
-	@Inject
-	@DefaultConfig(sharedRoot=true)
-	private ConfigurationLoader<CommentedConfigurationNode> configManager;
-
-	public File getDefaultConfig() {
-		return this.defaultConfig;
-	}
-
-	public ConfigurationLoader<CommentedConfigurationNode> getConfigManager() {
-		return this.configManager;
-	}
-
+	
 	// Declaring default configuration and loading configuration's settings.
+	@SuppressWarnings("unchecked")
 	@Listener
 	public void onPreInit(GamePreInitializationEvent event) throws Exception {
-		try{
-
-			if(!getDefaultConfig().exists()){
-
-				getDefaultConfig().createNewFile();
-				this.CONFIG=getConfigManager().load();
-
-				this.CONFIG.getNode("ConfigVersion").setValue(8);
-
-				this.CONFIG.getNode("url").setValue("http://changeme:8099");
-				this.CONFIG.getNode("secretkey").setValue("");
-				this.CONFIG.getNode("qr").setValue("true");
-				this.CONFIG.getNode("csigns").setValue("enabled");
-				this.CONFIG.getNode("debug").setValue("false");
-				getConfigManager().save(this.CONFIG);
-				logger.log(Level.INFO,"Created default configuration, Reddconomy-sponge will not run until you have edited this file!");
-			}
-
-			this.CONFIG=getConfigManager().load();
-
-		}catch(IOException exception){
-
-			logger.log(Level.SEVERE,"Couldn't create default configuration file!");
-
-		}
+		
+		File config_file=new File(configDir,"reddconomy-sponge.json");
+		Map<String,Object> config=new HashMap<String,Object>();
+		
+		// Load config file if exists
+		if(config_file.exists()){
+			BufferedReader reader=new BufferedReader(new FileReader(config_file));
+			config=_JSON.fromJson(reader,Map.class);
+			reader.close();
+		}		
+		
+		// Avoiding missing config parameters
+		config.putIfAbsent("ConfigVersion",8);
+		config.putIfAbsent("url","http://changeme:8099");
+		config.putIfAbsent("secretkey","");
+		config.putIfAbsent("qr","true");
+		config.putIfAbsent("csigns","true");
+		config.putIfAbsent("debug", "false");
 		
 		// Initializing Reddconomy APIs
-		ReddconomyApi.init(this.CONFIG.getNode("url").getString(),this.CONFIG.getNode("secretkey").getString());
+		ReddconomyApi.init(config.get("url").toString(),config.get("secretkey").toString());
 		Task.builder().execute(ReddconomyApi::updateInfo)
 		.async()
 		.interval(60,TimeUnit.SECONDS)
@@ -144,15 +128,15 @@ public class ReddconomyFrontend implements CommandListener{
 		.submit(this);
 		
 		// Loading configuration's settings.
-		API_QR=this.CONFIG.getNode("qr").getString();
-		PLUGIN_CONTRACT_SIGNS=this.CONFIG.getNode("csigns").getString();
-		DEBUG=this.CONFIG.getNode("debug").getBoolean();
-		int version=this.CONFIG.getNode("ConfigVersion").getInt();
+		API_QR=config.get("qr").toString();
+		PLUGIN_CONTRACT_SIGNS=(boolean)config.get("csigns");
+		DEBUG=(boolean)config.get("debug");
+		int version=(int)config.get("ConfigVersion");
 		logger.log(Level.INFO,"Configfile version is "+version+".");
 		
 		// Reddconomy-sponge can't start if the config is still the default one.
-		if(this.CONFIG.getNode("url").getString().equals("http://changeme:8099")){
-			logger.log(Level.SEVERE,"Reddconomy-sponge will not start until you modify the generated config.");
+		if(config.get("url").toString().equals("http://changeme:8099")){
+			logger.log(Level.SEVERE,"Reddconomy-sponge will not start until you modify the config.");
 			CAN_RUN=false;
 		}else{
 			CAN_RUN=true;
@@ -256,7 +240,7 @@ public class ReddconomyFrontend implements CommandListener{
 					// Getting the original position of the block
 					Direction origdirection=location.get(Keys.DIRECTION).get();
 					Player player=(Player)event.getSource();
-					if(PLUGIN_CONTRACT_SIGNS.equalsIgnoreCase("enabled")){
+					if(PLUGIN_CONTRACT_SIGNS){
 						UUID pUUID=player.getUniqueId();
 						String line0=FrontendUtils.getLine(tile,0);
 						String line1=FrontendUtils.getLine(tile,1);
@@ -303,7 +287,7 @@ public class ReddconomyFrontend implements CommandListener{
 							}
 						}
 
-					}else if(PLUGIN_CONTRACT_SIGNS.equalsIgnoreCase("deactivated")) player.sendMessage(Text.of(TextColors.BLUE,"Contract Signs aren't enabled. Sorry about that."));
+					}else if(!PLUGIN_CONTRACT_SIGNS) player.sendMessage(Text.of(TextColors.BLUE,"Contract Signs aren't enabled. Sorry about that."));
 				}
 			}
 		}
