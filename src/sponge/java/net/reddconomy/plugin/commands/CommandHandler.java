@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with Reddconomy-sponge.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.reddconomy.plugin;
+package net.reddconomy.plugin.commands;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,7 +32,7 @@ import org.spongepowered.api.command.spec.CommandExecutor;
 
 import com.google.inject.Inject;
 
-import net.reddconomy.plugin.CommandListener;
+import net.reddconomy.plugin.commands.CommandListener;
 
 public class CommandHandler  implements CommandExecutor {
 

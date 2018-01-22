@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with Reddconomy-sponge.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.reddconomy.plugin;
+package net.reddconomy.plugin.commands;
 
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;

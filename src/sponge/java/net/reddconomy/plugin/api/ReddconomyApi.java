@@ -16,22 +16,17 @@
     You should have received a copy of the GNU General Public License
     along with Reddconomy-sponge.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.reddconomy.plugin;
+package net.reddconomy.plugin.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.WriterException;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import com.google.zxing.qrcode.encoder.ByteMatrix;
-import com.google.zxing.qrcode.encoder.Encoder;
 
+import net.reddconomy.plugin.utils.FrontendUtils;
 import reddconomy.api.ApiResponse;
 import reddconomy.data.Deposit;
 import reddconomy.data.Info;
@@ -59,7 +54,7 @@ public class ReddconomyApi{
 		String urlString=URL+query;
 		URL url=new URL(urlString);
 		System.out.println("SECRET KEY: "+SECRET);
-		String hash=Utils.hmac(SECRET,query);
+		String hash=FrontendUtils.hmac(SECRET,query);
 		System.out.println("Hash: "+hash);
 		HttpURLConnection httpc=(HttpURLConnection)url.openConnection();
 		httpc.setRequestProperty("Hash",hash);
@@ -98,8 +93,8 @@ public class ReddconomyApi{
 	}
 
 
-	public static String getAddrDeposit(long balance, Object wallid) throws Exception {
-		String action="deposit&wallid="+wallid+"&amount="+balance;
+	public static String getAddrDeposit(long amount, Object wallid) throws Exception {
+		String action="deposit&wallid="+wallid+"&amount="+amount;
 		ApiResponse r=apiCall(action);
 		if(r.statusCode()==200){
 			Deposit deposit=r.data();

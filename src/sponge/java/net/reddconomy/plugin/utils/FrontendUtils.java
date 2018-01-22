@@ -16,10 +16,9 @@
     You should have received a copy of the GNU General Public License
     along with Reddconomy-sponge.  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.reddconomy.plugin;
+package net.reddconomy.plugin.utils;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -35,6 +34,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
@@ -46,7 +46,10 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.google.zxing.qrcode.encoder.ByteMatrix;
 import com.google.zxing.qrcode.encoder.Encoder;
 
-public class Utils {
+import net.reddconomy.plugin.api.ReddconomyApi;
+import reddconomy.Utils;
+
+public class FrontendUtils {
 	public static String getLine(TileEntity position, int line)	{
 		Optional<SignData> data = position.getOrCreate(SignData.class);
 		return (data.get().lines().get(line)).toPlainSingle();
@@ -58,6 +61,19 @@ public class Utils {
             entity.offer(sign.get());
     }
     
+    // Check if backend is running on testnet
+    public static String isTestnet() throws Exception
+    {
+    	if (ReddconomyApi.getInfo().testnet)
+    	return "TEST";
+    	else return "";
+    }
+    
+	// Useful function to check if a player is an Operator.
+	public static boolean isOp(Player player) {
+		if(player.hasPermission("Everything.everything")) return true;
+		else return false;
+	}
     
     public static Collection<Sign> getSurroundingSigns(Location<World> location) {
 		ArrayList<Sign> out = new ArrayList<Sign>();
@@ -78,7 +94,6 @@ public class Utils {
 		
 	}
 	
-	
 	public static boolean canPlayerOpen(Location<World> location, String pname){
 		Collection<Sign> surrounding_signs=getSurroundingSigns(location);
 		for(Sign s:surrounding_signs){
@@ -90,7 +105,6 @@ public class Utils {
 		return true;			
 	}
 
-	
 	public static String hmac(String key, String data) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {
         Mac sha256_HMAC=Mac.getInstance("HmacSHA256");
         SecretKeySpec secret_key=new SecretKeySpec(key.getBytes("UTF-8"),"HmacSHA256");
@@ -100,7 +114,7 @@ public class Utils {
 	
 	// QR Engine
 	public static String createQR(String addr, String coin, long amount) throws WriterException {
-		double damount = reddconomy.Utils.convertToUserFriendly(amount);
+		double damount = Utils.convertToUserFriendly(amount);
 		Map<EncodeHintType,Object> hint=new HashMap<EncodeHintType,Object>();
 		com.google.zxing.qrcode.encoder.QRCode code=Encoder.encode(coin!=null&&!coin.isEmpty()?coin+":"+addr+"?amount="+damount:""+damount,ErrorCorrectionLevel.L,hint);
 		ByteMatrix matrix=code.getMatrix();
@@ -117,7 +131,7 @@ public class Utils {
 	}
 	
 	public static String createQRLink(String API_LINK, String addr, String coin, long amount) {
-		double damount = reddconomy.Utils.convertToUserFriendly(amount);
+		double damount = Utils.convertToUserFriendly(amount);
 		return API_LINK.replace("{PAYDATA}", (coin!=null&&!coin.isEmpty()?coin+":"+addr+"?amount="+damount:""+damount));
 	}
 }

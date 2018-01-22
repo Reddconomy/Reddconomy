@@ -85,6 +85,7 @@ public class ApiResponse{
 		return STATUS;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <T extends Data> T data(){
 		return (T)DATA;
 	}
@@ -112,6 +113,7 @@ public class ApiResponse{
 		return out;
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public ApiResponse fromMap(Map<String,Object>  map){		
 		STATUS_CODE=((Number)map.get("status_code")).intValue();
 		STATUS=map.get("status").toString();
