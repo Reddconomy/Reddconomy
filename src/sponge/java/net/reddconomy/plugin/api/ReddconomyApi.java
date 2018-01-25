@@ -114,31 +114,27 @@ public class ReddconomyApi{
 		return output;
 	}
 
-	// Get balance.
-	public static double getBalance(Object wallid) throws Exception {
+	public static OffchainWallet getWallet(Object wallid) throws Exception {
 		String action="getwallet&wallid="+wallid;
 		ApiResponse r=apiCall(action);
 		if(r.statusCode()==200){
 			OffchainWallet wallet=r.data();
-			long balance=wallet.balance;
-			return balance/100000000.;
-		}else return -1;
+			return wallet;
+		}throw new Exception("Can't get wallet");
 	}
 
-
 	// Create contract.
-	public static String createContract(long amount, Object wallid) throws Exception {
+	public static long createContract(long amount, Object wallid) throws Exception {
 		String action="newcontract&wallid="+wallid+"&amount="+amount;
 		ApiResponse r=apiCall(action);
 		if(r.statusCode()==200){
 			OffchainContract contract=r.data();
-			String cId=contract.id;
-			return cId;
-		}else return null;
+			return contract.id;
+		}else throw new Exception("Can't create contract");
 	}
 
 	// Accept contract.
-	public static int acceptContract(String contractId, Object wallid) throws Exception {
+	public static int acceptContract(long contractId, Object wallid) throws Exception {
 		String action="acceptcontract&wallid="+wallid+"&contractid="+contractId;
 		ApiResponse r=apiCall(action);
 		return r.statusCode();

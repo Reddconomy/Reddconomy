@@ -81,7 +81,7 @@ public interface Offchain{
 	 * @return OffchainContract or null if does not exist
 	 * @throws SQLException
 	 */
-	OffchainContract getContract(String id) throws Exception;
+	OffchainContract getContract(long id) throws Exception;
 
 	/**
 	 * Create a contract
@@ -98,7 +98,7 @@ public interface Offchain{
 	 * @param walletid unique id that represent the wallet of whom accepts
 	 * @throws Exception is raised if for some reason the contract can't be accepted
 	 */
-	OffchainContract acceptContract(String contractid, String walletid) throws Exception;
+	OffchainContract acceptContract(long contractid, String walletid) throws Exception;
 
 	/**
 	 * Execute a withdraw on a OffchainWallet, ie. Removes coins from an OffchainWallet

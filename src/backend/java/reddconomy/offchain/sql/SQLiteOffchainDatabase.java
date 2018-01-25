@@ -55,12 +55,14 @@ public  class SQLiteOffchainDatabase implements Offchain {
 	protected Fees FEES;
 	protected String FEES_WALLET,WELCOME_WALLET,GENERIC_WALLET;
 	protected long WELCOME_TIP;
+	protected final int _MAX_SHORT_ID_SIZE="9999999999999".length();
 	
 	public SQLiteOffchainDatabase(String path) throws Exception{
 		Class.forName("org.sqlite.JDBC");
 		CONNECTION=DriverManager.getConnection("jdbc:sqlite:"+path);
 	}
 
+	
 	@Override
 	public void open(Fees fees,String feescollector_wallet,String welcomefunds_wallet,String generic_wallet,
 			long welcome_tip) throws Exception{
@@ -77,16 +79,19 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		q=query("SELECT * FROM `reddconomy_wallets`",true,true);
 		if(q==null){
 			query("CREATE TABLE `reddconomy_wallets` ( "
-					+ "`id`  TEXT NOT NULL PRIMARY KEY,"
+					+ "`short_id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
+					+ "`id`  TEXT NOT NULL UNIQUE  ,"
 					+ "`balance` INTEGER DEFAULT 0, "
 					+ "`status` INTEGER DEFAULT 1 "
 					+ " );",false,false);
+			query("CREATE UNIQUE INDEX `reddconomy_idIndex` ON  `reddconomy_wallets` (`id`)",false,false);
 		}
+		
 		
 		q=query("SELECT * FROM `reddconomy_contracts`",true,true);
 		if(q==null){
 			query("CREATE TABLE `reddconomy_contracts` ( "
-					+ "`id`  TEXT NOT NULL PRIMARY KEY,"
+					+ "`id`  INTEGER NOT NULL PRIMARY KEY  AUTOINCREMENT,"
 					+ "`createdby` TEXT NOT NULL, "
 					+ "`amount` INTEGER DEFAULT 0, "
 					+ "`acceptedby` TEXT DEFAULT '',"
@@ -102,7 +107,7 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		q=query("SELECT * FROM `reddconomy_deposits`",true,true);
 		if(q==null){
 			query("CREATE TABLE `reddconomy_deposits` ( "
-					+ "`addr`  TEXT  NOT NULL PRIMARY KEY,"
+					+ "`addr`  TEXT  NOT NULL PRIMARY KEY ,"
 					+ "`receiver` TEXT NOT NULL, "
 					+ "`expected_balance` INTEGER DEFAULT 0, "
 					+ "`status` INTEGER DEFAULT 1,"
@@ -158,28 +163,53 @@ public  class SQLiteOffchainDatabase implements Offchain {
 	}
 	
 
+	protected String getWalletIdFromShortId(String short_id) throws SQLException{
+		short_id=short_id.replaceAll("[^A-Za-z0-9_\\-]","_");
+
+		SQLResult res=query("SELECT "
+				+ "`id` FROM `reddconomy_wallets` WHERE `short_id`='"+short_id+"' LIMIT 0,1",true,false);
+		if(res!=null&&!res.isEmpty()){
+			Map<String,Object> o=res.fetchAssoc();
+			return o.get("id").toString();			
+		}
+		return null;
+	}
+	
+	protected String parseWalletId(String id) throws SQLException{
+		if(id.startsWith("s:")){
+			id=id.substring("s:".length());			
+			id=getWalletIdFromShortId(id);
+		}else id=id.replaceAll("[^A-Za-z0-9_\\-]","_");
+		return id;
+	}
+	
+
 	
 	
 	@Override
 	public synchronized OffchainWallet getOffchainWallet(String id) throws SQLException{
-		id=id.replaceAll("[^A-Za-z0-9_\\-]","_");
+		id=parseWalletId(id);
 		OffchainWallet out=new  OffchainWallet();
 		out.id=id;
 		SQLResult res=query("SELECT "
-				+ "`status`,`balance` "
+				+ "`status`,`balance`,`short_id` "
 				+ "FROM `reddconomy_wallets` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
-		boolean welcome_tip=false;
-		if(res!=null&&!res.isEmpty()){
-			Map<String,Object> fetched=res.fetchAssoc();
-			out.status=((Number)fetched.get("status")).byteValue();
-			out.balance=((Number)fetched.get("balance")).longValue();
-		}else{ // NEW WALLET
+		
+		if(res==null||res.isEmpty()){
+		
+			// Paranoia: Make sure it'll take at least 3000 years to exceed the maximum short id even under heavy spam.
+			try{
+				Thread.sleep(10);
+			}catch(InterruptedException e1){
+				e1.printStackTrace();
+			}
+			// -
+		
+			// NEW WALLET		
 			System.out.println("Create new wallet");
 			query("INSERT INTO reddconomy_wallets(`id`) VALUES('"+id+"')",false,false);
-			
-			welcome_tip=true;
-		}
-		if(welcome_tip){
+
+			// Welcome tip
 			System.out.println("Welcome tip: "+getWelcomeTip());
 			if(!isAServerWallet(id)&&getWelcomeTip()>0){
 				// Add welcome funds
@@ -193,22 +223,34 @@ public  class SQLiteOffchainDatabase implements Offchain {
 				}
 			}else{
 				System.out.println("Not elegible");
-
 			}
-		}
+			
+			// Get the newly created wallet
+			return getOffchainWallet(id); 			
+		}else{
+			Map<String,Object> fetched=res.fetchAssoc();
+			out.status=((Number)fetched.get("status")).byteValue();
+			out.balance=((Number)fetched.get("balance")).longValue();
+			out.short_id=((Number)fetched.get("short_id")).longValue();
+			if((""+out.short_id).length()>_MAX_SHORT_ID_SIZE){
+				System.err.println("Fatal! Maximum short_id reached?!");
+				System.exit(1);
+			}
+		}		
+		
 		return out;
 	}
 	
 	
 	
 	@Override
-	public synchronized OffchainContract getContract(String id) throws SQLException{
-		id=id.replaceAll("[^A-Za-z0-9]","_");
+	public synchronized OffchainContract getContract(long id) throws Exception{
+//		id=id.replaceAll("[^A-Za-z0-9]","_");		
 		OffchainContract out=new OffchainContract();
 		SQLResult res=query("SELECT * FROM `reddconomy_contracts` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
 		if(res!=null&&!res.isEmpty()){
 			Map<String,Object> fetched=res.fetchAssoc();
-			out.id=fetched.get("id").toString();
+			out.id=((Number)fetched.get("id")).longValue();
 			out.amount=((Number)fetched.get("amount")).longValue();
 			out.acceptedby=fetched.get("acceptedby").toString();
 			out.createdby=fetched.get("createdby").toString();
@@ -217,32 +259,36 @@ public  class SQLiteOffchainDatabase implements Offchain {
 			out.accepted=((Number)fetched.get("accepted")).longValue();
 			return out;
 		}else{
-			return null;
+			throw new Exception("Contract does not exist");
 		}
 	}
 	
 
 	@Override
-	public synchronized OffchainContract createContract(String walletid,long amount) throws SQLException{
-		OffchainContract out=new OffchainContract();
-		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
-		String id="0c"+(System.currentTimeMillis()+"___"+walletid+"__"+amount).hashCode();
-		id=id.replaceAll("[^A-Za-z0-9]","_");
-		
-		out.createdby=walletid;
-		out.amount=amount;
-		out.id=id;
-		
-
-		query("INSERT INTO  reddconomy_contracts(`id`,`createdby`,`amount`, `created`) VALUES('"+id+"','"+walletid+"','"+amount+"','"+System.currentTimeMillis()+"')",false,false);			
-		return out;
+	public synchronized OffchainContract createContract(String walletid,long amount) throws Exception{
+		// Paranoia
+		try{
+			Thread.sleep(10);
+		}catch(InterruptedException e1){
+			e1.printStackTrace();
+		}
+		// -
+		walletid=parseWalletId(walletid);
+		query("INSERT INTO  reddconomy_contracts(`createdby`,`amount`, `created`) VALUES('"+walletid+"','"+amount+"','"+System.currentTimeMillis()+"')",false,false);			
+		SQLResult res=query("SELECT last_insert_rowid()",true,false);
+		if(res!=null){
+			long contractid=((Number)res.fetchAssoc().values().iterator().next()).longValue();
+			return getContract(contractid);
+		}else{			
+			throw new Exception("Can't get last contract?");
+		}
 	}
 	
 
 	@Override
-	public synchronized OffchainContract acceptContract(String contractid, String acceptedby_walletid) throws Exception {
-		acceptedby_walletid=acceptedby_walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
-		contractid=contractid.replaceAll("[^A-Za-z0-9]","_");
+	public synchronized OffchainContract acceptContract(long contractid, String acceptedby_walletid) throws Exception {
+//		contractid=contractid.replaceAll("[^A-Za-z0-9]","_");		
+		acceptedby_walletid=parseWalletId(acceptedby_walletid);
 		OffchainContract contract=getContract(contractid);
 		if(contract!=null){
 			System.out.println("Accept contract "+contract+"from wallid "+acceptedby_walletid);
@@ -340,7 +386,8 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		long net=FEES.getWithdrawFee().apply(amount);
 		long tare=amount-net;
 		
-		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
+		walletid=parseWalletId(walletid);
+
 		OffchainWallet wallet=getOffchainWallet(walletid);
 		long balance=wallet.balance;
 		if(balance>=amount){
@@ -373,12 +420,13 @@ public  class SQLiteOffchainDatabase implements Offchain {
 	
 	@Override
 	public synchronized Deposit prepareForDeposit(String deposit_addr,String walletid,long expected_balance)throws Exception{
-		walletid=walletid.replaceAll("[^A-Za-z0-9_\\-]","_");
+		walletid=parseWalletId(walletid);
+
 		deposit_addr=deposit_addr.replaceAll("[^A-Za-z0-9]","_");
-		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `addr`='"+deposit_addr+"' LIMIT 0,1",true,false);
-		if(res!=null&&!res.isEmpty()){
-			throw new Exception("Cannot reuse deposit addresses");
-		}else
+//		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `addr`='"+deposit_addr+"' LIMIT 0,1",true,false);
+//		if(res!=null&&!res.isEmpty()){
+//			throw new Exception("Cannot reuse deposit addresses");
+//		}else
 			query("INSERT INTO reddconomy_deposits(`created`,`addr`,`receiver`,`expected_balance`) VALUES('"+System.currentTimeMillis()+"','"+deposit_addr+"','"+walletid+"','"+expected_balance+"')",false,false);
 		return getDeposit(deposit_addr);
 	}
@@ -522,6 +570,4 @@ public  class SQLiteOffchainDatabase implements Offchain {
 
 
 
-	
-	
 }

@@ -45,7 +45,7 @@ public final class OffchainContract implements Data{
 	/**
 	 * The id of the contract
 	 */
-	public String id;
+	public long id;
 	
 	/**
 	 * The value of the contract
@@ -84,7 +84,7 @@ public final class OffchainContract implements Data{
 	public boolean equals(Object contract2o){
 		if(!(contract2o instanceof OffchainContract))return false;
 		OffchainContract contract2=(OffchainContract)contract2o;
-		return id.equals(contract2.id)&&
+		return id==(contract2.id)&&
 				amount==contract2.amount&&created==contract2.created&&accepted==contract2.accepted&&
 				createdby.equals(contract2.createdby)&&
 				acceptedby.equals(contract2.acceptedby)&&paid_in_fees==contract2.paid_in_fees;
@@ -121,7 +121,7 @@ public final class OffchainContract implements Data{
 
 	@Override
 	public void fromMap(Map<String,Object> map) {
-		id=map.get("id").toString();
+		id=((Number)map.get("id")).longValue();
 		amount=((Number)map.get("amount")).longValue();
 		created=((Number)map.get("created")).longValue();
 		accepted=((Number)map.get("accepted")).longValue();

@@ -197,7 +197,7 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 			case "acceptcontract":{
 				try{
 					String wallet_id=_GET.get("wallid").toString();
-					String contractId=_GET.get("contractid").toString();
+					long contractId=Long.parseLong(_GET.get("contractid"));
 					OffchainContract contract=_OFFCHAIN.acceptContract(contractId,wallet_id);
 					response.success(contract);
 				}catch(Throwable e){
@@ -223,7 +223,7 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 			}
 			case "getcontract":{
 				try{
-					String contractId=_GET.get("contractid").toString();
+					long contractId=Long.parseLong(_GET.get("contractid"));
 					OffchainContract contract=_OFFCHAIN.getContract(contractId);
 					response.success(contract);
 				}catch(Throwable e){

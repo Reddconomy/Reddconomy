@@ -40,18 +40,20 @@ public final class OffchainWallet implements Data{
 	public String id;
 	public long balance=0;
 	public byte status=Status.active;
+	public long short_id;
 	
 	@Override
 	public boolean equals(Object wallet2o){
 		if(!(wallet2o instanceof OffchainWallet))return false;
 		OffchainWallet wallet2=(OffchainWallet)wallet2o;
-		return id.equals(wallet2.id)&&balance==wallet2.balance&&status==wallet2.status;
+		return id.equals(wallet2.id)&&balance==wallet2.balance&&status==wallet2.status&&wallet2.short_id==short_id;
 	}
 	
 	@Override
 	public String toString(){
 		StringBuilder sb=new StringBuilder();
-		sb.append("Wallet-").append(id).append(": balance=").append(balance).append(" status=").append(status);
+		sb.append("Wallet-").append(id).append(": balance=").append(balance).append(" status=").append(status)
+		.append(" short_id=").append(short_id);
 		return sb.toString();
 	}
 
@@ -61,6 +63,7 @@ public final class OffchainWallet implements Data{
 		out.put("id",id);
 		out.put("balance",balance);
 		out.put("status",status);
+		out.put("short_id",short_id);
 		return out;
 	}
 
@@ -69,5 +72,7 @@ public final class OffchainWallet implements Data{
 		id=map.get("id").toString();
 		balance=((Number)map.get("balance")).longValue();
 		status=((Number)map.get("status")).byteValue();
+		short_id=((Number)map.get("short_id")).longValue();
+
 	}
 }

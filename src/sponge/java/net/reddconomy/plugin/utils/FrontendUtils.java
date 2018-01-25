@@ -27,10 +27,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
@@ -48,26 +50,50 @@ import com.google.zxing.qrcode.encoder.Encoder;
 
 import net.reddconomy.plugin.api.ReddconomyApi;
 import reddconomy.Utils;
+import reddconomy.data.OffchainWallet;
 
 public class FrontendUtils {
-	public static String getLine(TileEntity position, int line)	{
-		Optional<SignData> data = position.getOrCreate(SignData.class);
+	public static String getLine(TileEntity sign, int line)	{
+		Optional<SignData> data = sign.getOrCreate(SignData.class);
 		return (data.get().lines().get(line)).toPlainSingle();
 	}
 	
-    public  static void setLine(TileEntity entity, int line, Text text) {
-    	Optional<SignData> sign = entity.getOrCreate(SignData.class);
-            sign.get().set(sign.get().lines().set(line, text));
-            entity.offer(sign.get());
+	public static void setLine(TileEntity sign, int line, String text) {
+		Optional<SignData> signdata=sign.getOrCreate(SignData.class);
+		signdata.get().set(signdata.get().lines().set(line,Text.of(text)));
+		sign.offer(signdata.get());
+	}
+
+	
+	/**
+	 * Input: w:WALLID Output: WALLID
+	 * Input: PLAYER_NAME  Output: WALLID
+	 * Input: s:SHORT_ID Output: s:SHORT_ID
+	 * 
+	 * @param val Prefixed string
+	 * @return A wallid understandable by the backend
+	 * @throws Exception
+	 */
+	public static String getWalletIdFromPrefixedString(String val) throws Exception{
+    	if(val.startsWith("w:")){ // A walletid
+    		return val.substring("w:".length());
+    	}else if(!val.startsWith("s:")){ // a player name
+			Player pl=Sponge.getServer().getPlayer(val).get();
+			UUID uuid=pl.getUniqueId();
+			OffchainWallet wallet=ReddconomyApi.getWallet(uuid);
+			return "s:"+wallet.short_id;			
+    	}
+    	return val;
+	}
+	
+	
+    public static void createContractSignFromSign(TileEntity sign) throws Exception{
+    	String contract_owner=getLine(sign,3);
+    	setLine(sign,3,getWalletIdFromPrefixedString(contract_owner));
     }
     
-    // Check if backend is running on testnet
-    public static String isTestnet() throws Exception
-    {
-    	if (ReddconomyApi.getInfo().testnet)
-    	return "TEST";
-    	else return "";
-    }
+    
+
     
 	// Useful function to check if a player is an Operator.
 	public static boolean isOp(Player player) {
