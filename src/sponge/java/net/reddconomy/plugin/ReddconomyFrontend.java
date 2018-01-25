@@ -206,7 +206,7 @@ public class ReddconomyFrontend implements CommandListener{
 			TileEntity tile=event.getTargetTile();
 			Player player=(Player)event.getSource();
 			if(FrontendUtils.getLine(tile,0).equals("[CONTRACT]")){
-				if(FrontendUtils.isOp(player)) {
+				if(FrontendUtils.isOp(player)&&!FrontendUtils.getLine(tile,3).isEmpty()) {
 					player.sendMessage(Text.of("You've just placed a contract sign as Admin."));
 				}else{
 					player.sendMessage(Text.of("You've just placed a contract sign."));
