@@ -284,6 +284,7 @@ public class ReddconomyFrontend implements CommandListener{
 			if(!(tile instanceof Sign)) return;
 			String line0=FrontendUtils.getLine(tile,0);
 			if(line0.equals("[CONTRACT]")){
+				event.setCancelled(true);
 
 				String line1=FrontendUtils.getLine(tile,1);
 				String line2=FrontendUtils.getLine(tile,2);
