@@ -251,20 +251,20 @@ public class ReddconomyFrontend implements CommandListener{
 			if(location.getTileEntity().isPresent()){
 				TileEntity tile=location.getTileEntity().get();
 				if(!(tile instanceof Sign)) return;
-
-				// Getting the original position of the block
-				Direction origdirection=location.get(Keys.DIRECTION).get();
 				Player player=(Player)event.getSource();
-				OffchainWallet player_wallet=ReddconomyApi.getWallet(player.getUniqueId());
-
-				String line0=FrontendUtils.getLine(tile,0);
-				String line1=FrontendUtils.getLine(tile,1);
-				String line2=FrontendUtils.getLine(tile,2);
-				String line3=FrontendUtils.getLine(tile,3);
-				
-				BlockType origsign=location.getBlockType();
-				
+				String line0=FrontendUtils.getLine(tile,0);						
 				if(line0.equals("[CONTRACT]")){
+					
+					String line1=FrontendUtils.getLine(tile,1);
+					String line2=FrontendUtils.getLine(tile,2);
+					String line3=FrontendUtils.getLine(tile,3);
+					
+					// Getting the original position of the block
+					Direction origdirection=location.get(Keys.DIRECTION).get();
+					BlockType origsign=location.getBlockType();
+
+					OffchainWallet player_wallet=ReddconomyApi.getWallet(player.getUniqueId());
+
 					String owner_id=line3;
 					OffchainWallet owner_wallet=ReddconomyApi.getWallet(line3);
 
