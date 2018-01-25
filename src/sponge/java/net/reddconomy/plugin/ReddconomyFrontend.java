@@ -27,6 +27,7 @@ import net.reddconomy.plugin.utils.Help;
 import reddconomy.Utils;
 import reddconomy.data.OffchainWallet;
 
+import com.flowpowered.math.vector.Vector3d;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
@@ -56,14 +57,26 @@ import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.Event;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.block.CollideBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.block.TargetBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.block.tileentity.TargetTileEntityEvent;
+import org.spongepowered.api.event.data.ChangeDataHolderEvent;
+import org.spongepowered.api.event.entity.CollideEntityEvent;
+import org.spongepowered.api.event.entity.DamageEntityEvent;
+import org.spongepowered.api.event.entity.MoveEntityEvent;
+import org.spongepowered.api.event.entity.living.humanoid.AnimateHandEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
+import org.spongepowered.api.event.item.inventory.InteractItemEvent;
+import org.spongepowered.api.event.statistic.ChangeStatisticEvent;
+import org.spongepowered.api.event.world.chunk.TargetChunkEvent;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -206,7 +219,7 @@ public class ReddconomyFrontend implements CommandListener{
 			TileEntity tile=event.getTargetTile();
 			Player player=(Player)event.getSource();
 			if(FrontendUtils.getLine(tile,0).equals("[CONTRACT]")){
-				if(FrontendUtils.isOp(player)&&!FrontendUtils.getLine(tile,3).isEmpty()) {
+				if(FrontendUtils.isOp(player)&&!FrontendUtils.getLine(tile,3).isEmpty()){
 					player.sendMessage(Text.of("You've just placed a contract sign as Admin."));
 				}else{
 					player.sendMessage(Text.of("You've just placed a contract sign."));
@@ -241,80 +254,97 @@ public class ReddconomyFrontend implements CommandListener{
 		}
 	}
 
+	//	@Listener(order=Order.PRE)
+	//	public void onSignInteract(Event event) throws Exception {
+	//		if(event instanceof TargetChunkEvent|| event instanceof CollideEntityEvent||event instanceof MoveEntityEvent
+	//				|| event instanceof ChangeStatisticEvent
+	//				|| event instanceof CollideBlockEvent
+	//				|| event instanceof AnimateHandEvent
+	//				|| event instanceof DamageEntityEvent
+	//				|| event instanceof ChangeDataHolderEvent
+	//				)return;
+	//		System.out.println("EV "+event.getClass()+" "+event);
+	//
+	//	}
+
 	// CONTRACT SIGNS BLOCK	
-	@Listener(order=Order.FIRST)
-	public void onSignInteract(InteractBlockEvent.Secondary event) throws Exception {
+	@Listener(order=Order.PRE)
+	public void onSignInteract(InteractItemEvent.Secondary event) throws Exception {
 		if(!PLUGIN_CONTRACT_SIGNS||!(event.getSource() instanceof Player)) return;
 
-		if(event.getTargetBlock().getLocation().isPresent()){
-			Location<World> location=event.getTargetBlock().getLocation().get();
-			if(location.getTileEntity().isPresent()){
-				TileEntity tile=location.getTileEntity().get();
-				if(!(tile instanceof Sign)) return;
-				Player player=(Player)event.getSource();
-				String line0=FrontendUtils.getLine(tile,0);						
-				if(line0.equals("[CONTRACT]")){
-					
-					String line1=FrontendUtils.getLine(tile,1);
-					String line2=FrontendUtils.getLine(tile,2);
-					String line3=FrontendUtils.getLine(tile,3);
-					
-					// Getting the original position of the block
-					Direction origdirection=location.get(Keys.DIRECTION).get();
-					BlockType origsign=location.getBlockType();
+		Optional<Vector3d> opoint=event.getInteractionPoint();
+		if(!opoint.isPresent()) return;
+		Vector3d point=opoint.get();
 
-					OffchainWallet player_wallet=ReddconomyApi.getWallet(player.getUniqueId());
+		Player player=(Player)event.getSource();
+		Location<World> location=player.getWorld().getLocation(point);
 
-					String owner_id=line3;
-					OffchainWallet owner_wallet=ReddconomyApi.getWallet(line3);
+		if(location.getTileEntity().isPresent()){
+			TileEntity tile=location.getTileEntity().get();
+			if(!(tile instanceof Sign)) return;
+			String line0=FrontendUtils.getLine(tile,0);
+			if(line0.equals("[CONTRACT]")){
 
-					String[] values=line1.split(",");
-					if(values.length<1)return;
-					
-					long amount=Utils.convertToInternal(Double.parseDouble(values[0].trim()));
-					int delay=100;
-					if(values.length>1){
-						int parsed_delay=Integer.parseInt(values[1].trim());
-						if(parsed_delay>=0) delay=parsed_delay;
-					}
-					
-					try{
-						// Check if player wallet != owner wallet
-						if(player_wallet.id!=owner_wallet.id||DEBUG){
-							long cID=ReddconomyApi.createContract(amount,owner_id);
-							int status=ReddconomyApi.acceptContract(cID,player_wallet.id);
-							// This activates the redstone only if the contract replied with 200
-							if(status==200){
-								player.sendMessage(Text.of("Contract ID: "+cID));
-								player.sendMessage(Text.of("Contract accepted."));
-								player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
+				String line1=FrontendUtils.getLine(tile,1);
+				String line2=FrontendUtils.getLine(tile,2);
+				String line3=FrontendUtils.getLine(tile,3);
 
-								_ACTIVATED_SIGNS.put(location,true);
-								location.setBlockType(BlockTypes.REDSTONE_TORCH);
-								Task.builder().execute(() -> {
-									BlockState state=origsign.getDefaultState();
-									BlockState newstate=state.with(Keys.DIRECTION,origdirection).get();
-									location.setBlock(newstate);
-									TileEntity tile2=location.getTileEntity().get();
-									FrontendUtils.setLine(tile2,0,line0);
-									FrontendUtils.setLine(tile2,1,line1);
-									FrontendUtils.setLine(tile2,2,line2);
-									FrontendUtils.setLine(tile2,3,line3);
-									_ACTIVATED_SIGNS.remove(location);
-								}).delay(delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(this);
-							}else{
-								player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
-							}
-						}else{
-							player.sendMessage(Text.of(TextColors.DARK_RED,"You can't accept your own contract."));
-						}
+				// Getting the original position of the block
+				Direction origdirection=location.get(Keys.DIRECTION).get();
+				BlockType origsign=location.getBlockType();
 
-					}catch(Exception e){
-						player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create/accept contract. Call an admin for more info."));
-						e.printStackTrace();
+				OffchainWallet player_wallet=ReddconomyApi.getWallet(player.getUniqueId());
 
-					}
+				String owner_id=line3;
+				OffchainWallet owner_wallet=ReddconomyApi.getWallet(line3);
+
+				String[] values=line1.split(",");
+				if(values.length<1) return;
+
+				long amount=Utils.convertToInternal(Double.parseDouble(values[0].trim()));
+				int delay=100;
+				if(values.length>1){
+					int parsed_delay=Integer.parseInt(values[1].trim());
+					if(parsed_delay>=0) delay=parsed_delay;
 				}
+
+				try{
+					// Check if player wallet != owner wallet
+					if(player_wallet.id!=owner_wallet.id||DEBUG){
+						long cID=ReddconomyApi.createContract(amount,owner_id);
+						int status=ReddconomyApi.acceptContract(cID,player_wallet.id);
+						// This activates the redstone only if the contract replied with 200
+						if(status==200){
+							player.sendMessage(Text.of("Contract ID: "+cID));
+							player.sendMessage(Text.of("Contract accepted."));
+							player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
+
+							_ACTIVATED_SIGNS.put(location,true);
+							location.setBlockType(BlockTypes.REDSTONE_TORCH);
+							Task.builder().execute(() -> {
+								BlockState state=origsign.getDefaultState();
+								BlockState newstate=state.with(Keys.DIRECTION,origdirection).get();
+								location.setBlock(newstate);
+								TileEntity tile2=location.getTileEntity().get();
+								FrontendUtils.setLine(tile2,0,line0);
+								FrontendUtils.setLine(tile2,1,line1);
+								FrontendUtils.setLine(tile2,2,line2);
+								FrontendUtils.setLine(tile2,3,line3);
+								_ACTIVATED_SIGNS.remove(location);
+							}).delay(delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(this);
+						}else{
+							player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
+						}
+					}else{
+						player.sendMessage(Text.of(TextColors.DARK_RED,"You can't accept your own contract."));
+					}
+
+				}catch(Exception e){
+					player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create/accept contract. Call an admin for more info."));
+					e.printStackTrace();
+
+				}
+
 			}
 
 		}
