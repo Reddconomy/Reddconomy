@@ -330,7 +330,8 @@ public  class SQLiteOffchainDatabase implements Offchain {
 								+ "`id`='"+acceptedby_walletid+"'",false,false);
 						query("UPDATE reddconomy_wallets SET `balance`='"+createdby_balance+"' WHERE "
 								+ "`id`='"+createdby_walletid+"'",false,false);
-					}					
+					}else throw new Exception("Not enought coins. Requested:"+amount+" Remaining balance: "+acceptedby_balance);
+				
 				}else if(TransactionDirection.get(contract)==TransactionDirection.CREATEDBY2ACCEPTEDBY){
 					System.out.println("Type 2");
 
@@ -360,7 +361,7 @@ public  class SQLiteOffchainDatabase implements Offchain {
 								+ "`id`='"+acceptedby_walletid+"'",false,false);
 						query("UPDATE reddconomy_wallets SET `balance`='"+createdby_balance+"' WHERE "
 								+ "`id`='"+createdby_walletid+"'",false,false);
-					}
+					}else throw new Exception("Not enought coins. Requested:"+amount+" Remaining balance: "+createdby_balance);
 				}else{
 					System.out.println("Type Invalid");
 
