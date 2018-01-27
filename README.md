@@ -1,5 +1,4 @@
-# Reddconomy [![Build Status](https://travis-ci.org/Reddconomy/Reddconomy.svg?branch=master)](https://travis-ci.org/Reddconomy/Reddconomy) [![Docker Build Status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=riccardoblb&repository=reddconomy_test&tag=amd64)](https://hub.docker.com/r/riccardoblb/reddconomy_test/builds/)
-
+# Reddconomy [![Build Status](https://travis-ci.org/Reddconomy/Reddconomy.svg?branch=master)](https://travis-ci.org/Reddconomy/Reddconomy)  [![Docker Build (doge_amd64) Status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=riccardoblb&repository=reddconomy-backend-testnet-docker&tag=doge_amd64)](https://hub.docker.com/r/riccardoblb/reddconomy-backend-testnet-docker/builds/) [![Docker Build (rdd_amd64) Status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=riccardoblb&repository=reddconomy-backend-testnet-docker&tag=rdd_amd64)](https://hub.docker.com/r/riccardoblb/reddconomy-backend-testnet-docker/builds/)
 Reddcoin-based economy for minecraft.
 
 WORK IN PROGRESS
@@ -39,8 +38,15 @@ To run reddconomy you'll need  four components:
 
 For simplicity we have a docker container that runs the latest backend snapshot, to use it, you need to:
 1. Start the container (/srv/reddconomy_testnet is the path where the blockchain and other configuration files will be stored persistently)
+
+__With Reddcoin__
 ```
-docker run --name=reddconomy_test -d -p 8099:8099  -v /srv/reddconomy_testnet:/data --restart=always riccardoblb/reddconomy_test:amd64
+docker run --name=reddconomy_test -d -p 8099:8099  -v /srv/reddconomy_testnet:/data --restart=always riccardoblb/reddconomy-backend-testnet-docker:rdd_amd64
+```
+
+__Or with Dogecoin__
+```
+docker run --name=reddconomy_test -d -p 8099:8099  -v /srv/reddconomy_testnet:/data --restart=always riccardoblb/reddconomy-backend-testnet-docker:doge_amd64
 ```
 
 2. Get the **secret key** required to connect the plugin, save this somewhere, you'll need it later
