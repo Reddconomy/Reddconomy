@@ -83,7 +83,7 @@ task buildBackend(type: Jar) {
     }
 
 	manifest {
-        attributes  'Main-Class':  "reddconomy.Reddconomy"
+        attributes  'Main-Class':  "it.reddconomy.Reddconomy"
     }
     baseName = project.name + '-fat'
     from { 
@@ -98,7 +98,7 @@ task buildSpongePlugin(type: Jar) {
     }
 
 	manifest {
-        attributes  'Main-Class':  "net.reddconomy.plugin.ReddconomyFrontend"
+        attributes  'Main-Class':  "it.reddconomy.plugin.ReddconomyFrontend"
     }
     baseName = project.name + '-sponge-fat'
     from { 
