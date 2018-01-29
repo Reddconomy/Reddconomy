@@ -27,11 +27,12 @@ import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
 
 import it.reddconomy.Utils;
+import it.reddconomy.plugin.ReddconomyFrontend;
 import it.reddconomy.plugin.api.ReddconomyApi;
 
 public class Help {
 	// Backend's info
-	public static void showInfos(Player player) throws Exception {
+	public static void showInfos(ReddconomyFrontend fe,Player player) throws Exception {
 		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY INFO]"));
 		player.sendMessage(Text.of(TextColors.GOLD,"On testnet? ",TextColors.WHITE,ReddconomyApi.getInfo().testnet));
 		player.sendMessage(Text.of(TextColors.GOLD,"Coin: ",TextColors.WHITE,ReddconomyApi.getInfo().coin));
@@ -41,9 +42,11 @@ public class Help {
 	}
 
 	// Complete Backend's info for OPs
-	public static void showAdminInfos(Player player) throws Exception {
+	public static void showAdminInfos(ReddconomyFrontend fe,Player player) throws Exception {
 		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY INFO]"));
-		player.sendMessage(Text.of(TextColors.GOLD,"On testnet? ",TextColors.WHITE,ReddconomyApi.getInfo().testnet));
+		player.sendMessage(Text.of(TextColors.GOLD,"Testnet:  ",TextColors.WHITE,ReddconomyApi.getInfo().testnet));
+		player.sendMessage(Text.of(TextColors.GOLD,"Debug:  ",TextColors.WHITE,fe.isDebug()));
+
 		player.sendMessage(Text.of(TextColors.GOLD,"Coin: ",TextColors.WHITE,ReddconomyApi.getInfo().coin));
 		player.sendMessage(Text.of(TextColors.GOLD,"Welcome Tip: ",TextColors.WHITE, Utils.convertToUserFriendly(ReddconomyApi.getInfo().welcome_tip)));
 		

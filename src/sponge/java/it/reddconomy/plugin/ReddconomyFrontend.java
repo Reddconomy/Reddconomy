@@ -168,6 +168,10 @@ public class ReddconomyFrontend implements CommandListener{
 		logger.log(Level.INFO,"Configfile version is "+version+".");
 
 	}
+	
+	public boolean isDebug(){
+		return DEBUG;
+	}
 
 	// Registering the Reddconomy functionalities
 	@Listener
@@ -311,7 +315,7 @@ public class ReddconomyFrontend implements CommandListener{
 
 				try{
 					// Check if player wallet != owner wallet
-					if(player_wallet.id!=owner_wallet.id||DEBUG){
+					if(player_wallet.short_id!=owner_wallet.short_id||DEBUG){
 						long cID=ReddconomyApi.createContract(amount,owner_id);
 						int status=ReddconomyApi.acceptContract(cID,player_wallet.id);
 						// This activates the redstone only if the contract replied with 200
@@ -399,7 +403,7 @@ public class ReddconomyFrontend implements CommandListener{
 					break;
 				}
 				case "info":{
-					Help.showInfos(player);
+					Help.showInfos(this,player);
 					break;
 				}
 				// commands for OPs
@@ -413,7 +417,7 @@ public class ReddconomyFrontend implements CommandListener{
 						switch(action){
 
 							case "info":{
-								Help.showAdminInfos(player);
+								Help.showAdminInfos(this,player);
 								break;
 							}
 							case "send":{
