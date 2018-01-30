@@ -1,11 +1,17 @@
 package it.reddconomy.plugin;
 
+import java.awt.event.ItemEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
+
+import javax.xml.transform.Source;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -20,20 +26,35 @@ import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.Cancellable;
+import org.spongepowered.api.event.Event;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.block.NotifyNeighborBlockEvent;
+import org.spongepowered.api.event.block.CollideBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.data.ChangeDataHolderEvent;
+import org.spongepowered.api.event.entity.CollideEntityEvent;
+import org.spongepowered.api.event.entity.DamageEntityEvent;
+import org.spongepowered.api.event.entity.MoveEntityEvent;
+import org.spongepowered.api.event.entity.living.humanoid.AnimateHandEvent;
+import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractItemEvent;
+import org.spongepowered.api.event.statistic.ChangeStatisticEvent;
+import org.spongepowered.api.event.block.TargetBlockEvent;
+import org.spongepowered.api.event.world.chunk.TargetChunkEvent;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.world.LocatableBlock;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import com.flowpowered.math.vector.Vector3d;
+import com.flowpowered.math.vector.Vector3i;
 
 import it.reddconomy.Utils;
 import it.reddconomy.common.data.OffchainWallet;
@@ -42,7 +63,7 @@ import it.reddconomy.plugin.utils.FrontendUtils;
 public class ContractSign{
 	
 	
-	private static final Map<Location<World>,Boolean> _ACTIVATED_SIGNS=new WeakHashMap<Location<World>,Boolean>();
+	private static final Collection<Vector3i> _ACTIVATED_SIGNS=new LinkedList<Vector3i>();
 	private static Object PLUGIN;
 	public static void init(Object plugin){
 		if(PLUGIN!=null)return;
@@ -61,8 +82,8 @@ public class ContractSign{
 		signdata.get().set(signdata.get().lines().set(line,Text.of(text)));
 		sign.offer(signdata.get());
 	}
-    public static Collection<Sign> getSurroundingSigns(Location<World> location) {
-		ArrayList<Sign> out = new ArrayList<Sign>();
+    public static Collection<TileEntity> getNearTileEntities(Location<World> location) {
+//		ArrayList<Sign> out = new ArrayList<Sign>();
 		TileEntity sr_entities[] = new TileEntity[] { 
 				location.getRelative(Direction.DOWN).getTileEntity().orElse(null),
 				location.getRelative(Direction.UP).getTileEntity().orElse(null),
@@ -71,15 +92,26 @@ public class ContractSign{
 				location.getRelative(Direction.NORTH).getTileEntity().orElse(null),
 				location.getRelative(Direction.SOUTH).getTileEntity().orElse(null) 
 		};
-		for (TileEntity te : sr_entities) {
-			if (te!=null&&te instanceof Sign) {
-				out.add((Sign) te);
-			}
-		}
-		return out;
+//		for (TileEntity te : sr_entities) {
+//			if (te!=null&&te instanceof Sign) {
+//				out.add((Sign) te);
+//			}
+//		}
+		return Arrays.asList(sr_entities);
 		
 	}
-	
+    public static Collection<LocatableBlock> getNearBlocks(Location<World> location) {
+    	LocatableBlock sr_entities[] = new LocatableBlock[] { 
+				location.getRelative(Direction.DOWN).getLocatableBlock().orElse(null),
+				location.getRelative(Direction.UP).getLocatableBlock().orElse(null),
+				location.getRelative(Direction.EAST).getLocatableBlock().orElse(null),
+				location.getRelative(Direction.WEST).getLocatableBlock().orElse(null),
+				location.getRelative(Direction.NORTH).getLocatableBlock().orElse(null),
+				location.getRelative(Direction.SOUTH).getLocatableBlock().orElse(null)
+		};
+		return Arrays.asList(sr_entities);
+		
+	}
 
     public static void createContractSignFromSign(TileEntity sign) throws Exception{
     	String contract_owner=getLine(sign,3);
@@ -165,8 +197,8 @@ public class ContractSign{
 							player.sendMessage(Text.of("Contract accepted."));
 							player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
 
-							_ACTIVATED_SIGNS.put(location,true);
-							location.setBlockType(BlockTypes.REDSTONE_TORCH);
+							_ACTIVATED_SIGNS.add(location.getBlockPosition());
+							location.setBlockType(BlockTypes.REDSTONE_BLOCK);
 							Task.builder().execute(() -> {
 								BlockState state=origsign.getDefaultState();
 								BlockState newstate=state.with(Keys.DIRECTION,origdirection).get();
@@ -176,7 +208,7 @@ public class ContractSign{
 								setLine(tile2,1,line1);
 								setLine(tile2,2,line2);
 								setLine(tile2,3,line3);
-								_ACTIVATED_SIGNS.remove(location);
+								_ACTIVATED_SIGNS.remove(location.getBlockPosition());
 							}).delay(delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(PLUGIN);
 						}else{
 							player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
@@ -207,13 +239,17 @@ public class ContractSign{
 			if(location.getTileEntity().isPresent()){
 				TileEntity tile=location.getTileEntity().get();
 				if(tile instanceof Dispenser||tile instanceof Dropper){
-					Collection<Sign> surrounding_signs=getSurroundingSigns(location);
-					for(Sign s:surrounding_signs){
+					Collection<TileEntity> near_blocks=getNearTileEntities(location);
+					for(TileEntity block:near_blocks){
+						if(block==null||!(block instanceof Sign))continue;
+						Sign s=(Sign)block;
 						OffchainWallet sign_owner=ReddconomyApi.getWallet(getLine(s,3));
 						if(player_wallet.short_id!=sign_owner.short_id){
 							if(!FrontendUtils.isOp(player)){
 								player.sendMessage(Text.of(TextColors.DARK_RED,"[CONTRACT] Only the owner can open this container."));
 								event.setCancelled(true);
+							}else{
+								player.sendMessage(Text.of(TextColors.DARK_RED,"[CONTRACT] You are bypassing container protection as OP."));
 							}
 							break;
 						}
@@ -223,15 +259,76 @@ public class ContractSign{
 		}
 	}
 
-	// Protect placed redstone
+
 	@Listener(order=Order.FIRST)
-	public void onRedstoneBreak(ChangeBlockEvent.Break event) {
+	public void onChangeBlockEvent(ChangeBlockEvent.Pre event) {		
 		if(event.isCancelled()) return;
-		for(Transaction<BlockSnapshot> trans:event.getTransactions()){
-			if(!trans.getOriginal().getState().getType().equals(BlockTypes.REDSTONE_TORCH)) continue;
-			Optional<Location<World>> loc=trans.getOriginal().getLocation();
-			if(loc.isPresent()&&_ACTIVATED_SIGNS.containsKey(loc.get())) event.setCancelled(true);
+		for(Location<World> l:event.getLocations()){
+			if(l.getBlockType()==BlockTypes.SLIME){				
+				Collection<LocatableBlock> near=getNearBlocks(l);
+				for(LocatableBlock b:near){
+					if(b.getBlockState().getType()==BlockTypes.REDSTONE_BLOCK){
+						boolean is_zone_protected=_ACTIVATED_SIGNS.contains(b.getLocation().getBlockPosition());
+						if(is_zone_protected){
+							event.setCancelled(true);
+							break;
+						}
+					}
+				}
+			}else if(l.getBlockType()==BlockTypes.REDSTONE_BLOCK&&_ACTIVATED_SIGNS.contains(l.getBlockPosition())){
+				event.setCancelled(true);
+				break;
+			}
+		}		
+	}
+	
+	
+	@Listener(order=Order.FIRST)
+	public void onChangeBlockEvent(ChangeBlockEvent event) {
+		if(event.isCancelled()) return;
+		
+		for(Transaction<BlockSnapshot> trans:event.getTransactions()){			
+			BlockSnapshot oblock=trans.getOriginal();
+			BlockSnapshot fblock=trans.getFinal();
+
+			
+			if(oblock.getState().getType()!=BlockTypes.REDSTONE_BLOCK)continue;
+				
+			Optional<Location<World>> lo=trans.getOriginal().getLocation();
+			if(!lo.isPresent()) continue;
+			Location<World> l=lo.get();
+			
+
+			boolean is_zone_protected=_ACTIVATED_SIGNS.contains(l.getBlockPosition());
+
+			if(is_zone_protected){
+				if(	
+					fblock.getState().getType()!=(BlockTypes.STANDING_SIGN)
+					&&fblock.getState().getType()!=(BlockTypes.WALL_SIGN)
+				){
+					event.setCancelled(true);
+					System.out.println("Can't replace "+l.getBlock()+" with "+fblock);
+					if(event.getSource() instanceof Player) ((Player)event.getSource()).sendMessage(Text.of(TextColors.DARK_RED,"[CONTRACT] Block protected."));
+					break;
+				}
+			}
+			
 		}
 	}
 
+	final boolean _DEBUG_PRINT_EVENTS=false;
+	@Listener(order=Order.PRE)
+	public void debugPrintEvents(Event event) throws Exception {
+		if(!_DEBUG_PRINT_EVENTS) return;
+		if(event instanceof TargetChunkEvent||
+				event instanceof CollideEntityEvent||
+				event instanceof MoveEntityEvent||
+				event instanceof ChangeStatisticEvent||
+				event instanceof CollideBlockEvent||
+				event instanceof AnimateHandEvent||
+				event instanceof DamageEntityEvent||
+				event instanceof ChangeDataHolderEvent) return;
+		System.out.println("EV "+event.getClass()+" "+event);
+
+	}
 }
