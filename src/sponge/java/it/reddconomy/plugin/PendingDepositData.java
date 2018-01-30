@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with Reddconomy-sponge.  If not, see <http://www.gnu.org/licenses/>.
  */
-package it.reddconomy.plugin.api;
+package it.reddconomy.plugin;
 
 public class PendingDepositData {
 	public String addr;

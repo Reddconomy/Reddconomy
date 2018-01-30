@@ -18,351 +18,148 @@
  */
 package it.reddconomy.plugin;
 
-import com.flowpowered.math.vector.Vector3d;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.inject.Inject;
-
-import it.reddconomy.Utils;
-import it.reddconomy.common.data.OffchainWallet;
-import it.reddconomy.plugin.api.PendingDepositData;
-import it.reddconomy.plugin.api.ReddconomyApi;
-import it.reddconomy.plugin.commands.CommandHandler;
-import it.reddconomy.plugin.commands.CommandListener;
-import it.reddconomy.plugin.utils.FrontendUtils;
-import it.reddconomy.plugin.utils.Help;
-
-import org.spongepowered.api.data.Transaction;
-import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.plugin.Plugin;
-import org.spongepowered.api.scheduler.Task;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.action.TextActions;
-import org.spongepowered.api.text.format.TextColors;
-import org.spongepowered.api.util.Direction;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
-import org.spongepowered.api.Game;
-import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockState;
-import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.tileentity.Sign;
-import org.spongepowered.api.block.tileentity.TileEntity;
-import org.spongepowered.api.block.tileentity.carrier.Dispenser;
-import org.spongepowered.api.block.tileentity.carrier.Dropper;
-import org.spongepowered.api.command.CommandSource;
-import org.spongepowered.api.command.args.GenericArguments;
-import org.spongepowered.api.command.spec.CommandSpec;
-import org.spongepowered.api.config.ConfigDir;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.Event;
-import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.Order;
-import org.spongepowered.api.event.block.ChangeBlockEvent;
-import org.spongepowered.api.event.block.CollideBlockEvent;
-import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.event.block.TargetBlockEvent;
-import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
-import org.spongepowered.api.event.block.tileentity.TargetTileEntityEvent;
-import org.spongepowered.api.event.data.ChangeDataHolderEvent;
-import org.spongepowered.api.event.entity.CollideEntityEvent;
-import org.spongepowered.api.event.entity.DamageEntityEvent;
-import org.spongepowered.api.event.entity.MoveEntityEvent;
-import org.spongepowered.api.event.entity.living.humanoid.AnimateHandEvent;
-import org.spongepowered.api.event.game.state.GameInitializationEvent;
-import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
-import org.spongepowered.api.event.game.state.GameStartedServerEvent;
-import org.spongepowered.api.event.item.inventory.InteractItemEvent;
-import org.spongepowered.api.event.statistic.ChangeStatisticEvent;
-import org.spongepowered.api.event.world.chunk.TargetChunkEvent;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.spongepowered.api.Game;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.command.args.GenericArguments;
+import org.spongepowered.api.command.spec.CommandSpec;
+import org.spongepowered.api.config.ConfigDir;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
+import org.spongepowered.api.event.game.state.GameStartedServerEvent;
+import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.action.TextActions;
+import org.spongepowered.api.text.format.TextColors;
+
+import com.google.inject.Inject;
+
+import it.reddconomy.Utils;
+import it.reddconomy.common.data.OffchainWallet;
+import it.reddconomy.plugin.commands.CommandHandler;
+import it.reddconomy.plugin.commands.CommandListener;
+import it.reddconomy.plugin.utils.FrontendUtils;
+
 @Plugin(id="reddconomy-sponge", name="Reddconomy-sponge", version="0.1.1")
-
 public class ReddconomyFrontend implements CommandListener{
+	@Inject	private Game GAME;
+	@Inject	private Logger LOGGER;
+	@Inject @ConfigDir(sharedRoot=true) private File CONFIG_DIR;
 
-	// Declaring fundamental functions
-	private String API_QR;
-	private boolean PLUGIN_CONTRACT_SIGNS;
 	private boolean CAN_RUN=true;
-	private boolean DEBUG;
-	private final Map<Location<World>,Boolean> _ACTIVATED_SIGNS=new WeakHashMap<Location<World>,Boolean>();
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
 
-	// CONFIG BLOCK
-	private static final Gson _JSON=new GsonBuilder().setPrettyPrinting().create();
+	
+	// Backend's info
+	public static void showInfos(Player player) throws Exception {
+		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY INFO]"));
+		player.sendMessage(Text.of(TextColors.GOLD,"On testnet? ",TextColors.WHITE,ReddconomyApi.getInfo().testnet));
+		player.sendMessage(Text.of(TextColors.GOLD,"Coin: ",TextColors.WHITE,ReddconomyApi.getInfo().coin));
+		player.sendMessage(Text.of(TextColors.GOLD,"Deposit fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getDepositFee().toString()));
+		player.sendMessage(Text.of(TextColors.GOLD,"Withdraw fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getWithdrawFee().toString()));
+		player.sendMessage(Text.of(TextColors.GOLD,"Transaction fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getTransactionFee().toString()));
+	}
 
-	@Inject
-	Game game;
 
-	@Inject
-	Logger logger;
 
-	@Inject
-	@ConfigDir(sharedRoot=true)
-	private File CONFIG_DIR;
+	// Help message of Reddconomy
+	public static void sendHelpText(Player player) throws MalformedURLException {
 
+		URL github=new URL("https://github.com/Reddconomy");
+		Text moreinfo=Text.builder("Click here for more info!").color(TextColors.GOLD).onClick(TextActions.openUrl(github)).build();
+		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY HELP]"));
+		player.sendMessage(Text.of(TextColors.BLUE,"=====[COMMANDS]====="));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$",TextColors.WHITE,": Shows info"));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ help",TextColors.WHITE,": Shows this"));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ deposit <amount>",TextColors.WHITE,": Get the deposit address."));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ balance",TextColors.WHITE,": Shows your balance."));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ withdraw <amount> <addr>",TextColors.WHITE,": Withdraw money."));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ contract new <amount>",TextColors.WHITE,": Create contract. (- sign for giving, no sign for requesting)"));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ contract accept <contractid>",TextColors.WHITE,": Accept a contract."));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ tip <amount> <user>",TextColors.WHITE,": Tip an user."));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ tipsrv <amount>",TextColors.WHITE,": Tip the server."));
+		player.sendMessage(Text.of(TextColors.GOLD,"/$ info",TextColors.WHITE,": Get info from backend."));
+		player.sendMessage(Text.of(TextColors.BLUE,"===[CONTRACT SIGNS]==="));
+		player.sendMessage(Text.of("In order to make Contract Signs, you have to write in a sign:"));
+		player.sendMessage(Text.of(TextColors.GOLD,"FIRST LINE:"," [CONTRACT] | ",TextColors.GOLD,"SECOND LINE: ","<amount>"));
+		player.sendMessage(Text.of("Third line is for description, it's not necessary."));
+		player.sendMessage(Text.of(TextColors.BLUE,"========[INFOs]========"));
+		player.sendMessage(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino. This plugin and all its components are released under GNU GPL v3 and BSD-2-Clause license."));
+		player.sendMessage(moreinfo);
+	}
+	
 	// Declaring default configuration and loading configuration's settings.
 	@SuppressWarnings("unchecked")
 	@Listener
 	public void onPreInit(GamePreInitializationEvent event) throws Exception {
 
-		File config_file=new File(CONFIG_DIR,"reddconomy-sponge.json");
-		Map<String,Object> config=new HashMap<String,Object>();
-
-		// Load config file if exists
-		if(config_file.exists()){
-			BufferedReader reader=new BufferedReader(new FileReader(config_file));
-			config=_JSON.fromJson(reader,Map.class);
-			reader.close();
-		}
-
-		// Add missing config parameters
-		config.putIfAbsent("ConfigVersion",8);
-		config.putIfAbsent("url","http://127.0.0.1:8099");
-		config.putIfAbsent("secretkey","changeme");
-		config.putIfAbsent("qr","true");
-		config.putIfAbsent("csigns",true);
-		config.putIfAbsent("debug",false);
-
-		// Write config
-		BufferedWriter config_writer=new BufferedWriter(new FileWriter(config_file));
-		_JSON.toJson(config,config_writer);
-		config_writer.close();
+		Config.init(new File(CONFIG_DIR,"reddconomy-sponge.json"));
 
 		// Reddconomy-sponge can't start if the config is still the default one.
-		if(config.get("secretkey").toString().equals("changeme")){
-			logger.log(Level.SEVERE,"Reddconomy-sponge will not start until you modify the config.");
+		if(Config.getValue("secretkey").toString().equals("changeme")){
+			LOGGER.log(Level.SEVERE,"Reddconomy-sponge will not start until you modify the config.");
 			CAN_RUN=false;
 		}else{
 			CAN_RUN=true;
 		}
 
 		// Initializing Reddconomy APIs
-		ReddconomyApi.init(config.get("url").toString(),config.get("secretkey").toString());
+		ReddconomyApi.init(Config.getValue("url").toString(),Config.getValue("secretkey").toString());
 		Task.builder().execute(ReddconomyApi::updateInfo).async().interval(60,TimeUnit.SECONDS).name("Update backend info").submit(this);
 
-		// Loading configuration's settings.
-		API_QR=config.get("qr").toString();
-		PLUGIN_CONTRACT_SIGNS=(boolean)config.get("csigns");
-		DEBUG=(boolean)config.get("debug");
-		int version=((Number)config.get("ConfigVersion")).intValue();
-		logger.log(Level.INFO,"Configfile version is "+version+".");
-
-	}
-	
-	public boolean isDebug(){
-		return DEBUG;
+		ContractSign.init(this);
+		AdminCommands.init(this);
+		
+		
 	}
 
-	// Registering the Reddconomy functionalities
 	@Listener
 	public void onInit(GameInitializationEvent event) {
 		if(CAN_RUN){
-			logger.log(Level.INFO,"Reddconomy-sponge is now activated.");
+			LOGGER.log(Level.INFO,"Reddconomy-sponge is now activated.");
 			CommandSpec cmds=CommandSpec.builder().description(Text.of("Command")).executor(new CommandHandler(this)).arguments(GenericArguments.optional(GenericArguments.remainingJoinedStrings(Text.of("args")))).build();
-			game.getCommandManager().register(this,cmds,"$","reddconomy","rdd");
-		}else logger.log(Level.SEVERE,"Reddconomy-sponge is deactivated, an admin should modify the config.");
+			GAME.getCommandManager().register(this,cmds,"$","reddconomy","rdd");
+		}else LOGGER.log(Level.SEVERE,"Reddconomy-sponge is deactivated, an admin should modify the config.");
 	}
 
-	// Checking if the deposit has successfully happened.
 	@Listener
 	public void hasStarted(GameStartedServerEvent event) {
-		Task.builder().execute(() -> processPendingDeposits()).async().delay(1,TimeUnit.SECONDS).interval(10,TimeUnit.SECONDS).name("Fetch deposit status").submit(this);
-	}
-
-	// Checking if a deposit has been completed.
-	private void processPendingDeposits() {
-		final Iterator<String> it=_PENDING_DEPOSITS.iterator();
-
-		while(it.hasNext()){
-			String addr=it.next();
-			try{
-				final PendingDepositData deposit_data=ReddconomyApi.getDepositStatus(addr);
-				if(deposit_data.status!=1){
-					it.remove();
-
-					Task.builder().execute((new Runnable(){
-						public void run() {
-							final UUID pUUID=UUID.fromString(deposit_data.addr);
-							(Sponge.getServer().getPlayer(pUUID)).get().sendMessage(Text.of(deposit_data.status==0?"Deposit completed. Check your balance!":"Deposit expired! Request another one."));
-						}
-					})).delay(0,TimeUnit.MILLISECONDS).name("Fetch deposit status").submit(this);
-
-				}
-			}catch(Exception e){
-				e.printStackTrace();
-			}
-		}
-	}
-
-	// Create contract signs from placed signs
-	@Listener
-	public void onSignPlace(ChangeSignEvent event) {
-		if(!PLUGIN_CONTRACT_SIGNS||!(event.getSource() instanceof Player)) return;
-
+		// Start task that processes pending deposits
 		Task.builder().execute(() -> {
-			TileEntity tile=event.getTargetTile();
-			Player player=(Player)event.getSource();
-			if(FrontendUtils.getLine(tile,0).equals("[CONTRACT]")){
-				if(FrontendUtils.isOp(player)&&!FrontendUtils.getLine(tile,3).isEmpty()){
-					player.sendMessage(Text.of("You've just placed a contract sign as Admin."));
-				}else{
-					player.sendMessage(Text.of("You've just placed a contract sign."));
-					FrontendUtils.setLine(tile,3,player.getName());
-				}
+			final Iterator<String> it=_PENDING_DEPOSITS.iterator();
+			while(it.hasNext()){
+				String addr=it.next();
 				try{
-					FrontendUtils.createContractSignFromSign(tile);
+					final PendingDepositData deposit_data=ReddconomyApi.getDepositStatus(addr);
+					if(deposit_data.status!=1){
+						it.remove();
+
+						Task.builder().execute((new Runnable(){
+							public void run() {
+								final UUID pUUID=UUID.fromString(deposit_data.addr);
+								(Sponge.getServer().getPlayer(pUUID)).get().sendMessage(Text.of(deposit_data.status==0?"Deposit completed. Check your balance!":"Deposit expired! Request another one."));
+							}
+						})).delay(0,TimeUnit.MILLISECONDS).name("Fetch deposit status").submit(this);
+
+					}
 				}catch(Exception e){
-					player.sendMessage(Text.of("Unexpected error"));
-					FrontendUtils.setLine(tile,1,"[Err~CONTRACT]");
 					e.printStackTrace();
 				}
 			}
-		}).delay(5,TimeUnit.MILLISECONDS).name("Forcing player name in the contract sign").submit(this);
-	}
-
-	// Disabling dispenser/dropper access to other players than the owner.
-	@Listener(order=Order.FIRST)
-	public void onContainerAdjacentInteract(InteractBlockEvent.Secondary event) {
-		Player player=(Player)event.getSource();
-		if(event.getTargetBlock().getLocation().isPresent()){
-			Location<World> location=event.getTargetBlock().getLocation().get();
-			if(location.getTileEntity().isPresent()){
-				TileEntity tile=location.getTileEntity().get();
-				if(tile instanceof Dispenser||tile instanceof Dropper){
-					if(!FrontendUtils.canPlayerOpen(location,player.getName())&&!FrontendUtils.isOp(player)){
-						player.sendMessage(Text.of(TextColors.DARK_RED,"[CONTRACT] Only the owner can open this container."));
-						event.setCancelled(true);
-					}
-				}
-			}
-		}
-	}
-
-	//	@Listener(order=Order.PRE)
-	//	public void onSignInteract(Event event) throws Exception {
-	//		if(event instanceof TargetChunkEvent|| event instanceof CollideEntityEvent||event instanceof MoveEntityEvent
-	//				|| event instanceof ChangeStatisticEvent
-	//				|| event instanceof CollideBlockEvent
-	//				|| event instanceof AnimateHandEvent
-	//				|| event instanceof DamageEntityEvent
-	//				|| event instanceof ChangeDataHolderEvent
-	//				)return;
-	//		System.out.println("EV "+event.getClass()+" "+event);
-	//
-	//	}
-
-	// CONTRACT SIGNS BLOCK	
-	@Listener(order=Order.PRE)
-	public void onSignInteract(InteractItemEvent.Secondary event) throws Exception {
-		if(!PLUGIN_CONTRACT_SIGNS||!(event.getSource() instanceof Player)) return;
-
-		Optional<Vector3d> opoint=event.getInteractionPoint();
-		if(!opoint.isPresent()) return;
-		Vector3d point=opoint.get();
-
-		Player player=(Player)event.getSource();
-		Location<World> location=player.getWorld().getLocation(point);
-
-		if(location.getTileEntity().isPresent()){
-			TileEntity tile=location.getTileEntity().get();
-			if(!(tile instanceof Sign)) return;
-			String line0=FrontendUtils.getLine(tile,0);
-			if(line0.equals("[CONTRACT]")){
-				event.setCancelled(true);
-
-				String line1=FrontendUtils.getLine(tile,1);
-				String line2=FrontendUtils.getLine(tile,2);
-				String line3=FrontendUtils.getLine(tile,3);
-
-				// Getting the original position of the block
-				Direction origdirection=location.get(Keys.DIRECTION).get();
-				BlockType origsign=location.getBlockType();
-
-				OffchainWallet player_wallet=ReddconomyApi.getWallet(player.getUniqueId());
-
-				String owner_id=line3;
-				OffchainWallet owner_wallet=ReddconomyApi.getWallet(line3);
-
-				String[] values=line1.split(",");
-				if(values.length<1) return;
-
-				long amount=Utils.convertToInternal(Double.parseDouble(values[0].trim()));
-				int delay=100;
-				if(values.length>1){
-					int parsed_delay=Integer.parseInt(values[1].trim());
-					if(parsed_delay>=0) delay=parsed_delay;
-				}
-
-				try{
-					// Check if player wallet != owner wallet
-					if(player_wallet.short_id!=owner_wallet.short_id||DEBUG){
-						long cID=ReddconomyApi.createContract(amount,owner_id);
-						int status=ReddconomyApi.acceptContract(cID,player_wallet.id);
-						// This activates the redstone only if the contract replied with 200
-						if(status==200){
-							player.sendMessage(Text.of("Contract ID: "+cID));
-							player.sendMessage(Text.of("Contract accepted."));
-							player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
-
-							_ACTIVATED_SIGNS.put(location,true);
-							location.setBlockType(BlockTypes.REDSTONE_TORCH);
-							Task.builder().execute(() -> {
-								BlockState state=origsign.getDefaultState();
-								BlockState newstate=state.with(Keys.DIRECTION,origdirection).get();
-								location.setBlock(newstate);
-								TileEntity tile2=location.getTileEntity().get();
-								FrontendUtils.setLine(tile2,0,line0);
-								FrontendUtils.setLine(tile2,1,line1);
-								FrontendUtils.setLine(tile2,2,line2);
-								FrontendUtils.setLine(tile2,3,line3);
-								_ACTIVATED_SIGNS.remove(location);
-							}).delay(delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(this);
-						}else{
-							player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
-						}
-					}else{
-						player.sendMessage(Text.of(TextColors.DARK_RED,"You can't accept your own contract."));
-					}
-
-				}catch(Exception e){
-					player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create/accept contract. Call an admin for more info."));
-					e.printStackTrace();
-
-				}
-
-			}
-
-		}
-	}
-
-	@Listener(order=Order.FIRST)
-	public void onRedstoneBreak(ChangeBlockEvent.Break event) {
-		if(event.isCancelled()) return;
-		for(Transaction<BlockSnapshot> trans:event.getTransactions()){
-			if(!trans.getOriginal().getState().getType().equals(BlockTypes.REDSTONE_TORCH)) continue;
-			Optional<Location<World>> loc=trans.getOriginal().getLocation();
-			if(loc.isPresent()&&_ACTIVATED_SIGNS.containsKey(loc.get())) event.setCancelled(true);
-		}
+		}).async().delay(1,TimeUnit.SECONDS).interval(10,TimeUnit.SECONDS).name("Process pending deposits").submit(this);
 	}
 
 	// All the commands of Reddconomy
@@ -384,12 +181,7 @@ public class ReddconomyFrontend implements CommandListener{
 					long amount=Utils.convertToInternal(damount);
 					String addr=ReddconomyApi.getAddrDeposit(amount,pUUID);
 					if(addr!=null){
-						if(API_QR.equalsIgnoreCase("true")) player.sendMessage(Text.of(FrontendUtils.createQR(addr,ReddconomyApi.getInfo().coin,amount)));
-						else if(!API_QR.equalsIgnoreCase("false")){
-							URL qrlink=new URL(FrontendUtils.createQRLink(API_QR,addr,ReddconomyApi.getInfo().coin,amount));
-							Text qrlink_text=Text.builder("Click me to get the QR code").color(TextColors.GOLD).onClick(TextActions.openUrl(qrlink)).build();
-							player.sendMessage(Text.of(qrlink_text));
-						}
+						FrontendUtils.sendQrToPlayer(addr,amount,player);
 						player.sendMessage(Text.of("Deposit "+damount+" "+(ReddconomyApi.getInfo().testnet?"TEST ":" ")+ReddconomyApi.getInfo().coin_short+" to this address: "+addr));
 						_PENDING_DEPOSITS.add(addr);
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create deposit address right now. Contact an admin."));
@@ -403,88 +195,12 @@ public class ReddconomyFrontend implements CommandListener{
 					break;
 				}
 				case "info":{
-					Help.showInfos(this,player);
+					showInfos(player);
 					break;
 				}
 				// commands for OPs
 				case "admin":{
-					if(FrontendUtils.isOp(player)){
-						String action=args[0];
-						if(args.length<1){
-							invalid=true;
-							break;
-						}
-						switch(action){
-
-							case "info":{
-								Help.showAdminInfos(this,player);
-								break;
-							}
-							case "send":{
-								if(args.length<3){
-									invalid=true;
-									break;
-								}
-								double dval=Double.parseDouble(args[1]);
-								String addr=args[2];
-								long amount=Utils.convertToInternal(dval);
-								int status=ReddconomyApi.sendCoins(addr,amount);
-								if(status==200) player.sendMessage(Text.of("Sending "+dval+" to the address: "+addr));
-								else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot request coins right now. Check the error in console"));
-								break;
-							}
-							case "deposit":{
-								if(args.length<3){
-									invalid=true;
-									break;
-								}
-								String wallid=FrontendUtils.getWalletIdFromPrefixedString(args[2]);
-								double damount=Double.parseDouble(args[1]);
-								long amount=Utils.convertToInternal(damount);
-								String addr=ReddconomyApi.getAddrDeposit(amount,wallid);
-								if(addr!=null){
-									if(API_QR.equalsIgnoreCase("true")) player.sendMessage(Text.of(FrontendUtils.createQR(addr,ReddconomyApi.getInfo().coin,amount)));
-									else if(!API_QR.equalsIgnoreCase("false")){
-										URL qrlink=new URL(FrontendUtils.createQRLink(API_QR,addr,ReddconomyApi.getInfo().coin,amount));
-										Text qrlink_text=Text.builder("Click me to get the QR code").color(TextColors.GOLD).onClick(TextActions.openUrl(qrlink)).build();
-										player.sendMessage(Text.of(qrlink_text));
-									}
-									player.sendMessage(Text.of("Deposit "+damount+" "+(ReddconomyApi.getInfo().testnet?"TEST ":" ")+ReddconomyApi.getInfo().coin_short+" to this address: "+addr));
-								}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create deposit address right now. Check the server console."));
-								break;
-							}
-							case "balance":{
-								if(args.length<2){
-									invalid=true;
-									break;
-								}
-								String wallid=FrontendUtils.getWalletIdFromPrefixedString(args[1]);
-								double balance=Utils.convertToUserFriendly(ReddconomyApi.getWallet(wallid).balance);
-								if(balance!=-1) player.sendMessage(Text.of("Wallet "+wallid+" has: "+balance+" "+(ReddconomyApi.getInfo().testnet?"TEST ":" ")+ReddconomyApi.getInfo().coin_short));
-								else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot request balance right now. Contact an admin."));
-								break;
-							}
-							case "withdraw":{
-								if(args.length<4){
-									invalid=true;
-									break;
-								}
-								String wallid=FrontendUtils.getWalletIdFromPrefixedString(args[2]);
-								String addr=args[3];
-								double damount=Double.parseDouble(args[1]);
-								long amount=Utils.convertToInternal(damount);
-								int status=ReddconomyApi.withdraw(amount,addr,wallid);
-								if(status==200) player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing.. Wait at least 10 minutes"));
-								else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot request a withdraw right now, check the Reddconomy Service error."));
-								break;
-							}
-							default:
-							case "help":{
-								Help.sendAdminHelpText(player);
-								break;
-							}
-						}
-					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Forbidden for non-op"));
+					invalid=!AdminCommands.onCommand(player,command,args);
 					break;
 				}
 				// withdraw
@@ -518,8 +234,9 @@ public class ReddconomyFrontend implements CommandListener{
 					if(server){
 						to=ReddconomyApi.getInfo().generic_wallid;
 					}else{
-						receiver=(Player)Sponge.getServer().getPlayer(args[1]).get();
-						to=receiver.getUniqueId().toString();
+						to=FrontendUtils.getWalletIdFromPrefixedString(args[1]);
+						OffchainWallet receiver_wallet=ReddconomyApi.getWallet(to);
+						receiver=(Player)Sponge.getServer().getPlayer(UUID.fromString(receiver_wallet.id)).orElse(null);
 					}
 					long cId=ReddconomyApi.createContract(-amount,pUUID);
 					//					if(cId!=null){
@@ -560,16 +277,15 @@ public class ReddconomyFrontend implements CommandListener{
 				}
 
 				default:
-					// help/info or no args
 				case "help":{
-					Help.sendHelpText(player);
+					sendHelpText(player);
 					break;
 				}
 			}
 
 			if(invalid){
 				player.sendMessage(Text.of(TextColors.DARK_RED,"Invalid Command"));
-				Help.sendHelpText(player);
+				sendHelpText(player);
 			}
 		}catch(Exception e){
 			e.printStackTrace();
