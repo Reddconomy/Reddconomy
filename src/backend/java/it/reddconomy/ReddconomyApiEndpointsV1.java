@@ -94,24 +94,31 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 	/**
 	 * API v1 Endpoints
 	 * 
-	 * ?action=deposit&wallid=XXXXXX&amount=XXXXXX
+	 * /?action=deposit&wallid=XXXXXX&amount=XXXXXX
 	 *   Response: Deposit
-	 * ?action=getdeposit&addr=XXXXX
+	 * /?action=getdeposit&addr=XXXXX
 	 * 	 Response: Deposit
-	 * ?action=withdraw&ammount=XXXXXXX&addr=XXXXX
+	 * /?action=withdraw&ammount=XXXXXXX&addr=XXXXX
 	 * 	 Response: Withdraw
-	 * ?action=getwallet&wallid=XXXXXXX
+	 * /?action=getwallet&wallid=XXXXXXX
 	 *   Response: OffchainWallet
-	 * ?action=newcontract&wallid=XXXXXXX&amount=XXXXXXX
+	 * /?action=newcontract&wallid=XXXXXXX&amount=XXXXXXX
 	 *   Response: OffchainContract
-	 * ?action=acceptcontract&wallid=XXXXXX&contractid=XXXXXX
+	 * /?action=acceptcontract&wallid=XXXXXX&contractid=XXXXXX
 	 *   Response: OffchainContract
-	 * ?action=getcontract&contractid=XXXXXX
+	 * /?action=getcontract&contractid=XXXXXX
 	 *   Response: OffchainContract
-	 * ?action=sendcoins&amount=XXXX&addr=XXXx
+	 * /?action=sendcoins&amount=XXXX&addr=XXXx
 	 * 	 Response: EmptyData
-	 * ?action=info
+	 * /?action=info
 	 *   Response: Info
+	 *   
+	 *   Authentication
+	 *   Requests are authenticated by adding an header "Hash"
+	 *   which contains the base64-hmacsha256 hash of the requested location and resource 
+	 *   calculated using the secret key.
+	 *   eg.  Hash: base64(hmacsha256(DECRET_KEY,"/?action=deposit&wallid=XXXXXX&amount=XXXXXX"))
+	 *   
 	 */
 	public synchronized ApiResponse onRequest(String action, Map<String,String> _GET) {
 		ApiResponse response=ApiResponse.build();
