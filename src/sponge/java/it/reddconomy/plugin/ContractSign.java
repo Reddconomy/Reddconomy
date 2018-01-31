@@ -40,10 +40,10 @@ import org.spongepowered.api.event.entity.CollideEntityEvent;
 import org.spongepowered.api.event.entity.DamageEntityEvent;
 import org.spongepowered.api.event.entity.MoveEntityEvent;
 import org.spongepowered.api.event.entity.living.humanoid.AnimateHandEvent;
-import org.spongepowered.api.event.item.inventory.DropItemEvent;
 import org.spongepowered.api.event.item.inventory.InteractItemEvent;
 import org.spongepowered.api.event.statistic.ChangeStatisticEvent;
 import org.spongepowered.api.event.block.TargetBlockEvent;
+import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.event.world.chunk.TargetChunkEvent;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
@@ -61,7 +61,19 @@ import it.reddconomy.common.data.OffchainWallet;
 import it.reddconomy.plugin.utils.FrontendUtils;
 
 public class ContractSign{
-	
+
+	// If the contract sign is placed above one of these blocks, it will be replaced with a redstone block
+	// instead of a redstone torch
+	private static final Collection<BlockType> _BLOCK_BLACKLIST=Arrays.asList(new BlockType[]{
+		BlockTypes.SEA_LANTERN,
+		BlockTypes.PISTON,
+		BlockTypes.STICKY_PISTON,
+		BlockTypes.PISTON_HEAD,
+		BlockTypes.PISTON_EXTENSION,
+		BlockTypes.CACTUS,
+		BlockTypes.TNT,
+		BlockTypes.AIR	
+	});
 	
 	private static final Collection<Vector3i> _ACTIVATED_SIGNS=new LinkedList<Vector3i>();
 	private static Object PLUGIN;
@@ -198,8 +210,13 @@ public class ContractSign{
 							player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
 
 							_ACTIVATED_SIGNS.add(location.getBlockPosition());
-							location.setBlockType(BlockTypes.REDSTONE_BLOCK);
+					
+							location.setBlockType(
+									_BLOCK_BLACKLIST.contains(location.getRelative(Direction.DOWN).getBlockType())
+									?BlockTypes.REDSTONE_BLOCK:BlockTypes.REDSTONE_TORCH);
 							Task.builder().execute(() -> {
+								if(location.getBlock().getType()!=BlockTypes.REDSTONE_TORCH&&location.getBlock().getType()!=BlockTypes.REDSTONE_BLOCK)return;
+
 								BlockState state=origsign.getDefaultState();
 								BlockState newstate=state.with(Keys.DIRECTION,origdirection).get();
 								location.setBlock(newstate);
@@ -258,8 +275,25 @@ public class ContractSign{
 			}
 		}
 	}
-
-
+	
+	
+	
+	@Listener(order=Order.FIRST)
+	public void onExplosion(ExplosionEvent.Detonate event) {		
+		for(Location<World> l:event.getAffectedLocations()){
+			Optional<LocatableBlock> lb=l.getLocatableBlock();
+			if(!lb.isPresent())continue;
+			LocatableBlock b=lb.get();
+			if(b.getBlockState().getType()==BlockTypes.REDSTONE_TORCH||b.getBlockState().getType()==BlockTypes.REDSTONE_BLOCK){
+				boolean is_zone_protected=_ACTIVATED_SIGNS.contains(b.getLocation().getBlockPosition());
+				if(is_zone_protected){
+					event.setCancelled(true);
+					break;
+				}
+			}
+		}	
+	}
+	
 	@Listener(order=Order.FIRST)
 	public void onChangeBlockEvent(ChangeBlockEvent.Pre event) {		
 		if(event.isCancelled()) return;
@@ -267,7 +301,7 @@ public class ContractSign{
 			if(l.getBlockType()==BlockTypes.SLIME){				
 				Collection<LocatableBlock> near=getNearBlocks(l);
 				for(LocatableBlock b:near){
-					if(b.getBlockState().getType()==BlockTypes.REDSTONE_BLOCK){
+					if(b.getBlockState().getType()==BlockTypes.REDSTONE_TORCH||b.getBlockState().getType()==BlockTypes.REDSTONE_BLOCK){
 						boolean is_zone_protected=_ACTIVATED_SIGNS.contains(b.getLocation().getBlockPosition());
 						if(is_zone_protected){
 							event.setCancelled(true);
@@ -275,7 +309,7 @@ public class ContractSign{
 						}
 					}
 				}
-			}else if(l.getBlockType()==BlockTypes.REDSTONE_BLOCK&&_ACTIVATED_SIGNS.contains(l.getBlockPosition())){
+			}else if((l.getBlockType()==BlockTypes.REDSTONE_TORCH||l.getBlockType()==BlockTypes.REDSTONE_BLOCK)&&_ACTIVATED_SIGNS.contains(l.getBlockPosition())){
 				event.setCancelled(true);
 				break;
 			}
@@ -292,7 +326,7 @@ public class ContractSign{
 			BlockSnapshot fblock=trans.getFinal();
 
 			
-			if(oblock.getState().getType()!=BlockTypes.REDSTONE_BLOCK)continue;
+			if(oblock.getState().getType()!=BlockTypes.REDSTONE_TORCH||oblock.getState().getType()!=BlockTypes.REDSTONE_BLOCK)continue;
 				
 			Optional<Location<World>> lo=trans.getOriginal().getLocation();
 			if(!lo.isPresent()) continue;
