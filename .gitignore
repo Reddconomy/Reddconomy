@@ -1,5 +1,6 @@
 bin/
 build/
+out/
 .project
 .classpath
 .gradle/
@@ -14,3 +15,7 @@ gradlew.bat
 reddconomy.json
 /eula.txt
 /server.properties
+/logs
+*.xml
+*.iml
+gradle-wrapper.properties

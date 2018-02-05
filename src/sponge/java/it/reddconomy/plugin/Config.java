@@ -30,11 +30,13 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+@SuppressWarnings("serial")
 public class Config extends HashMap<String,Object>{
 	private static final Gson _JSON=new GsonBuilder().setPrettyPrinting().create();
 	private final File _FILE;
 	private static Config INSTANCE;
 	
+	@SuppressWarnings("unchecked")
 	public static void load() throws IOException {
 		// Load config file if exists
 		if(INSTANCE._FILE.exists()){
@@ -72,6 +74,7 @@ public class Config extends HashMap<String,Object>{
 		save();
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T> T getValue(String key) {
 		return (T)INSTANCE.get(key);
 	}

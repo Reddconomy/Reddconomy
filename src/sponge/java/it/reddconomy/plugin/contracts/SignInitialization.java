@@ -26,7 +26,7 @@ import org.spongepowered.api.world.World;
 import it.reddconomy.common.data.OffchainContract;
 import it.reddconomy.common.data.OffchainWallet;
 
-public class ContractInitialization {
+public class SignInitialization {
 	public Direction sign_direction;
 	public BlockType sign;
 	public OffchainWallet player_wallet;
