@@ -246,7 +246,7 @@ public class ReddconomyFrontend implements CommandListener{
 						OffchainWallet receiver_wallet=ReddconomyApi.getWallet(to);
 						receiver=(Player)Sponge.getServer().getPlayer(UUID.fromString(receiver_wallet.id)).orElse(null);
 					}
-					long cId=ReddconomyApi.createContract(-amount,pUUID);
+					long cId=ReddconomyApi.createContract(-amount,pUUID).id;
 					//					if(cId!=null){
 					int status=ReddconomyApi.acceptContract(cId,to);
 					if(status==200){
@@ -266,7 +266,7 @@ public class ReddconomyFrontend implements CommandListener{
 					String text=args[1];
 					if(method.equals("new")){
 						long amount=Utils.convertToInternal(Double.parseDouble(text));
-						long cId=ReddconomyApi.createContract(amount,pUUID);
+						long cId=ReddconomyApi.createContract(amount,pUUID).id;
 						player.sendMessage(Text.of("Share this Contract ID: "+cId));
 						//						else player.sendMessage(Text.of(TextColors.DARK_RED,"Can't create contract right now. Contact an admin."));
 					}else if(method.equals("accept")){
@@ -285,39 +285,42 @@ public class ReddconomyFrontend implements CommandListener{
 				}
 				case "confirm":{
 					try {
-						ContractInitialization cdata = ContractSign.contract.get(player);
+						ContractInitialization cdata = ContractSign.contract.remove(player);
 						// Check if player wallet != owner wallet
-						if(cdata.player_wallet.short_id!=cdata.owner_wallet.short_id||((boolean)Config.getValue("debug"))){
-							int status=ReddconomyApi.acceptContract(cdata.cID,cdata.player_wallet.id);
-							// This activates the redstone only if the contract replied with 200
-							if(status==200){
-								player.sendMessage(Text.of("Contract ID: "+cdata.cID));
-								player.sendMessage(Text.of("Contract accepted."));
-								player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(cdata.player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
-
-								ContractSign._ACTIVATED_SIGNS.add(cdata.location.getBlockPosition());
-						
-								cdata.location.setBlockType(
-										ContractSign._BLOCK_BLACKLIST.contains(cdata.location.getRelative(Direction.DOWN).getBlockType())
-										?BlockTypes.REDSTONE_BLOCK:BlockTypes.REDSTONE_TORCH);
-								Task.builder().execute(() -> {
-									if(cdata.location.getBlock().getType()!=BlockTypes.REDSTONE_TORCH&&cdata.location.getBlock().getType()!=BlockTypes.REDSTONE_BLOCK)return;
-
-									BlockState state=cdata.origsign.getDefaultState();
-									BlockState newstate=state.with(Keys.DIRECTION,cdata.origdirection).get();
-									cdata.location.setBlock(newstate);
-									TileEntity tile2=cdata.location.getTileEntity().get();
-									ContractSign.setLine(tile2,0,cdata.line0);
-									ContractSign.setLine(tile2,1,cdata.line1);
-									ContractSign.setLine(tile2,2,cdata.line2);
-									ContractSign.setLine(tile2,3,cdata.line3);
-									ContractSign._ACTIVATED_SIGNS.remove(cdata.location.getBlockPosition());
-								}).delay(cdata.delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(this);
+						if(cdata.sign_location.getTileEntity().isPresent())
+						{
+							if(cdata.player_wallet.short_id!=cdata.owner_wallet.short_id||((boolean)Config.getValue("debug"))){
+								int status=ReddconomyApi.acceptContract(cdata.contract.id,cdata.player_wallet.id);
+								// This activates the redstone only if the contract replied with 200
+								if(status==200){
+									player.sendMessage(Text.of("Contract ID: "+cdata.contract.id));
+									player.sendMessage(Text.of("Contract accepted."));
+									player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(cdata.player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
+	
+									ContractSign._ACTIVATED_SIGNS.add(cdata.sign_location.getBlockPosition());
+							
+									cdata.sign_location.setBlockType(
+											ContractSign._BLOCK_BLACKLIST.contains(cdata.sign_location.getRelative(Direction.DOWN).getBlockType())
+											?BlockTypes.REDSTONE_BLOCK:BlockTypes.REDSTONE_TORCH);
+									Task.builder().execute(() -> {
+										if(cdata.sign_location.getBlock().getType()!=BlockTypes.REDSTONE_TORCH&&cdata.sign_location.getBlock().getType()!=BlockTypes.REDSTONE_BLOCK)return;
+	
+										BlockState state=cdata.sign.getDefaultState();
+										BlockState newstate=state.with(Keys.DIRECTION,cdata.sign_direction).get();
+										cdata.sign_location.setBlock(newstate);
+										TileEntity tile2=cdata.sign_location.getTileEntity().get();
+										ContractSign.setLine(tile2,0,cdata.sign_lines[0]);
+										ContractSign.setLine(tile2,1,cdata.sign_lines[1]);
+										ContractSign.setLine(tile2,2,cdata.sign_lines[2]);
+										ContractSign.setLine(tile2,3,cdata.sign_lines[3]);
+										ContractSign._ACTIVATED_SIGNS.remove(cdata.sign_location.getBlockPosition());
+									}).delay(cdata.delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(this);
+								}else{
+									player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
+								}
 							}else{
-								player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
+								player.sendMessage(Text.of(TextColors.DARK_RED,"You can't accept your own contract."));
 							}
-						}else{
-							player.sendMessage(Text.of(TextColors.DARK_RED,"You can't accept your own contract."));
 						}
 
 					}catch(Exception e){

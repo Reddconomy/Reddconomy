@@ -124,14 +124,14 @@ public class ReddconomyApi{
 	}
 
 	// Create contract.
-	public static long createContract(long amount, Object wallid) throws Exception {
+	public static OffchainContract createContract(long amount, Object wallid) throws Exception {
 		String action="newcontract&wallid="+wallid+"&amount="+amount;
 		ApiResponse r=apiCall(action);
 		if(r.statusCode()==200){
 			OffchainContract contract=r.data();
-			return contract.id;
+			return contract;
 		}else throw new Exception("Can't create contract");
-	}
+}
 
 	// Accept contract.
 	public static int acceptContract(long contractId, Object wallid) throws Exception {

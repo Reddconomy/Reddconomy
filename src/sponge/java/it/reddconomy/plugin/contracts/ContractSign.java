@@ -1,16 +1,32 @@
+/*
+ * Copyright (c) 2018, Simone Cervino.
+ * 
+ * This file is part of Reddconomy-sponge.
+
+    Reddconomy-sponge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Reddconomy-sponge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Reddconomy-sponge.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package it.reddconomy.plugin.contracts;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -33,12 +49,10 @@ import org.spongepowered.api.event.entity.CollideEntityEvent;
 import org.spongepowered.api.event.entity.DamageEntityEvent;
 import org.spongepowered.api.event.entity.MoveEntityEvent;
 import org.spongepowered.api.event.entity.living.humanoid.AnimateHandEvent;
-import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
 import org.spongepowered.api.event.item.inventory.InteractItemEvent;
 import org.spongepowered.api.event.statistic.ChangeStatisticEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.event.world.chunk.TargetChunkEvent;
-import org.spongepowered.api.item.inventory.property.InventoryTitle;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
@@ -75,7 +89,7 @@ public class ContractSign{
 	
 	public static HashMap<Player, ContractInitialization> contract = new HashMap<Player, ContractInitialization>();
 	public static ContractInitialization cdata;
-	private final static Text CONTRACT_INVENTORY_NAME = Text.of(TextColors.GOLD,TextStyles.BOLD,"Reddconomy Contracts");
+	//private final static Text CONTRACT_INVENTORY_NAME = Text.of(TextColors.GOLD,TextStyles.BOLD,"Reddconomy Contracts");
 	public static final Collection<Vector3i> _ACTIVATED_SIGNS=new LinkedList<Vector3i>();
 	private static Object PLUGIN;
 	public static void init(Object plugin){
@@ -176,51 +190,47 @@ public class ContractSign{
 		Player player=(Player)event.getSource();
 		cdata = new ContractInitialization();
 		contract.put(player, cdata);
-		cdata.location=player.getWorld().getLocation(point);
-		System.out.println(cdata.location);
-		if(cdata.location.getTileEntity().isPresent()){
-			cdata.tile = cdata.location.getTileEntity().get();
-			if(!(cdata.tile instanceof Sign)) return;
-			cdata.line0=getLine(cdata.tile,0);
-			if(cdata.line0.equals("[CONTRACT]")){
+		cdata.sign_location=player.getWorld().getLocation(point);
+		System.out.println(cdata.sign_location);
+		if(cdata.sign_location.getTileEntity().isPresent()){
+			TileEntity tile = cdata.sign_location.getTileEntity().get();
+			if(!(tile instanceof Sign)) return;
+			cdata.sign_lines[0]=getLine(tile,0);
+			if(cdata.sign_lines[0].equals("[CONTRACT]")){
 				event.setCancelled(true);
 
-				cdata.line1=getLine(cdata.tile,1);
-				cdata.line2=getLine(cdata.tile,2);
-				cdata.line3=getLine(cdata.tile,3);
+				cdata.sign_lines[1]=getLine(tile,1);
+				cdata.sign_lines[2]=getLine(tile,2);
+				cdata.sign_lines[3]=getLine(tile,3);
 
 				// Getting the original position of the block
-				cdata.origdirection=cdata.location.get(Keys.DIRECTION).get();
-				cdata.origsign=cdata.location.getBlockType();
+				cdata.sign_direction=cdata.sign_location.get(Keys.DIRECTION).get();
+				cdata.sign=cdata.sign_location.getBlockType();
 
 				cdata.player_wallet=ReddconomyApi.getWallet(player.getUniqueId());
+				cdata.owner_wallet=ReddconomyApi.getWallet(cdata.sign_lines[3]);
 
-				cdata.owner_id=cdata.line3;
-				cdata.owner_wallet=ReddconomyApi.getWallet(cdata.line3);
+				String[] values=cdata.sign_lines[1].split(",");
+				if(values.length<1) return;
 
-				cdata.values=cdata.line1.split(",");
-				if(cdata.values.length<1) return;
-
-				cdata.amount=Utils.convertToInternal(Double.parseDouble(cdata.values[0].trim()));
+				long amount=Utils.convertToInternal(Double.parseDouble(values[0].trim()));
 				cdata.delay=100;
-				if(cdata.values.length>1){
-					cdata.parsed_delay=Integer.parseInt(cdata.values[1].trim());
-					if(cdata.parsed_delay>=0) cdata.delay=cdata.parsed_delay;
+				if(values.length>1){
+					int parsed_delay=Integer.parseInt(values[1].trim());
+					if(parsed_delay>=0) cdata.delay=parsed_delay;
 				}
-				cdata.cID=ReddconomyApi.createContract(cdata.amount,cdata.owner_id);
+				cdata.contract=ReddconomyApi.createContract(amount,cdata.owner_wallet.id);
 				// Confirm Contract
 				player.sendMessage(Text.builder("[REDDCONOMY] Confirm Contract.")
 									 .color(TextColors.GREEN)
 									 .style(TextStyles.BOLD)
-									 .style(TextStyles.UNDERLINE)
-									 .onHover(TextActions.showText(Text.of("Confirm the Contract Sign ID: "+cdata.cID)))
+									 .onHover(TextActions.showText(Text.of("Contract ID: "+cdata.contract.id+" | Amount: "+values[0].trim())))
 									 .onClick(TextActions.runCommand("/$ confirm "))
 									 .build());
 				// Decline Contract
 				player.sendMessage(Text.builder("[REDDCONOMY] Decline Contract.")
 						 .color(TextColors.DARK_RED)
 						 .style(TextStyles.BOLD)
-						 .style(TextStyles.UNDERLINE)
 						 .onHover(TextActions.showText(Text.of("Decline the Contract Sign that you clicked.")))
 						 .onClick(TextActions.runCommand("/$ decline "))
 						 .build());
