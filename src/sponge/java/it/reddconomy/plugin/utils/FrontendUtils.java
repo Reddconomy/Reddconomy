@@ -22,36 +22,23 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.tileentity.Sign;
-import org.spongepowered.api.block.tileentity.TileEntity;
-import org.spongepowered.api.data.manipulator.mutable.tileentity.SignData;
+import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.item.ItemType;
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
+import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
-import org.spongepowered.api.util.Direction;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
-
-import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import com.google.zxing.qrcode.encoder.ByteMatrix;
-import com.google.zxing.qrcode.encoder.Encoder;
 
-import it.reddconomy.Utils;
 import it.reddconomy.common.data.OffchainWallet;
 import it.reddconomy.plugin.Config;
 import it.reddconomy.plugin.ReddconomyApi;
@@ -107,6 +94,12 @@ public class FrontendUtils {
         return new String(Base64.getEncoder().encode(sha256_HMAC.doFinal(data.getBytes("UTF-8"))),"UTF-8");
     }
 	
+	public static ItemStack createItem(ItemType type, int quantity, String name, TextColor color)
+	{
+		ItemStack item = ItemStack.builder().itemType(type).quantity(quantity).build();
+		item.offer(Keys.DISPLAY_NAME, Text.of(color,name));
+		return item;
+	}
 
 }
 
