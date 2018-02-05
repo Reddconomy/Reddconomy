@@ -12,3 +12,5 @@ gradlew.bat
 .DS_Store
 *.sqlite
 reddconomy.json
+/eula.txt
+/server.properties
