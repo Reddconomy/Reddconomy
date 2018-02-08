@@ -23,58 +23,27 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package it.reddconomy.offchain.sql;
+package it.reddconomy.common.fees;
 
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import it.reddconomy.Utils;
 
-/**
- * Result of an SQL query
- * @author Riccardo Balbo
- *
- */
-public class SQLResult{
-	protected ResultSet RESULT_SET;
-	protected Boolean EMPTY=null;
-
-	public SQLResult(ResultSet result){
-		RESULT_SET=result;
+public class BlockchainFee {
+	protected long FEE;
+	public BlockchainFee(long feeXkb){
+		FEE=feeXkb;
 	}
-
-	public Map<String,Object> fetchAssoc() {
-		Map<String,Object> map=new HashMap<String,Object>();
-		try{
-			if(EMPTY==null)EMPTY=!RESULT_SET.next();
-			for(int column=1;column<=RESULT_SET.getMetaData().getColumnCount();column++){
-				map.put(RESULT_SET.getMetaData().getColumnLabel(column),RESULT_SET.getObject(column));
-			}
-			if(EMPTY!=null)RESULT_SET.next();
-		}catch(Exception e){}
-		return map;
-	}
-
 	
-	
-	public boolean isEmpty(){
-		try{
-			if(EMPTY==null)EMPTY=!RESULT_SET.next();
-			return EMPTY;
-		}catch(Exception e){
-			
-		}
-		return true;
+	public long get(String rawtr) {
+		int kb=(int)Math.ceil(((double)rawtr.length()/2.)/1024.);
+		return FEE*kb;
 	}
 
-	public Collection<Map<String,Object>> fetchAll() {
-		Collection<Map<String,Object>> out=new ArrayList<Map<String,Object>>();
-		Map<String,Object> fetch=null;
-		while((fetch=fetchAssoc())!=null){
-			out.add(fetch);
-		}
-		return out;
+	public long getRaw(){
+		return FEE;
 	}
 
+	@Override
+	public String toString(){
+		return  Utils.convertToUserFriendly(FEE)+"/kb";
+	}
 }

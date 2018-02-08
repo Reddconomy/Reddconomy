@@ -18,14 +18,30 @@
  */
 package it.reddconomy.plugin;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
 import it.reddconomy.Utils;
+import it.reddconomy.common.ApiResponse;
+import it.reddconomy.common.data.Withdraw;
 import it.reddconomy.plugin.utils.FrontendUtils;
 
 public class AdminCommands{
+	private static long _STARTTIME=System.currentTimeMillis();
+	private static String timestampToHumanReadable(long millis){
+		return String.format("%02d:%02d:%02d", 
+				TimeUnit.MILLISECONDS.toHours(millis),
+				TimeUnit.MILLISECONDS.toMinutes(millis) -  
+				TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millis)),
+				TimeUnit.MILLISECONDS.toSeconds(millis) - 
+				TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));   
+		
+	}
 	// Complete Backend's info for OPs
 	public static void showAdminInfos(Player player) throws Exception {
 		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY INFO]"));
@@ -43,7 +59,17 @@ public class AdminCommands{
 		player.sendMessage(Text.of(TextColors.GOLD,"Deposit fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getDepositFee().toString()));
 		player.sendMessage(Text.of(TextColors.GOLD,"Withdraw fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getWithdrawFee().toString()));
 		player.sendMessage(Text.of(TextColors.GOLD,"Transaction fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getTransactionFee().toString()));
+		player.sendMessage(Text.of(TextColors.GOLD,"Blockchain fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getBlockchainFee().toString()));
+	
+
+	    String date = timestampToHumanReadable(ReddconomyApi.getInfo().uptime);
+		player.sendMessage(Text.of(TextColors.GOLD,"Backend uptime: ",TextColors.WHITE,date));
+		 date = timestampToHumanReadable(System.currentTimeMillis()-_STARTTIME);
+		player.sendMessage(Text.of(TextColors.GOLD,"Frontend uptime: ",TextColors.WHITE,date));
+
 	}
+	
+	
 	// Admin help message of Reddconomy
 	public static void sendAdminHelpText(Player player) {
 		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY HELP]"));
@@ -101,9 +127,11 @@ public class AdminCommands{
 					String addr=args[3];
 					double damount=Double.parseDouble(args[1]);
 					long amount=Utils.convertToInternal(damount);
-					int status=ReddconomyApi.withdraw(amount,addr,wallid);
-					if(status==200) player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing.. Wait at least 10 minutes"));
-					else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot request a withdraw right now, check the Reddconomy Service error."));
+					ApiResponse resp=ReddconomyApi.withdraw(amount,addr,wallid,true);
+					if(resp.statusCode()==200){
+						Withdraw wt=resp.data();
+						player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing.. Txid: "+wt.id));
+					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Error:"+resp.status()));
 					return true;
 				}
 				default:

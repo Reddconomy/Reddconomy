@@ -32,6 +32,7 @@ import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,17 +41,15 @@ import it.reddconomy.blockchain.BlockchainConnector;
 import it.reddconomy.blockchain.impl.BitcoindConnector;
 import it.reddconomy.common.ApiResponse;
 import it.reddconomy.common.fees.Fees;
-import it.reddconomy.offchain.Offchain;
-import it.reddconomy.offchain.sql.SQLiteOffchainDatabase;
+import it.reddconomy.core.ReddconomyCore;
+import it.reddconomy.core.sql.ReddconomyCoreSQLLite;
 
 public class Reddconomy {
 
 	private static HttpGateway HTTPD;
 	private static ApiEndpoints RDDE;
-	private static BlockchainConnector BLOCKCHAIN;
-	private static Offchain OFFCHAIN;
+	private static ReddconomyCore CORE;
 	private static final Gson _JSON=new GsonBuilder().setPrettyPrinting().create();
-	private static Fees FEES=new Fees();
 	
 	
 	@SuppressWarnings("unchecked")
@@ -59,12 +58,12 @@ public class Reddconomy {
 		File config_file=new File("reddconomy.json");		
 		if(args.length>0)config_file=new File(String.join(" ",args).replace("/",File.separator));
 		
-		Map<String,Object> config=new HashMap<String,Object>();
+		Config config=new Config();
 
 		// Load config file if exists
 		if(config_file.exists()){
 			BufferedReader reader=new BufferedReader(new FileReader(config_file));
-			config=_JSON.fromJson(reader,Map.class);
+			config.putAll(_JSON.fromJson(reader,Map.class));
 			reader.close();
 		}		
 		
@@ -92,8 +91,14 @@ public class Reddconomy {
 		// Coin info
 		config.putIfAbsent("coin","reddcoin");
 		config.putIfAbsent("coin_short","rdd");
+		config.putIfAbsent("blockchain_fee","0.001/kb");
+		config.putIfAbsent("estimate_blockchainfee",false);
+		config.putIfAbsent("minconf",3);
+
+		
 		// Coins that the offchain wallets will receive upon creation
 		config.putIfAbsent("welcome_tip",0.0);
+		config.onUpdate();
 
 
 		
@@ -103,25 +108,17 @@ public class Reddconomy {
 		writer.close();
 		
 		// Connect to RPC daemon
-		BLOCKCHAIN=new BitcoindConnector(config.get("bitcoind-rpc_url").toString(),config.get("bitcoind-rpc_user").toString(),config.get("bitcoind-rpc_password").toString());
-		BLOCKCHAIN.waitForSync();
-		// Load fees
-		FEES.fromMap(config,true);
-		// Convert welcome tip to internal representation
-		long welcome_tip=Utils.convertToInternal(((Number)config.get("welcome_tip")).doubleValue());
-		// Start local database
-		OFFCHAIN=new SQLiteOffchainDatabase(config.get("sqlite-path").toString());
-		// Init offchain
-		OFFCHAIN.open(BLOCKCHAIN,FEES,		config.get("fees_collector_wallid").toString(),
-				config.get("welcome_funds_walletid").toString(),
-				config.get("generic_wallid").toString(),
-				config.get("null_wallid").toString(),
+		BitcoindConnector blockchain=new BitcoindConnector(config);
+		blockchain.waitForSync();
 
-				welcome_tip);
+		// Start local database
+		CORE=new ReddconomyCoreSQLLite(config.get("sqlite-path").toString());
+		// Init offchain
+		CORE.open(blockchain,		config);
 		// Register api responses
 		ApiResponse.registerAll("v1");	
 		// Start api backend
-		RDDE=new ReddconomyApiEndpointsV1(config,BLOCKCHAIN,OFFCHAIN);
+		RDDE=new EndpointsV1(config,blockchain,CORE);
 		RDDE.open();
 		// Start HTTP gateway
 		String ip=config.get("bind_ip").toString();

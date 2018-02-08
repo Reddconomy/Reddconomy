@@ -23,7 +23,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package it.reddconomy.offchain.sql;
+package it.reddconomy.core.sql;
 
 
 import java.sql.Connection;
@@ -34,16 +34,21 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
+import it.reddconomy.Config;
+import it.reddconomy.Utils;
 import it.reddconomy.blockchain.BlockchainConnector;
 import it.reddconomy.common.data.Deposit;
 import it.reddconomy.common.data.OffchainContract;
 import it.reddconomy.common.data.OffchainWallet;
 import it.reddconomy.common.data.Withdraw;
 import it.reddconomy.common.data.OffchainContract.TransactionDirection;
+import it.reddconomy.common.fees.Fee;
 import it.reddconomy.common.fees.Fees;
-import it.reddconomy.offchain.Offchain;
+import it.reddconomy.common.fees.BlockchainFee;
+import it.reddconomy.core.ReddconomyCore;
 
 
 /**
@@ -51,31 +56,55 @@ import it.reddconomy.offchain.Offchain;
  * @author Riccardo Balbo
  */
 
-public  class SQLiteOffchainDatabase implements Offchain {
+public  class ReddconomyCoreSQLLite implements ReddconomyCore {
 	protected Connection CONNECTION;
-	protected Fees FEES;
-	protected String FEES_WALLET,WELCOME_WALLET,GENERIC_WALLET,NULL_WALLET;
-	protected long WELCOME_TIP;
+
+	protected String FEES_WALLET,WELCOME_WALLET,GENERIC_WALLET,NULL_WALLET;	
+
+	
 	protected final int _MAX_SHORT_ID_SIZE="9999999999999".length();
+	
 	protected BlockchainConnector BLOCKCHAIN;
-	public SQLiteOffchainDatabase(String path) throws Exception{
+	protected Fees FEES=new Fees();
+	protected Config CONFIG;
+	protected long WELCOME_TIP;
+	
+	
+	protected Map<Long,Withdraw> PENDING_WITHDRAW=new HashMap<Long,Withdraw>();
+	protected long LATEST_WITHDRAW_ID;
+
+
+	public ReddconomyCoreSQLLite(String path) throws Exception{
 		Class.forName("org.sqlite.JDBC");
 		CONNECTION=DriverManager.getConnection("jdbc:sqlite:"+path);
 	}
+	
+	
+	public Fees getFees(){
+		return FEES;
+	}
 
 	
+	public long getWelcomeTip(){
+		return WELCOME_TIP;
+	
+	}
+	
 	@Override
-	public void open(BlockchainConnector blc,Fees fees,String feescollector_wallet,String welcomefunds_wallet,String generic_wallet,String null_wallet,
-			long welcome_tip) throws Exception{
-		FEES=fees;
-		FEES_WALLET=feescollector_wallet;
-		WELCOME_WALLET=welcomefunds_wallet;
-		GENERIC_WALLET=generic_wallet;
-		NULL_WALLET=null_wallet;
-		WELCOME_TIP=welcome_tip;
+	public void open(BlockchainConnector blc, Config config) throws Exception {
+		CONFIG=config;
+		
+		WELCOME_TIP=Utils.convertToInternal(((Number)CONFIG.get("welcome_tip")).doubleValue());
+		
+		FEES.fromMap(CONFIG,true);
+
+		FEES_WALLET=CONFIG.get("fees_collector_wallid").toString();
+		WELCOME_WALLET=CONFIG.get("welcome_funds_walletid").toString();
+		GENERIC_WALLET=CONFIG.get("generic_wallid").toString();
+		NULL_WALLET=CONFIG.get("null_wallid").toString();
+
 		BLOCKCHAIN=blc;
-		
-		
+
 		SQLResult q;
 		
 		q=query("SELECT * FROM `reddconomy_wallets`",true,true);
@@ -132,25 +161,16 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		getOffchainWallet(WELCOME_WALLET);
 		getOffchainWallet(GENERIC_WALLET);
 		getOffchainWallet(NULL_WALLET);
-		
-	
-	
+			
 	}
 	
-	public long getWelcomeTip(){
-		return WELCOME_TIP;
-	}
-	
-	public Fees getFees(){
-		return FEES;
-	}
 	
 
 	protected boolean isAServerWallet(String wallid){
 		return (wallid.equals(GENERIC_WALLET)||
 			wallid.equals(WELCOME_WALLET)
 			||wallid.equals(FEES_WALLET)
-			||wallid.equals(NULL_WALLET)
+			||isNullWallet(wallid)
 				);
 	}
 	
@@ -241,8 +261,8 @@ public  class SQLiteOffchainDatabase implements Offchain {
 				// Add welcome funds
 				System.out.println("Create welcome contract");
 				try{
-					OffchainContract contract=createContract(WELCOME_WALLET,-WELCOME_TIP);
-					acceptContract(contract.id,id);
+					OffchainContract contract=createOffchainContract(WELCOME_WALLET,-WELCOME_TIP);
+					acceptOffchainContract(contract.id,id);
 					out.balance=WELCOME_TIP;
 				}catch(Exception e){
 					e.printStackTrace();
@@ -270,7 +290,7 @@ public  class SQLiteOffchainDatabase implements Offchain {
 	
 	
 	@Override
-	public synchronized OffchainContract getContract(long id) throws Exception{
+	public synchronized OffchainContract getOffchainContract(long id) throws Exception{
 //		id=id.replaceAll("[^A-Za-z0-9]","_");		
 		OffchainContract out=new OffchainContract();
 		SQLResult res=query("SELECT * FROM `reddconomy_contracts` WHERE `id`='"+id+"' LIMIT 0,1",true,false);
@@ -291,7 +311,7 @@ public  class SQLiteOffchainDatabase implements Offchain {
 	
 
 	@Override
-	public synchronized OffchainContract createContract(String walletid,long amount) throws Exception{
+	public synchronized OffchainContract createOffchainContract(String walletid,long amount) throws Exception{
 		if(isNullWallet(walletid))throw new Exception("Null wallet can't create contracts");
 		
 		// Paranoia
@@ -306,7 +326,7 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		SQLResult res=query("SELECT last_insert_rowid()",true,false);
 		if(res!=null){
 			long contractid=((Number)res.fetchAssoc().values().iterator().next()).longValue();
-			return getContract(contractid);
+			return getOffchainContract(contractid);
 		}else{			
 			throw new Exception("Can't get last contract?");
 		}
@@ -314,12 +334,12 @@ public  class SQLiteOffchainDatabase implements Offchain {
 	
 
 	@Override
-	public synchronized OffchainContract acceptContract(long contractid, String acceptedby_walletid) throws Exception {
+	public synchronized OffchainContract acceptOffchainContract(long contractid, String acceptedby_walletid) throws Exception {
 		if(isNullWallet(acceptedby_walletid))throw new Exception("Null wallet can't accept contracts");
 
 //		contractid=contractid.replaceAll("[^A-Za-z0-9]","_");		
 		acceptedby_walletid=parseWalletId(acceptedby_walletid);
-		OffchainContract contract=getContract(contractid);
+		OffchainContract contract=getOffchainContract(contractid);
 		if(contract!=null){
 			System.out.println("Accept contract "+contract+"from wallid "+acceptedby_walletid);
 			String accp=contract.acceptedby;
@@ -418,51 +438,90 @@ public  class SQLiteOffchainDatabase implements Offchain {
 		return contract;
 	}
 	
+	
 
 	@Override
-	public synchronized Withdraw withdraw(String walletid,long amount) throws Exception{
-		if(isNullWallet(walletid)){
-			long balance=getNullWallet().balance;
-			if(balance>=amount){
-				Withdraw wt=new Withdraw();
-				wt.amount=amount;
-				wt.paid_in_fees=0;
-				wt.from_wallet=NULL_WALLET;
-				return wt;
-			}else{
-				throw new Exception("Requested withdraw of "+amount+" but only "+balance+" available");				
-			}			
-		}
+	public synchronized Withdraw withdraw(String from,long amount,String to,BlockchainFee net_fee,boolean noconfirm) throws Throwable{
+		to=parseWalletId(to);
+		from=parseWalletId(from);
 
-		long net=FEES.getWithdrawFee().apply(amount);
-		long tare=amount-net;
-		
-		walletid=parseWalletId(walletid);
+		if(net_fee==null)net_fee=BLOCKCHAIN.estimateFee();
+		if(net_fee==null)net_fee=getFees().getBlockchainFee();
+	
 
-		OffchainWallet wallet=getOffchainWallet(walletid);
+		OffchainWallet wallet=getOffchainWallet(from);
 		long balance=wallet.balance;
 		if(balance>=amount){
-			balance-=amount;
-			query("UPDATE reddconomy_wallets SET `balance`='"+balance+"' WHERE `id`='"+walletid+"'",false,false);
-			
-			if(!isAServerWallet(walletid)){
-				OffchainWallet fees_wallet=getOffchainWallet(FEES_WALLET);
-				fees_wallet.balance+=tare;
-				query("UPDATE reddconomy_wallets SET `balance`='"+fees_wallet.balance+"' WHERE `id`='"+fees_wallet.id+"'",false,false);
-				amount=net;
+			if(BLOCKCHAIN.getBalance()>=amount){
+				long amount_minus_offchainfees=amount;
+				if(!isAServerWallet(wallet.id)){
+					amount_minus_offchainfees=getFees().getWithdrawFee().apply(amount);
+				}
+				
+				Object rawtr[]=BLOCKCHAIN.createRawTransaction(to,amount_minus_offchainfees,net_fee.getRaw());
+				String rawt=(String)rawtr[0];
+				long amount_net=(long)rawtr[1];
+				
+				Withdraw data=new Withdraw();
+				data.amount=amount;
+				data.from_wallet=from;
+				data.to_addr=to;
+				data.amount_net=amount_net;
+				data.paid_in_fees=amount-amount_minus_offchainfees;
+				data.raw=rawt;
+
+				long id=(LATEST_WITHDRAW_ID++);
+				data.id=""+id;
+				data.confirmed=false;
+				
+				PENDING_WITHDRAW.put(id,data);
+				if(isAServerWallet(wallet.id)||noconfirm)confirmWithdraw(data.id);
+				
+				
+				return data;
 			}else{
-				tare=0;
+				throw new Exception("The server doesn't have enough coins");
 			}
-			
+
 		}else{
-			throw new Exception("Requested withdraw of "+amount+" but only "+balance+" available");
+			throw new Exception("Not enough coins");
 		}
+	}
+
+	@Override
+	public synchronized Withdraw confirmWithdraw(String withdraw_id) throws Throwable{
 		
-		Withdraw wt=new Withdraw();
-		wt.amount=amount;
-		wt.paid_in_fees=tare;
-		wt.from_wallet=walletid;
-		return wt;
+		Withdraw data=PENDING_WITHDRAW.remove(Long.parseLong(withdraw_id));
+		
+		if(data==null)	throw new Exception("Can't find pending withdraw with id "+withdraw_id+". Inexistent or already confirmed.");				
+		data.confirmed=true;
+		OffchainWallet wallet=getOffchainWallet(data.from_wallet);
+		
+		if(wallet.balance>=data.amount){
+			if(BLOCKCHAIN.getBalance()>=data.amount){
+		
+				
+				if(isNullWallet(wallet.id)){
+					data.id=BLOCKCHAIN.sendRawTransaction(data.raw);
+					return data;
+				}
+				
+				
+				data.id=BLOCKCHAIN.sendRawTransaction(data.raw);
+				wallet.balance-=data.amount;
+				query("UPDATE reddconomy_wallets SET `balance`='"+wallet.balance+"' WHERE `id`='"+wallet.id+"'",false,false);
+				if(!isAServerWallet(wallet.id)){
+					OffchainWallet fees_wallet=getOffchainWallet(FEES_WALLET);
+					fees_wallet.balance+=data.paid_in_fees;
+					query("UPDATE reddconomy_wallets SET `balance`='"+fees_wallet.balance+"' WHERE `id`='"+fees_wallet.id+"'",false,false);
+				}
+				
+			}else throw new Exception("The server doesn't have enough coins");
+		}else throw new Exception("Not enough coins");
+
+		
+		
+		return data;
 	}
 	
 	
@@ -470,17 +529,11 @@ public  class SQLiteOffchainDatabase implements Offchain {
 	
 	
 	@Override
-	public synchronized Deposit prepareForDeposit(String deposit_addr,String walletid,long expected_balance)throws Exception{
+	public synchronized Deposit prepareForDeposit(String walletid,long expected_balance)throws Throwable{
 		if(isNullWallet(walletid))throw new Exception("You can not deposit on null wallet");
-
 		walletid=parseWalletId(walletid);
-
-		deposit_addr=deposit_addr.replaceAll("[^A-Za-z0-9]","_");
-//		SQLResult res=query("SELECT * FROM `reddconomy_deposits` WHERE `addr`='"+deposit_addr+"' LIMIT 0,1",true,false);
-//		if(res!=null&&!res.isEmpty()){
-//			throw new Exception("Cannot reuse deposit addresses");
-//		}else
-			query("INSERT INTO reddconomy_deposits(`created`,`addr`,`receiver`,`expected_balance`) VALUES('"+System.currentTimeMillis()+"','"+deposit_addr+"','"+walletid+"','"+expected_balance+"')",false,false);
+		String deposit_addr=BLOCKCHAIN.getNewAddress();
+		query("INSERT INTO reddconomy_deposits(`created`,`addr`,`receiver`,`expected_balance`) VALUES('"+System.currentTimeMillis()+"','"+deposit_addr+"','"+walletid+"','"+expected_balance+"')",false,false);
 		return getDeposit(deposit_addr);
 	}
 	
@@ -493,12 +546,10 @@ public  class SQLiteOffchainDatabase implements Offchain {
 			Map<String,Object> fetch;
 			while(!(fetch=res.fetchAssoc()).isEmpty()){
 				
-
 				String addr=fetch.get("addr").toString();
 				byte status=((Number)fetch.get("status")).byteValue();
 				long exp=((Number)fetch.get("expiring")).longValue();
 
-		
 				
 				exp-=tms;
 				if(exp<=0){

@@ -23,52 +23,25 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package it.reddconomy.blockchain;
+package it.reddconomy;
 
-import it.reddconomy.common.fees.BlockchainFee;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Interface that describes a class used to query the blockchain 
- * @author Riccardo Balbo
- *
- */
-public interface BlockchainConnector{
-	/**
-	 * Get balance of specified address
-	 * @param addr A valid blockchain address
-	 * @return Amount of coins
-	 * @throws Throwable
-	 */
-	public long getReceivedByAddress(String addr) throws Throwable ;	
+public class Config extends ConcurrentHashMap<String,Object>{
+	private long LAST_UPDATE;
+	public void onUpdate(){
+		LAST_UPDATE=System.currentTimeMillis();
+	}
 	
-	/**
-	 * Send coins to a specified address
-	 * @param addr A valid blockchain address
-	 * @param amount_long Amount to send 
-	 * @throws Throwable
-	 */
-	public Object[] createRawTransaction(String to, 
-			long amount_long,
-			long feeXkb
-			) throws Throwable;
+	public long lastUpdate(){
+		return LAST_UPDATE;
+	}
 	
+	@Override
+	public Object put(String key, Object value) {
+		return super.put(key,value);
+	}
+
 	
-	
-	
-	public String sendRawTransaction(String raw) throws Throwable;
-	/**
-	 * Get new blockchain address
-	 * @return new address
-	 * @throws Throwable
-	 */
-	public String getNewAddress() throws Throwable ;
-	
-	public boolean isTestnet()  throws Throwable ;
-	
-	public long getBalance() throws Throwable;
-	
-	public void waitForSync();
-	
-	public BlockchainFee estimateFee();
 	
 }

@@ -141,10 +141,10 @@ public class ReddconomyApi{
 	}
 
 	// Withdraw money
-	public static int withdraw(long amount, String addr, Object wallid) throws Exception {
-		String action="withdraw&amount="+amount+"&addr="+addr+"&wallid="+wallid;
+	public static ApiResponse withdraw(long amount, String addr, Object wallid,boolean noconfirm) throws Exception {
+		String action="withdraw&amount="+amount+"&addr="+addr+"&wallid="+wallid+(noconfirm?"&noconfirm":"");
 		ApiResponse r=apiCall(action);
-		return r.statusCode();
+		return r;
 	}
 
 
@@ -153,5 +153,11 @@ public class ReddconomyApi{
 		String action="sendcoins&addr="+addr+"&amount="+amount;
 		ApiResponse r=apiCall(action);
 		return r.statusCode();
+	}
+
+	public static ApiResponse withdraw_confirm(String id) throws Exception {
+		String action="confirm_withdraw&id="+id;
+		ApiResponse r=apiCall(action);
+		return r;
 	}
 }

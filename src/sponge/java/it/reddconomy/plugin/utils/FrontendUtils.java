@@ -101,5 +101,11 @@ public class FrontendUtils {
 		return item;
 	}
 
+
+
+	public static String getCoinString() throws Exception {
+		return (ReddconomyApi.getInfo().testnet?"test ":"")+ReddconomyApi.getInfo().coin_short;
+	}
+
 }
 

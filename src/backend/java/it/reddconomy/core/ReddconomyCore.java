@@ -24,25 +24,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package it.reddconomy.offchain;
+package it.reddconomy.core;
 
 import java.sql.SQLException;
 import java.util.Collection;
 
+import it.reddconomy.Config;
 import it.reddconomy.blockchain.BlockchainConnector;
 import it.reddconomy.common.data.Deposit;
 import it.reddconomy.common.data.OffchainContract;
 import it.reddconomy.common.data.OffchainWallet;
 import it.reddconomy.common.data.Withdraw;
+import it.reddconomy.common.fees.Fee;
 import it.reddconomy.common.fees.Fees;
+import it.reddconomy.common.fees.BlockchainFee;
 
 /**
- * This interface represent an internal class used to handle off-chain transactions 
- * Note: No blockchain operations should be handled by classes that implement this interface
  * @author Riccardo Balbo
  *
  */
-public interface Offchain{
+public interface ReddconomyCore{
 	// 
 	boolean close();
 
@@ -54,7 +55,7 @@ public interface Offchain{
 	 * @param generic_wallet
 	 * @param welcome_tip
 	 */
-	void open(BlockchainConnector blc,Fees fees,String feescollector_wallet,String welcomefunds_wallet,String generic_wallet,String null_wallet,long welcome_tip) throws Exception;
+	void open(BlockchainConnector blc,Config config) throws Exception;
 	
 	//	
 
@@ -72,7 +73,7 @@ public interface Offchain{
 	 * @return An instance of OffchainWallet
 	 * @throws Exception
 	 */
-	OffchainWallet getOffchainWallet(String id) throws Exception;
+	OffchainWallet getOffchainWallet(String id) throws Throwable;
 
 	/**
 	 * Get a contract
@@ -80,7 +81,7 @@ public interface Offchain{
 	 * @return OffchainContract or null if does not exist
 	 * @throws SQLException
 	 */
-	OffchainContract getContract(long id) throws Exception;
+	OffchainContract getOffchainContract(long id) throws Throwable;
 
 	/**
 	 * Create a contract
@@ -89,7 +90,7 @@ public interface Offchain{
 	 * @return The newly created OffchainContract
 	 * @throws SQLException
 	 */
-	OffchainContract createContract(String walletid, long amount) throws Exception;
+	OffchainContract createOffchainContract(String walletid, long amount) throws Throwable;
 
 	/**
 	 * Accept a contract
@@ -97,26 +98,20 @@ public interface Offchain{
 	 * @param walletid unique id that represent the wallet of whom accepts
 	 * @throws Exception is raised if for some reason the contract can't be accepted
 	 */
-	OffchainContract acceptContract(long contractid, String walletid) throws Exception;
+	OffchainContract acceptOffchainContract(long contractid, String walletid) throws Throwable;
 
-	/**
-	 * Execute a withdraw on a OffchainWallet, ie. Removes coins from an OffchainWallet
-	 * Note: this is not enough to perform an actual withdraw, a correspondent action must be
-	 * performed from a BlockchainConnector.
-	 * @param walletid Unique id of the OffchainWallet that performs the withdraw
-	 * @param amount quanti soldi
-	 * @throws Exception solleva eccezione se non è possibile farlo
-	 */
-	Withdraw withdraw(String walletid, long amount) throws Exception;
+	
+	Withdraw withdraw(String walletid, long amount,String to,BlockchainFee net_fee,boolean noconfirm) throws Throwable;
+
+	Withdraw confirmWithdraw(String withdraw_id) throws Throwable;
 
 	/**
 	 * Tells the backend to wait for a deposit
-	 * @param deposit_addr Blockchain address where it's expected to find the coins once they are deposited (obtained from BlockchainConnector)
 	 * @param wallet_id OffchainWallet where the coins will go
 	 * @param expected_balance How many coins to expect
 	 * @throws Exception If for some reason the deposit is not possible
 	 */
-	Deposit prepareForDeposit(String deposit_addr, String walletid, long expected_balance) throws Exception;
+	Deposit prepareForDeposit(String walletid, long expected_balance) throws Throwable;
 
 	/**
 	 * Get all the pending deposits that have yet to expire 
@@ -124,21 +119,21 @@ public interface Offchain{
 	 * @return Collection of Deposit
 	 * @throws Exception  
 	 */
-	Collection<Deposit> getIncompletedDepositsAndUpdate(long tms) throws Exception;
+	Collection<Deposit> getIncompletedDepositsAndUpdate(long tms) throws Throwable;
 
 	/**
 	 * Tells the backend that the deposit action that was waiting on the specified addres has been completed
 	 * @param deposit_addr Blockchain Address
 	 * @throws Exception 
 	 */
-	Deposit completeDeposit(String deposit_addr) throws Exception;
+	Deposit completeDeposit(String deposit_addr) throws Throwable;
 	
 	/**
 	 * Get informations about a deposit 
 	 * @param deposit_addr Deposit address
 	 * @throws Exception 
 	 */
-	Deposit getDeposit(String deposit_addr) throws Exception;
+	Deposit getDeposit(String deposit_addr) throws Throwable;
 
 
 }

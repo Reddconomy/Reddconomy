@@ -23,52 +23,58 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package it.reddconomy.blockchain;
+package it.reddconomy.core.sql;
 
-import it.reddconomy.common.fees.BlockchainFee;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Interface that describes a class used to query the blockchain 
+ * Result of an SQL query
  * @author Riccardo Balbo
  *
  */
-public interface BlockchainConnector{
-	/**
-	 * Get balance of specified address
-	 * @param addr A valid blockchain address
-	 * @return Amount of coins
-	 * @throws Throwable
-	 */
-	public long getReceivedByAddress(String addr) throws Throwable ;	
+public class SQLResult{
+	protected ResultSet RESULT_SET;
+	protected Boolean EMPTY=null;
+
+	public SQLResult(ResultSet result){
+		RESULT_SET=result;
+	}
+
+	public Map<String,Object> fetchAssoc() {
+		Map<String,Object> map=new HashMap<String,Object>();
+		try{
+			if(EMPTY==null)EMPTY=!RESULT_SET.next();
+			for(int column=1;column<=RESULT_SET.getMetaData().getColumnCount();column++){
+				map.put(RESULT_SET.getMetaData().getColumnLabel(column),RESULT_SET.getObject(column));
+			}
+			if(EMPTY!=null)RESULT_SET.next();
+		}catch(Exception e){}
+		return map;
+	}
+
 	
-	/**
-	 * Send coins to a specified address
-	 * @param addr A valid blockchain address
-	 * @param amount_long Amount to send 
-	 * @throws Throwable
-	 */
-	public Object[] createRawTransaction(String to, 
-			long amount_long,
-			long feeXkb
-			) throws Throwable;
 	
-	
-	
-	
-	public String sendRawTransaction(String raw) throws Throwable;
-	/**
-	 * Get new blockchain address
-	 * @return new address
-	 * @throws Throwable
-	 */
-	public String getNewAddress() throws Throwable ;
-	
-	public boolean isTestnet()  throws Throwable ;
-	
-	public long getBalance() throws Throwable;
-	
-	public void waitForSync();
-	
-	public BlockchainFee estimateFee();
-	
+	public boolean isEmpty(){
+		try{
+			if(EMPTY==null)EMPTY=!RESULT_SET.next();
+			return EMPTY;
+		}catch(Exception e){
+			
+		}
+		return true;
+	}
+
+	public Collection<Map<String,Object>> fetchAll() {
+		Collection<Map<String,Object>> out=new ArrayList<Map<String,Object>>();
+		Map<String,Object> fetch=null;
+		while((fetch=fetchAssoc())!=null){
+			out.add(fetch);
+		}
+		return out;
+	}
+
 }

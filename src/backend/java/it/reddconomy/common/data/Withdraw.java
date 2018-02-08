@@ -41,22 +41,39 @@ public final class Withdraw implements Data{
 	/**
 	 * Blockchain address where to send coins
 	 */
-	public String from_wallet;
+	public String from_wallet;	
+	public String to_addr;
 
 	/**
-	 * How many coins
+	 * Net amount
 	 */
-	public long amount;
-	
+	public long amount,amount_net;
 	public long paid_in_fees=0;
+
+	public boolean confirmed=false;
 	
-		
+	
+	public String id;
+	
+	public String raw;
 	
 	@Override
 	public String toString(){
 		StringBuilder sb=new StringBuilder();
 		sb.append("Withdraw-").append(from_wallet).append(": ammount=").append(amount)		
-		.append(" paid_in_fees=").append(paid_in_fees);
+		.append(" id=").append(id)
+		.append(" raw=").append(raw)
+		.append(" to_addr=").append(to_addr)
+		.append(" confirmed=").append(confirmed)
+
+		.append(" paid_in_fees=").append(paid_in_fees)
+		.append(" amount=").append(amount)
+		.append(" amount_net=").append(amount_net);
+		
+		
+		
+		
+
 		return sb.toString();
 	}
 	
@@ -67,7 +84,18 @@ public final class Withdraw implements Data{
 		Map<String,Object> out=new HashMap<String,Object>();
 		out.put("from_wallet",from_wallet);
 		out.put("amount",amount);
+		out.put("amount_net",amount_net);
+
+		//		out.put("amount",amount);
+
 		out.put("paid_in_fees",paid_in_fees);
+
+		out.put("id",id);
+		out.put("raw",raw);
+		out.put("to_addr",to_addr);
+		out.put("confirmed",confirmed);
+
+//		out.put("paid_in_netfees",paid_in_netfees);
 		return out;
 	}
 
@@ -75,15 +103,25 @@ public final class Withdraw implements Data{
 	public void fromMap(Map<String,Object> map) {
 		from_wallet=map.get("from_wallet").toString();
 		amount=((Number)map.get("amount")).longValue();
-		paid_in_fees=((Number)map.get("paid_in_fees")).longValue();
+		amount_net=((Number)map.get("amount_net")).longValue();
 
+		paid_in_fees=((Number)map.get("paid_in_fees")).longValue();
+		id=map.get("id").toString();
+		raw=map.get("raw").toString();
+		to_addr=map.get("to_addr").toString();
+		confirmed=(boolean)map.get("confirmed");
+//		amount=((Number)map.get("amount")).longValue();
 	}
 	
 	@Override
 	public boolean equals(Object w2o){
 		if(!(w2o instanceof Withdraw))return false;
 		Withdraw w2=(Withdraw)w2o;
-		return from_wallet.equals(w2.from_wallet)&&amount==w2.amount&&paid_in_fees==w2.paid_in_fees;
+		return from_wallet.equals(w2.from_wallet)
+				&&amount==w2.amount	&&amount_net==w2.amount_net
+				&&to_addr.equals(w2.to_addr)
+				&&(id.equals(w2.id)||raw.equals(raw))
+		;
 	}
 	
 	

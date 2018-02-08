@@ -36,18 +36,20 @@ import it.reddconomy.common.data.Info;
 import it.reddconomy.common.data.OffchainContract;
 import it.reddconomy.common.data.OffchainWallet;
 import it.reddconomy.common.data.Withdraw;
-import it.reddconomy.offchain.Offchain;
+import it.reddconomy.common.fees.BlockchainFee;
+import it.reddconomy.core.ReddconomyCore;
 
-public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
+public class EndpointsV1 extends Thread implements ApiEndpoints {
+	private final long _STARTTIME=System.currentTimeMillis();
 
 	
-	private final Offchain _OFFCHAIN;
+	private final ReddconomyCore _OFFCHAIN;
 
 	private BlockchainConnector _BLOCKCHAIN;
 	private boolean CLOSED=false;
 	private final Map<String,Object> _CONFIG;
 	
-	public ReddconomyApiEndpointsV1(Map<String,Object> config,BlockchainConnector conn,Offchain db) throws Exception{
+	public EndpointsV1(Map<String,Object> config,BlockchainConnector conn,ReddconomyCore db) throws Exception{
 		_BLOCKCHAIN=conn;
 		_OFFCHAIN=db;
 		_CONFIG=config;
@@ -79,7 +81,7 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 						e.printStackTrace();
 					}
 				}
-			}catch(Exception e){
+			}catch(Throwable e){
 				e.printStackTrace();
 			}
 			t=System.currentTimeMillis();
@@ -125,10 +127,9 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 		switch(action){			
 			case "deposit":{
 				try{
-					String addr=_BLOCKCHAIN.getNewAddress();
 					String wallet_id=_GET.get("wallid").toString();
 					long balance=Long.parseLong(_GET.get("amount").toString());
-					Deposit data=_OFFCHAIN.prepareForDeposit(addr,wallet_id,balance);
+					Deposit data=_OFFCHAIN.prepareForDeposit(wallet_id,balance);
 					response.success(data);
 				}catch(Throwable e){					
 					String error=e.toString();
@@ -151,28 +152,45 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 			}
 			case "withdraw":{
 				long amount=Long.parseLong(_GET.get("amount").toString());
-				String addr=(String)_GET.get("addr");
-				String wallet_id=_GET.get("wallid").toString();
-				try{
-					OffchainWallet wallet=_OFFCHAIN.getOffchainWallet(wallet_id);
-					long balance=wallet.balance;
-					if(balance>=amount){
-						if(_BLOCKCHAIN.getBalance()>=amount){
-							Withdraw data=_OFFCHAIN.withdraw(wallet_id,amount);
-							_BLOCKCHAIN.sendToAddress(addr,data.amount);
-							response.success(data);
-						}else{
-							response.error(500,"The server doesn't have enough coins");
-						}
-						
+				String from=_GET.get("wallid").toString();
+				String to=(String)_GET.get("addr");
+				boolean noconfirm=_GET.containsKey("noconfirm");
+
+				
+				BlockchainFee net_fee=null;
+				
+				if(_GET.containsKey("fee")){
+					Long fee=Long.parseLong(_GET.get("fee"));
+					if(fee>0){
+						net_fee=new BlockchainFee(fee);
 					}else{
-						response.error(401,"Not enough coins");
+						response.error(500,"Fee is less than 0!?");
+						break;
 					}
+				}
+
+				try{
+					Withdraw data=_OFFCHAIN.withdraw(from,amount,to,net_fee,noconfirm);
+					response.success(data);
 				}catch(Throwable e){
 					String error=e.toString();
 					response.error(500,error);
 					e.printStackTrace();
 				}
+				break;
+			}
+			case "confirm_withdraw":{
+				String id=(_GET.get("id").toString());
+				try{
+					Withdraw data=_OFFCHAIN.confirmWithdraw(id);
+					response.success(data);
+
+				}catch(Throwable e){
+					String error=e.toString();
+					response.error(500,error);
+					e.printStackTrace();
+				}
+
 				break;
 			}
 			case "getwallet":{
@@ -191,7 +209,7 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 				try{
 					String wallet_id=_GET.get("wallid").toString();
 					long amount=Long.parseLong(_GET.get("amount").toString());
-					OffchainContract contract=_OFFCHAIN.createContract(wallet_id,amount);
+					OffchainContract contract=_OFFCHAIN.createOffchainContract(wallet_id,amount);
 					response.success(contract);
 				}catch(Throwable e){
 					String error=e.toString();
@@ -206,7 +224,7 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 				try{
 					String wallet_id=_GET.get("wallid").toString();
 					long contractId=Long.parseLong(_GET.get("contractid"));
-					OffchainContract contract=_OFFCHAIN.acceptContract(contractId,wallet_id);
+					OffchainContract contract=_OFFCHAIN.acceptOffchainContract(contractId,wallet_id);
 					response.success(contract);
 				}catch(Throwable e){
 					String error=e.toString();
@@ -216,23 +234,23 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 
 				break;
 			}
-			case "sendcoins":{
-				try{
-					String addr=_GET.get("addr").toString();
-					long amount=Long.parseLong(_GET.get("amount").toString());
-					_BLOCKCHAIN.sendToAddress(addr,amount);
-					response.success(new EmptyData());
-				}catch(Throwable e){
-					String error=e.toString();
-					response.error(500,error);
-					e.printStackTrace();
-				}
-				break;
-			}
+//			case "sendcoins":{
+//				try{
+//					String addr=_GET.get("addr").toString();
+//					long amount=Long.parseLong(_GET.get("amount").toString());
+//					_BLOCKCHAIN.sendToAddress(addr,amount);
+//					response.success(new EmptyData());
+//				}catch(Throwable e){
+//					String error=e.toString();
+//					response.error(500,error);
+//					e.printStackTrace();
+//				}
+//				break;
+//			}
 			case "getcontract":{
 				try{
 					long contractId=Long.parseLong(_GET.get("contractid"));
-					OffchainContract contract=_OFFCHAIN.getContract(contractId);
+					OffchainContract contract=_OFFCHAIN.getOffchainContract(contractId);
 					response.success(contract);
 				}catch(Throwable e){
 					String error=e.toString();
@@ -257,7 +275,7 @@ public class ReddconomyApiEndpointsV1 extends Thread implements ApiEndpoints {
 					netinfo.coin=_CONFIG.get("coin").toString();
 					netinfo.coin_short=_CONFIG.get("coin_short").toString();
 					netinfo.welcome_tip=_OFFCHAIN.getWelcomeTip();
-					
+					netinfo.uptime=System.currentTimeMillis()-_STARTTIME;
 					
 					
 //					netinfo.welcome_funds_wallid=OF

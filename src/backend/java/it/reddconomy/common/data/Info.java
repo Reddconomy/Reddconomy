@@ -45,7 +45,7 @@ public final class Info implements Data{
 
 	public Fees fees;
 
-	
+	public long uptime;
 	
 	@Override
 	public String toString(){
@@ -60,7 +60,9 @@ public final class Info implements Data{
 
 		.append("generic_wallid=").append(generic_wallid)
 		.append("fees_collector_wallid=").append(fees_collector_wallid)
-		.append("fees=").append(fees)		
+		.append("fees=").append(fees)	
+		.append("uptime=").append(uptime)		
+
 		;
 		
 		return sb.toString();
@@ -80,6 +82,7 @@ public final class Info implements Data{
 		out.put("null_wallid",null_wallid);
 		out.put("fees_collector_wallid",fees_collector_wallid);
 		out.put("fees",fees.toMap(false));
+		out.put("uptime",uptime);
 		return out;
 	}
 
@@ -94,8 +97,9 @@ public final class Info implements Data{
 		generic_wallid=map.get("generic_wallid").toString();
 		null_wallid=map.get("null_wallid").toString();
 		fees_collector_wallid=map.get("fees_collector_wallid").toString();
-		Map<String,Object> fees=(Map<String,Object>)map.get("fees");
-		this.fees=new Fees().fromMap(fees,false);		
+		fees=new Fees().fromMap((Map<String,Object>)map.get("fees"),false);		
+		uptime=((Number)map.get("uptime")).longValue();
+
 	}
 	
 	@Override

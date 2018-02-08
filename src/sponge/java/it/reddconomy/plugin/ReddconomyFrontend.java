@@ -22,7 +22,9 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -53,7 +55,9 @@ import org.spongepowered.api.util.Direction;
 import com.google.inject.Inject;
 
 import it.reddconomy.Utils;
+import it.reddconomy.common.ApiResponse;
 import it.reddconomy.common.data.OffchainWallet;
+import it.reddconomy.common.data.Withdraw;
 import it.reddconomy.plugin.commands.CommandHandler;
 import it.reddconomy.plugin.commands.CommandListener;
 import it.reddconomy.plugin.contracts.ContractInitialization;
@@ -69,6 +73,7 @@ public class ReddconomyFrontend implements CommandListener{
 
 	private boolean CAN_RUN=true;
 	private final ConcurrentLinkedQueue<String> _PENDING_DEPOSITS=new ConcurrentLinkedQueue<String>();
+	private final Map<Player,String> _PENDING_WITHDRAW=new WeakHashMap<Player,String>();
 
 	
 	// Backend's info
@@ -213,17 +218,57 @@ public class ReddconomyFrontend implements CommandListener{
 				}
 				// withdraw
 				case "withdraw":{
+					
+
 					if(args.length<2){
-						invalid=true;
-						break;
+						if(args.length==1){
+							if(args[0].equals("confirm")){
+								String id=_PENDING_WITHDRAW.get(player);
+								ApiResponse resp=ReddconomyApi.withdraw_confirm(id);
+								if(resp.statusCode()==200){
+									Withdraw wt=resp.data();
+									player.sendMessage(Text.of(TextColors.GREEN,"Confirmed!\nTransaction ID:"));
+									String trid_url=Config.getValue("trid_viewer").toString().replace("{TRID}",wt.id);
+									player.sendMessage(Text.builder(wt.id).color(TextColors.GOLD)
+											.onClick(TextActions.openUrl(new URL(trid_url))).build());
+								}else{
+									player.sendMessage(Text.of(TextColors.RED,"Error: "+resp.status()));
+								}
+								break;
+							}
+						}else{
+							invalid=true;
+							break;
+						}
 					}
 					double damount=Double.parseDouble(args[0]);
 					String addr=args[1];
 					long amount=Utils.convertToInternal(damount);
-					int status=ReddconomyApi.withdraw(amount,addr,pUUID);
-					if(status==200){
-						player.sendMessage(Text.of(TextColors.BLUE,"Withdrawing "+damount+" "+(ReddconomyApi.getInfo().testnet?"TEST ":" ")+ReddconomyApi.getInfo().coin_short+".. Wait at least 10 minutes"));
-					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot request a withdraw right now, contact an admin."));
+					ApiResponse resp=ReddconomyApi.withdraw(amount,addr,pUUID,false);
+					if(resp.statusCode()==200){
+						Withdraw wt=resp.data();
+						StringBuilder tx=new StringBuilder();
+						tx.append("You asked to withdraw ");
+						tx.append(damount).append(FrontendUtils.getCoinString()).append(" to your address ").append(addr);
+						tx.append("\nWithdraw fee: ").append(ReddconomyApi.getInfo().fees.getWithdrawFee().toString());
+						tx.append("\nBlockchain fee: ").append(ReddconomyApi.getInfo().fees.getBlockchainFee().toString());
+						tx.append("\nYou will receive: ").append(Utils.convertToUserFriendly(wt.amount_net)).append(FrontendUtils.getCoinString());
+						player.sendMessage(Text.of(TextColors.BLUE,tx.toString()));
+
+						if(!wt.confirmed){
+							player.sendMessage(Text.of(TextColors.GRAY,"Use /$ withdraw confirm to confirm"));
+
+							_PENDING_WITHDRAW.put(player,wt.id);
+						}else{
+							player.sendMessage(Text.of(TextColors.GREEN,"Transaction ID:"));
+							String trid_url=Config.getValue("trid_viewer").toString().replace("{TRID}",wt.id);
+							player.sendMessage(Text.builder(wt.id).color(TextColors.GOLD)
+									.onClick(TextActions.openUrl(new URL(trid_url))).build());
+
+						}
+						
+						
+					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Error: "+resp.status()));
 					break;
 				}
 				// tip
