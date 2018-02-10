@@ -58,8 +58,8 @@ public class AdminCommands{
 							+ "\n",TextColors.GOLD,"Transaction fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getTransactionFee().toString()
 							+ "\n",TextColors.GOLD,"Blockchain fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getBlockchainFee().toString()
 							+ "\n",TextColors.GOLD,"Backend uptime: ",TextColors.WHITE,timestampToHumanReadable(ReddconomyApi.getInfo().uptime)
-							+ "\n",TextColors.GOLD,"Frontend uptime: ",TextColors.WHITE,timestampToHumanReadable(System.currentTimeMillis()-_STARTTIME);
-		);
+							+ "\n",TextColors.GOLD,"Frontend uptime: ",TextColors.WHITE,timestampToHumanReadable(System.currentTimeMillis()-_STARTTIME)
+		));
 	}
 	// Admin help message of Reddconomy
 	public static void sendAdminHelpText(Player player) {
