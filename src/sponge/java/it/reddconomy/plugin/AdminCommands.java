@@ -27,10 +27,10 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
 import it.reddconomy.Utils;
+import it.reddconomy.plugin.utils.FrontendUtils;
 import it.reddconomy.common.ApiResponse;
 import it.reddconomy.common.data.Withdraw;
 import it.reddconomy.plugin.utils.FrontendUtils;
-
 public class AdminCommands{
 	private static long _STARTTIME=System.currentTimeMillis();
 	private static String timestampToHumanReadable(long millis){
@@ -44,42 +44,33 @@ public class AdminCommands{
 	}
 	// Complete Backend's info for OPs
 	public static void showAdminInfos(Player player) throws Exception {
-		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY INFO]"));
-		player.sendMessage(Text.of(TextColors.GOLD,"Testnet:  ",TextColors.WHITE,ReddconomyApi.getInfo().testnet));
-		player.sendMessage(Text.of(TextColors.GOLD,"Debug:  ",TextColors.WHITE,Config.getValue("debug")));
-
-		player.sendMessage(Text.of(TextColors.GOLD,"Coin: ",TextColors.WHITE,ReddconomyApi.getInfo().coin));
-		player.sendMessage(Text.of(TextColors.GOLD,"Welcome Tip: ",TextColors.WHITE, Utils.convertToUserFriendly(ReddconomyApi.getInfo().welcome_tip)));
-		
-		player.sendMessage(Text.of(TextColors.GOLD,"Welcome Funds wallet id: ",TextColors.WHITE,ReddconomyApi.getInfo().welcome_funds_wallid));
-		player.sendMessage(Text.of(TextColors.GOLD,"Generic wallet id: ",TextColors.WHITE,ReddconomyApi.getInfo().generic_wallid));
-		player.sendMessage(Text.of(TextColors.GOLD,"Fees Collector wallet id: ",TextColors.WHITE,ReddconomyApi.getInfo().fees_collector_wallid));
-		player.sendMessage(Text.of(TextColors.GOLD,"Null Wallet id: ",TextColors.WHITE,ReddconomyApi.getInfo().null_wallid));
-		
-		player.sendMessage(Text.of(TextColors.GOLD,"Deposit fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getDepositFee().toString()));
-		player.sendMessage(Text.of(TextColors.GOLD,"Withdraw fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getWithdrawFee().toString()));
-		player.sendMessage(Text.of(TextColors.GOLD,"Transaction fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getTransactionFee().toString()));
-		player.sendMessage(Text.of(TextColors.GOLD,"Blockchain fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getBlockchainFee().toString()));
-	
-
-	    String date = timestampToHumanReadable(ReddconomyApi.getInfo().uptime);
-		player.sendMessage(Text.of(TextColors.GOLD,"Backend uptime: ",TextColors.WHITE,date));
-		 date = timestampToHumanReadable(System.currentTimeMillis()-_STARTTIME);
-		player.sendMessage(Text.of(TextColors.GOLD,"Frontend uptime: ",TextColors.WHITE,date));
-
+		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY INFO]"
+							+ "\n",TextColors.GOLD,"Testnet:  ",TextColors.WHITE,ReddconomyApi.getInfo().testnet
+							+ "\n",TextColors.GOLD,"Debug:  ",TextColors.WHITE,Config.getValue("debug")
+							+ "\n",TextColors.GOLD,"Coin: ",TextColors.WHITE,ReddconomyApi.getInfo().coin
+							+ "\n",TextColors.GOLD,"Welcome Tip: ",TextColors.WHITE, Utils.convertToUserFriendly(ReddconomyApi.getInfo().welcome_tip)
+							+ "\n",TextColors.GOLD,"Welcome Funds wallet id: ",TextColors.WHITE,ReddconomyApi.getInfo().welcome_funds_wallid
+							+ "\n",TextColors.GOLD,"Generic wallet id: ",TextColors.WHITE,ReddconomyApi.getInfo().generic_wallid
+							+ "\n",TextColors.GOLD,"Fees Collector wallet id: ",TextColors.WHITE,ReddconomyApi.getInfo().fees_collector_wallid
+							+ "\n",TextColors.GOLD,"Null Wallet id: ",TextColors.WHITE,ReddconomyApi.getInfo().null_wallid
+							+ "\n",TextColors.GOLD,"Deposit fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getDepositFee().toString()
+							+ "\n",TextColors.GOLD,"Withdraw fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getWithdrawFee().toString()
+							+ "\n",TextColors.GOLD,"Transaction fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getTransactionFee().toString()
+							+ "\n",TextColors.GOLD,"Blockchain fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getBlockchainFee().toString()
+							+ "\n",TextColors.GOLD,"Backend uptime: ",TextColors.WHITE,timestampToHumanReadable(ReddconomyApi.getInfo().uptime)
+							+ "\n",TextColors.GOLD,"Frontend uptime: ",TextColors.WHITE,timestampToHumanReadable(System.currentTimeMillis()-_STARTTIME);
+		);
 	}
-	
-	
 	// Admin help message of Reddconomy
 	public static void sendAdminHelpText(Player player) {
-		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY HELP]"));
-		player.sendMessage(Text.of(TextColors.BLUE,"=====[COMMANDS]====="));
-		player.sendMessage(Text.of(TextColors.BLUE,"/$ admin help",TextColors.WHITE,": Shows this"));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ admin send <amount> <addr>",TextColors.WHITE,": Send coins from the backend."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ admin deposit <amount> <wallid>",TextColors.WHITE,": Deposit into wallid."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ admin balance <wallid>",TextColors.WHITE,": Get balance of wallid."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ admin withdraw <amount> <wallid> <addr>",TextColors.WHITE,": Withdraw from wallid."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ admin info",TextColors.WHITE,": Shows info and status about the backend."));
+		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY HELP]"
+							+ "\n",TextColors.BLUE,"=====[COMMANDS]====="
+							+ "\n",TextColors.BLUE,"/$ admin help",TextColors.WHITE,": Shows this"
+							+ "\n",TextColors.GOLD,"/$ admin send <amount> <addr>",TextColors.WHITE,": Send coins from the backend."
+							+ "\n",TextColors.GOLD,"/$ admin deposit <amount> <wallid>",TextColors.WHITE,": Deposit into wallid."
+							+ "\n",TextColors.GOLD,"/$ admin balance <wallid>",TextColors.WHITE,": Get balance of wallid."
+							+ "\n",TextColors.GOLD,"/$ admin withdraw <amount> <wallid> <addr>",TextColors.WHITE,": Withdraw from wallid."
+							+ "\n",TextColors.GOLD,"/$ admin info",TextColors.WHITE,": Shows info and status about the backend."));
 	}
 
 	public static boolean onCommand(Player player, String command, String[] args) throws Exception {

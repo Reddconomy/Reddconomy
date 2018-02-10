@@ -60,12 +60,11 @@ import it.reddconomy.common.data.OffchainWallet;
 import it.reddconomy.common.data.Withdraw;
 import it.reddconomy.plugin.commands.CommandHandler;
 import it.reddconomy.plugin.commands.CommandListener;
-import it.reddconomy.plugin.contracts.ContractInitialization;
-//import it.reddconomy.plugin.contracts.ContractGUI;
 import it.reddconomy.plugin.contracts.ContractSign;
+import it.reddconomy.plugin.contracts.SignInitialization;
 import it.reddconomy.plugin.utils.FrontendUtils;
 
-@Plugin(id="reddconomy-sponge", name="Reddconomy-sponge", version="0.2.0")
+@Plugin(id="reddconomy-sponge", name="Reddconomy-sponge", version="0.2.1")
 public class ReddconomyFrontend implements CommandListener{
 	@Inject	private Game GAME;
 	@Inject	private Logger LOGGER;
@@ -78,12 +77,12 @@ public class ReddconomyFrontend implements CommandListener{
 	
 	// Backend's info
 	public static void showInfos(Player player) throws Exception {
-		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY INFO]"));
-		player.sendMessage(Text.of(TextColors.GOLD,"On testnet? ",TextColors.WHITE,ReddconomyApi.getInfo().testnet));
-		player.sendMessage(Text.of(TextColors.GOLD,"Coin: ",TextColors.WHITE,ReddconomyApi.getInfo().coin));
-		player.sendMessage(Text.of(TextColors.GOLD,"Deposit fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getDepositFee().toString()));
-		player.sendMessage(Text.of(TextColors.GOLD,"Withdraw fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getWithdrawFee().toString()));
-		player.sendMessage(Text.of(TextColors.GOLD,"Transaction fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getTransactionFee().toString()));
+		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY INFO]"
+							+ "\n",TextColors.GOLD,"On testnet? ",TextColors.WHITE,ReddconomyApi.getInfo().testnet
+							+ "\n",TextColors.GOLD,"Coin: ",TextColors.WHITE,ReddconomyApi.getInfo().coin
+							+ "\n",TextColors.GOLD,"Deposit fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getDepositFee().toString()
+							+ "\n",TextColors.GOLD,"Withdraw fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getWithdrawFee().toString()
+							+ "\n",TextColors.GOLD,"Transaction fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getTransactionFee().toString()));
 	}
 
 
@@ -93,25 +92,25 @@ public class ReddconomyFrontend implements CommandListener{
 
 		URL github=new URL("https://github.com/Reddconomy");
 		Text moreinfo=Text.builder("Click here for more info!").color(TextColors.GOLD).onClick(TextActions.openUrl(github)).build();
-		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY HELP]"));
-		player.sendMessage(Text.of(TextColors.BLUE,"=====[COMMANDS]====="));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$",TextColors.WHITE,": Shows info"));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ help",TextColors.WHITE,": Shows this"));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ deposit <amount>",TextColors.WHITE,": Get the deposit address."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ balance",TextColors.WHITE,": Shows your balance."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ withdraw <amount> <addr>",TextColors.WHITE,": Withdraw money."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ contract new <amount>",TextColors.WHITE,": Create contract. (- sign for giving, no sign for requesting)"));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ contract accept <contractid>",TextColors.WHITE,": Accept a contract."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ tip <amount> <user>",TextColors.WHITE,": Tip an user."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ tipsrv <amount>",TextColors.WHITE,": Tip the server."));
-		player.sendMessage(Text.of(TextColors.GOLD,"/$ info",TextColors.WHITE,": Get info from backend."));
-		player.sendMessage(Text.of(TextColors.BLUE,"===[CONTRACT SIGNS]==="));
-		player.sendMessage(Text.of("In order to make Contract Signs, you have to write in a sign:"));
-		player.sendMessage(Text.of(TextColors.GOLD,"FIRST LINE:"," [CONTRACT] | ",TextColors.GOLD,"SECOND LINE: ","<amount>"));
-		player.sendMessage(Text.of("Third line is for description, it's not necessary."));
-		player.sendMessage(Text.of(TextColors.BLUE,"========[INFOs]========"));
-		player.sendMessage(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino. This plugin and all its components are released under GNU GPL v3 and BSD-2-Clause license."));
-		player.sendMessage(moreinfo);
+		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY HELP]"
+							+ "\n",TextColors.BLUE,"=====[COMMANDS]====="
+							+ "\n",TextColors.GOLD,"/$",TextColors.WHITE,": Shows info"
+							+ "\n",TextColors.GOLD,"/$ help",TextColors.WHITE,": Shows this"
+							+ "\n",TextColors.GOLD,"/$ deposit <amount>",TextColors.WHITE,": Get the deposit address."
+							+ "\n",TextColors.GOLD,"/$ balance",TextColors.WHITE,": Shows your balance."
+							+ "\n",TextColors.GOLD,"/$ withdraw <amount> <addr>",TextColors.WHITE,": Withdraw money."
+							+ "\n",TextColors.GOLD,"/$ contract new <amount>",TextColors.WHITE,": Create contract. (- sign for giving, no sign for requesting)"
+							+ "\n",TextColors.GOLD,"/$ contract accept <contractid>",TextColors.WHITE,": Accept a contract."
+							+ "\n",TextColors.GOLD,"/$ tip <amount> <user>",TextColors.WHITE,": Tip an user."
+							+ "\n",TextColors.GOLD,"/$ tipsrv <amount>",TextColors.WHITE,": Tip the server."
+							+ "\n",TextColors.GOLD,"/$ info",TextColors.WHITE,": Get info from backend."
+							+ "\n",TextColors.BLUE,"===[CONTRACT SIGNS]==="
+							+ "\n",TextColors.WHITE,"In order to make Contract Signs, you have to write in a sign:"
+							+ "\n",TextColors.GOLD,"FIRST LINE:"," [CONTRACT] | ",TextColors.GOLD,"SECOND LINE: ","<amount>"
+							+ "\n",TextColors.WHITE,"Third line is for description, it's not necessary."
+							+ "\n",TextColors.BLUE,"========[INFOs]========"
+							+ "\n",TextColors.WHITE,"Copyright (c) 2018, Riccardo Balbo, Simone Cervino. This plugin and all its components are released under GNU GPL v3 and BSD-2-Clause license."
+							+ "\n",moreinfo));
 	}
 	
 	// Declaring default configuration and loading configuration's settings.
@@ -183,7 +182,7 @@ public class ReddconomyFrontend implements CommandListener{
 		UUID pUUID=player.getUniqueId();
 		try{
 			boolean invalid=false;
-			switch(command){
+			switch(command.toLowerCase()){
 				// deposit
 				case "deposit":{
 					if(args.length<1){
@@ -279,8 +278,11 @@ public class ReddconomyFrontend implements CommandListener{
 						invalid=true;
 						break;
 					}
-
 					double damount=Double.parseDouble(args[0]);
+					if (damount<0) {
+						invalid=true;
+						break;
+					}
 					long amount=Utils.convertToInternal(damount);
 					String to;
 					Player receiver=null;
@@ -292,80 +294,49 @@ public class ReddconomyFrontend implements CommandListener{
 						receiver=(Player)Sponge.getServer().getPlayer(UUID.fromString(receiver_wallet.id)).orElse(null);
 					}
 					long cId=ReddconomyApi.createContract(-amount,pUUID).id;
-					//					if(cId!=null){
 					int status=ReddconomyApi.acceptContract(cId,to);
 					if(status==200){
 						player.sendMessage(Text.of(TextColors.GOLD,damount+" "+(ReddconomyApi.getInfo().testnet?"TEST ":" ")+ReddconomyApi.getInfo().coin_short+" sent to the "+(server?"server":"user "+args[1])));
 						if(receiver!=null) receiver.sendMessage(Text.of(TextColors.GOLD,player.getName()+" sent you a tip worth "+damount+" "+(ReddconomyApi.getInfo().testnet?"TEST ":" ")+ReddconomyApi.getInfo().coin_short+"!"));
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot send tip, "+"check your balance or contact an admin."));
-					//					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Something went wrong, contact an admin."));
 					break;
 				}
-				// contract
-				case "contract":{
-					if(args.length<2){
-						invalid=true;
-						break;
-					}
-					String method=args[0];
-					String text=args[1];
-					if(method.equals("new")){
-						long amount=Utils.convertToInternal(Double.parseDouble(text));
-						long cId=ReddconomyApi.createContract(amount,pUUID).id;
-						player.sendMessage(Text.of("Share this Contract ID: "+cId));
-						//						else player.sendMessage(Text.of(TextColors.DARK_RED,"Can't create contract right now. Contact an admin."));
-					}else if(method.equals("accept")){
-						long contractId=Long.parseLong(text);
-						int status=ReddconomyApi.acceptContract(contractId,pUUID);
-						if(status==200){
-							player.sendMessage(Text.of(TextColors.GOLD,"Contract accepted."));
-							player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(pUUID).balance)+" "+ReddconomyApi.getInfo().coin_short));
-						}else{
-							player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot accept contract. Are you sure that you haven't already accepted?"));
-							player.sendMessage(Text.of(TextColors.GOLD,"Otherwise, call and admin for more info."));
-						}
-
-					}
-					break;
-				}
-				case "confirm":{
+				// Confirm and decline sign
+				case "confirmsign":{
 					try {
-						ContractInitialization cdata = ContractSign.contract.remove(player);
+						SignInitialization cdata = ContractSign.csign.remove(player);
 						// Check if player wallet != owner wallet
-						if(cdata.sign_location.getTileEntity().isPresent())
-						{
-							if(cdata.player_wallet.short_id!=cdata.owner_wallet.short_id||((boolean)Config.getValue("debug"))){
-								int status=ReddconomyApi.acceptContract(cdata.contract.id,cdata.player_wallet.id);
-								// This activates the redstone only if the contract replied with 200
-								if(status==200){
-									player.sendMessage(Text.of("Contract ID: "+cdata.contract.id));
-									player.sendMessage(Text.of("Contract accepted."));
-									player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(cdata.player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
-	
-									ContractSign._ACTIVATED_SIGNS.add(cdata.sign_location.getBlockPosition());
-							
-									cdata.sign_location.setBlockType(
-											ContractSign._BLOCK_BLACKLIST.contains(cdata.sign_location.getRelative(Direction.DOWN).getBlockType())
-											?BlockTypes.REDSTONE_BLOCK:BlockTypes.REDSTONE_TORCH);
-									Task.builder().execute(() -> {
-										if(cdata.sign_location.getBlock().getType()!=BlockTypes.REDSTONE_TORCH&&cdata.sign_location.getBlock().getType()!=BlockTypes.REDSTONE_BLOCK)return;
-	
-										BlockState state=cdata.sign.getDefaultState();
-										BlockState newstate=state.with(Keys.DIRECTION,cdata.sign_direction).get();
-										cdata.sign_location.setBlock(newstate);
-										TileEntity tile2=cdata.sign_location.getTileEntity().get();
-										ContractSign.setLine(tile2,0,cdata.sign_lines[0]);
-										ContractSign.setLine(tile2,1,cdata.sign_lines[1]);
-										ContractSign.setLine(tile2,2,cdata.sign_lines[2]);
-										ContractSign.setLine(tile2,3,cdata.sign_lines[3]);
-										ContractSign._ACTIVATED_SIGNS.remove(cdata.sign_location.getBlockPosition());
-									}).delay(cdata.delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(this);
-								}else{
-									player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
-								}
+						if(cdata.player_wallet.short_id!=cdata.owner_wallet.short_id||((boolean)Config.getValue("debug"))){
+							int status=ReddconomyApi.acceptContract(cdata.contract.id,cdata.player_wallet.id);
+							// This activates the redstone only if the contract replied with 200
+							if(status==200){
+								player.sendMessage(Text.of("Contract ID: "+cdata.contract.id
+										+"\nContract accepted."
+										+"\nYou have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(cdata.player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
+
+								ContractSign._ACTIVATED_SIGNS.add(cdata.sign_location.getBlockPosition());
+						
+								cdata.sign_location.setBlockType(
+										ContractSign._BLOCK_BLACKLIST.contains(cdata.sign_location.getRelative(Direction.DOWN).getBlockType())
+										?BlockTypes.REDSTONE_BLOCK:BlockTypes.REDSTONE_TORCH);
+								Task.builder().execute(() -> {
+									if(cdata.sign_location.getBlock().getType()!=BlockTypes.REDSTONE_TORCH&&cdata.sign_location.getBlock().getType()!=BlockTypes.REDSTONE_BLOCK)return;
+
+									BlockState state=cdata.sign.getDefaultState();
+									BlockState newstate=state.with(Keys.DIRECTION,cdata.sign_direction).get();
+									cdata.sign_location.setBlock(newstate);
+									TileEntity tile2=cdata.sign_location.getTileEntity().get();
+									ContractSign.setLine(tile2,0,cdata.sign_lines[0]);
+									ContractSign.setLine(tile2,1,cdata.sign_lines[1]);
+									ContractSign.setLine(tile2,2,cdata.sign_lines[2]);
+									ContractSign.setLine(tile2,3,cdata.sign_lines[3]);
+									ContractSign._ACTIVATED_SIGNS.remove(cdata.sign_location.getBlockPosition());
+								}).delay(cdata.delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(this);
 							}else{
-								player.sendMessage(Text.of(TextColors.DARK_RED,"You can't accept your own contract."));
+								player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
 							}
+						}else{
+							player.sendMessage(Text.of(TextColors.DARK_RED,"You can't accept your own contract."));
 						}
 
 					}catch(Exception e){
@@ -375,8 +346,8 @@ public class ReddconomyFrontend implements CommandListener{
 					}
 					break;
 				}
-				case "decline":{
-					ContractSign.contract.remove(player);
+				case "declinesign":{
+					ContractSign.csign.remove(player);
 					player.sendMessage(Text.of("Contract declined."));
 					break;
 				}

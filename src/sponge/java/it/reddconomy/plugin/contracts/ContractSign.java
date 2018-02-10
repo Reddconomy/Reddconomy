@@ -87,9 +87,7 @@ public class ContractSign{
 		BlockTypes.AIR	
 	});
 	
-	public static HashMap<Player, ContractInitialization> contract = new HashMap<Player, ContractInitialization>();
-	public static ContractInitialization cdata;
-	//private final static Text CONTRACT_INVENTORY_NAME = Text.of(TextColors.GOLD,TextStyles.BOLD,"Reddconomy Contracts");
+	public static HashMap<Player, SignInitialization> csign = new HashMap<Player, SignInitialization>();
 	public static final Collection<Vector3i> _ACTIVATED_SIGNS=new LinkedList<Vector3i>();
 	private static Object PLUGIN;
 	public static void init(Object plugin){
@@ -172,13 +170,6 @@ public class ContractSign{
 		}).delay(5,TimeUnit.MILLISECONDS).name("Forcing player name in the contract sign").submit(PLUGIN);
 	}
 
-	// In case of GUI, add this
-	/*
-	 * cdata = new ContractInitialization();
-	 * contract.put(player, cdata);
-	 *
-	 * cdata.variable
-	 */
 	@Listener(order=Order.PRE)
 	public void onSignInteract(InteractItemEvent.Secondary event) throws Exception {
 		if(!((boolean)Config.getValue("csigns"))||!(event.getSource() instanceof Player)) return;
@@ -188,8 +179,8 @@ public class ContractSign{
 		Vector3d point=opoint.get();
 
 		Player player=(Player)event.getSource();
-		cdata = new ContractInitialization();
-		contract.put(player, cdata);
+		SignInitialization cdata = new SignInitialization();
+		csign.put(player, cdata);
 		cdata.sign_location=player.getWorld().getLocation(point);
 		System.out.println(cdata.sign_location);
 		if(cdata.sign_location.getTileEntity().isPresent()){
@@ -221,83 +212,28 @@ public class ContractSign{
 				}
 				cdata.contract=ReddconomyApi.createContract(amount,cdata.owner_wallet.id);
 				// Confirm Contract
-				player.sendMessage(Text.builder("[REDDCONOMY] Confirm Contract.")
-									 .color(TextColors.GREEN)
-									 .style(TextStyles.BOLD)
-									 .onHover(TextActions.showText(Text.of("Contract ID: "+cdata.contract.id+" | Amount: "+values[0].trim())))
-									 .onClick(TextActions.runCommand("/$ confirm "))
-									 .build());
+				Text confirmcontract = Text.builder("[REDDCONOMY] CLICK HERE to Confirm Contract.")
+						 .color(TextColors.GREEN)
+						 .style(TextStyles.BOLD)
+						 .onHover(TextActions.showText(Text.of("Contract ID: "+cdata.contract.id
+															  +"\nAmount: "+Utils.convertToUserFriendly(cdata.contract.amount)
+															  +"\n"+cdata.sign_lines[3])))
+						 .onClick(TextActions.runCommand("/$ confirm "))
+						 .build();
 				// Decline Contract
-				player.sendMessage(Text.builder("[REDDCONOMY] Decline Contract.")
+				Text declinecontract = Text.builder("[REDDCONOMY] CLICK HERE to Decline Contract.")
 						 .color(TextColors.DARK_RED)
 						 .style(TextStyles.BOLD)
-						 .onHover(TextActions.showText(Text.of("Decline the Contract Sign that you clicked.")))
+						 .onHover(TextActions.showText(Text.of("Contract ID: "+cdata.contract.id
+															  +"\nAmount: "+Utils.convertToUserFriendly(cdata.contract.amount)
+															  +"\n"+cdata.sign_lines[3])))
 						 .onClick(TextActions.runCommand("/$ decline "))
-						 .build());
+						 .build();
+				player.sendMessage(Text.of(confirmcontract,"\n",declinecontract));
 			}
 
 		}
 	}
-	
-	/*@Listener(order=Order.FIRST)
-	public void confirmContractClick(ClickInventoryEvent.Primary event)
-	{			
-		Player player = (Player) event.getCause().allOf(Player.class).get(0);
-		cdata = contract.get(player);
-		String confirmation = event.getCursorTransaction().getFinal().getType().getId();
-		String inv = event.getTargetInventory().getProperty(InventoryTitle.class, InventoryTitle.PROPERTY_NAME).get().getValue().toString();
-		if (inv.equals(CONTRACT_INVENTORY_NAME.toString()))
-		if (confirmation.equals("minecraft:emerald_block")) {
-			event.setCancelled(true);
-			player.sendMessage(Text.of("Contract Confirmed"));
-			Task.builder().execute(() -> player.closeInventory()).delay(10, TimeUnit.MILLISECONDS).submit(PLUGIN);
-			try{
-				// Check if player wallet != owner wallet
-				if(player_wallet.short_id!=owner_wallet.short_id||((boolean)Config.getValue("debug"))){
-					long cID=ReddconomyApi.createContract(amount,owner_id);
-					int status=ReddconomyApi.acceptContract(cID,player_wallet.id);
-					// This activates the redstone only if the contract replied with 200
-					if(status==200){
-						player.sendMessage(Text.of("Contract ID: "+cID));
-						player.sendMessage(Text.of("Contract accepted."));
-						player.sendMessage(Text.of("You have now: "+Utils.convertToUserFriendly(ReddconomyApi.getWallet(player_wallet.id).balance)+" "+ReddconomyApi.getInfo().coin_short));
-
-						_ACTIVATED_SIGNS.add(location.getBlockPosition());
-				
-						location.setBlockType(
-								_BLOCK_BLACKLIST.contains(location.getRelative(Direction.DOWN).getBlockType())
-								?BlockTypes.REDSTONE_BLOCK:BlockTypes.REDSTONE_TORCH);
-						Task.builder().execute(() -> {
-							if(location.getBlock().getType()!=BlockTypes.REDSTONE_TORCH&&location.getBlock().getType()!=BlockTypes.REDSTONE_BLOCK)return;
-
-							BlockState state=origsign.getDefaultState();
-							BlockState newstate=state.with(Keys.DIRECTION,origdirection).get();
-							location.setBlock(newstate);
-							TileEntity tile2=location.getTileEntity().get();
-							setLine(tile2,0,line0);
-							setLine(tile2,1,line1);
-							setLine(tile2,2,line2);
-							setLine(tile2,3,line3);
-							_ACTIVATED_SIGNS.remove(location.getBlockPosition());
-						}).delay(delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(PLUGIN);
-					}else{
-						player.sendMessage(Text.of(TextColors.DARK_RED,"Check your balance. Cannot accept contract"));
-					}
-				}else{
-					player.sendMessage(Text.of(TextColors.DARK_RED,"You can't accept your own contract."));
-				}
-
-			}catch(Exception e){
-				player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create/accept contract. Call an admin for more info."));
-				e.printStackTrace();
-
-			}
-		} else if (confirmation.equals("minecraft:red_mushroom_block")) {
-			event.setCancelled(true);
-			player.sendMessage(Text.of("Contract Declined"));
-			Task.builder().execute(() -> player.closeInventory()).delay(10, TimeUnit.MILLISECONDS).submit(PLUGIN);
-		}
-	}*/
 
 	// Protect near dispenser/dropper
 	@Listener(order=Order.FIRST)
