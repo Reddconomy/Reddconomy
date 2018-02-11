@@ -84,7 +84,12 @@ public class ContractSign{
 		BlockTypes.PISTON_EXTENSION,
 		BlockTypes.CACTUS,
 		BlockTypes.TNT,
-		BlockTypes.AIR	
+		BlockTypes.AIR,
+		BlockTypes.GLASS,
+		BlockTypes.GLASS_PANE,
+		BlockTypes.GLOWSTONE,
+		BlockTypes.STAINED_GLASS,
+		BlockTypes.STAINED_GLASS_PANE
 	});
 	
 	public static HashMap<Player, SignInitialization> csign = new HashMap<Player, SignInitialization>();

@@ -18,8 +18,6 @@
  */
 package it.reddconomy.plugin;
 
-import java.text.SimpleDateFormat;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.spongepowered.api.entity.living.player.Player;
@@ -30,7 +28,6 @@ import it.reddconomy.Utils;
 import it.reddconomy.plugin.utils.FrontendUtils;
 import it.reddconomy.common.ApiResponse;
 import it.reddconomy.common.data.Withdraw;
-import it.reddconomy.plugin.utils.FrontendUtils;
 public class AdminCommands{
 	private static long _STARTTIME=System.currentTimeMillis();
 	private static String timestampToHumanReadable(long millis){
@@ -61,6 +58,7 @@ public class AdminCommands{
 							+ "\n",TextColors.GOLD,"Frontend uptime: ",TextColors.WHITE,timestampToHumanReadable(System.currentTimeMillis()-_STARTTIME)
 		));
 	}
+	
 	// Admin help message of Reddconomy
 	public static void sendAdminHelpText(Player player) {
 		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY HELP]"
@@ -78,10 +76,12 @@ public class AdminCommands{
 			String action=args[0];
 			if(args.length<1) return false; 
 			switch(action){
+				// Backend infos
 				case "info":{
 					showAdminInfos(player);
 					return true;
 				}
+				// Send money from backend
 				case "send":{
 					if(args.length<3){ return false; }
 					double dval=Double.parseDouble(args[1]);
@@ -92,6 +92,7 @@ public class AdminCommands{
 					else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot request coins right now. Check the error in console"));
 					return true;
 				}
+				// Deposit money into given wallet id
 				case "deposit":{
 					if(args.length<3){ return false; }
 					String wallid=FrontendUtils.getWalletIdFromPrefixedString(args[2]);
@@ -104,6 +105,7 @@ public class AdminCommands{
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot create deposit address right now. Check the server console."));
 					return true;
 				}
+				// Show balance of given wallet id
 				case "balance":{
 					if(args.length<2){ return false; }
 					String wallid=FrontendUtils.getWalletIdFromPrefixedString(args[1]);
@@ -112,6 +114,7 @@ public class AdminCommands{
 					else player.sendMessage(Text.of(TextColors.DARK_RED,"Cannot request balance right now. Contact an admin."));
 					return true;
 				}
+				// Withdraw from given wallet id
 				case "withdraw":{
 					if(args.length<4){ return false; }
 					String wallid=FrontendUtils.getWalletIdFromPrefixedString(args[2]);
@@ -125,6 +128,7 @@ public class AdminCommands{
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Error:"+resp.status()));
 					return true;
 				}
+				// Admin help text
 				default:
 				case "help":{
 					sendAdminHelpText(player);
@@ -133,11 +137,8 @@ public class AdminCommands{
 			}
 		}else player.sendMessage(Text.of(TextColors.DARK_RED,"Forbidden for non-op"));
 		return true;
-
 	}
 
-	public static void init(Object obj) {
-		
-	}
+	public static void init(Object obj) {}
 
 }
