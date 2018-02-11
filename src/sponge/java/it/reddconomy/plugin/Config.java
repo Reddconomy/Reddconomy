@@ -66,9 +66,12 @@ public class Config extends HashMap<String,Object>{
 		putIfAbsent("url","http://127.0.0.1:8099");
 		putIfAbsent("secretkey","changeme");
 		putIfAbsent("qr","https://reddconomy.it/#qr:text${PAYDATA}");
-		putIfAbsent("csigns",true);
 		putIfAbsent("debug",false);
 		putIfAbsent("trid_viewer","https://reddconomy.it/#trid:{TRID}");
+		putIfAbsent("contracts",true);
+		putIfAbsent("tips",true);
+		putIfAbsent("deposit",true);
+		putIfAbsent("withdraw",true);
 
 		save();
 	}

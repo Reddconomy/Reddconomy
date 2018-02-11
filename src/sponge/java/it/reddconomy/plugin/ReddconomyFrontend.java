@@ -50,6 +50,7 @@ import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.text.format.TextStyles;
 import org.spongepowered.api.util.Direction;
 
 import com.google.inject.Inject;
@@ -85,13 +86,10 @@ public class ReddconomyFrontend implements CommandListener{
 							+ "\n",TextColors.GOLD,"Transaction fee: ",TextColors.WHITE,ReddconomyApi.getInfo().fees.getTransactionFee().toString()));
 	}
 
-
-
 	// Help message of Reddconomy
 	public static void sendHelpText(Player player) throws MalformedURLException {
-
-		URL github=new URL("https://github.com/Reddconomy");
-		Text moreinfo=Text.builder("Click here for more info!").color(TextColors.GOLD).onClick(TextActions.openUrl(github)).build();
+		Text license =Text.builder("Read the license by clicking here").style(TextStyles.BOLD).color(TextColors.GOLD).onHover(TextActions.showText(Text.of("Copyright (c) 2018, Riccardo Balbo, Simone Cervino. This plugin and all its components are released under GNU GPL v3 and BSD-2-Clause license."))).onClick(TextActions.openUrl(new URL("https://github.com/Reddconomy/Reddconomy/blob/master/LICENSE.md"))).build();
+		Text moreinfo=Text.builder("Click here for more info about Reddconomy!").style(TextStyles.BOLD).color(TextColors.GOLD).onClick(TextActions.openUrl(new URL("https://github.com/Reddconomy"))).build();
 		player.sendMessage(Text.of(TextColors.BLUE,"[REDDCONOMY HELP]"
 							+ "\n",TextColors.BLUE,"=====[COMMANDS]====="
 							+ "\n",TextColors.GOLD,"/$",TextColors.WHITE,": Shows info"
@@ -99,8 +97,6 @@ public class ReddconomyFrontend implements CommandListener{
 							+ "\n",TextColors.GOLD,"/$ deposit <amount>",TextColors.WHITE,": Get the deposit address."
 							+ "\n",TextColors.GOLD,"/$ balance",TextColors.WHITE,": Shows your balance."
 							+ "\n",TextColors.GOLD,"/$ withdraw <amount> <addr>",TextColors.WHITE,": Withdraw money."
-							+ "\n",TextColors.GOLD,"/$ contract new <amount>",TextColors.WHITE,": Create contract. (- sign for giving, no sign for requesting)"
-							+ "\n",TextColors.GOLD,"/$ contract accept <contractid>",TextColors.WHITE,": Accept a contract."
 							+ "\n",TextColors.GOLD,"/$ tip <amount> <user>",TextColors.WHITE,": Tip an user."
 							+ "\n",TextColors.GOLD,"/$ tipsrv <amount>",TextColors.WHITE,": Tip the server."
 							+ "\n",TextColors.GOLD,"/$ info",TextColors.WHITE,": Get info from backend."
@@ -109,8 +105,9 @@ public class ReddconomyFrontend implements CommandListener{
 							+ "\n",TextColors.GOLD,"FIRST LINE:"," [CONTRACT] | ",TextColors.GOLD,"SECOND LINE: ","<amount>"
 							+ "\n",TextColors.WHITE,"Third line is for description, it's not necessary."
 							+ "\n",TextColors.BLUE,"========[INFOs]========"
-							+ "\n",TextColors.WHITE,"Copyright (c) 2018, Riccardo Balbo, Simone Cervino. This plugin and all its components are released under GNU GPL v3 and BSD-2-Clause license."
-							+ "\n",moreinfo));
+							+ "\n",TextColors.WHITE,"Copyright \u00A9 2018, Riccardo Balbo, Simone Cervino. "
+							+ "\n",license,
+							  "\n",moreinfo));
 	}
 	
 	// Declaring default configuration and loading configuration's settings.
@@ -185,6 +182,10 @@ public class ReddconomyFrontend implements CommandListener{
 			switch(command.toLowerCase()){
 				// deposit
 				case "deposit":{
+					if(!((boolean)Config.getValue("deposit"))) {
+						player.sendMessage(Text.of(TextColors.DARK_RED,"Deposits are disabled."));
+						break;
+					}
 					if(args.length<1){
 						invalid=true;
 						break;
@@ -217,8 +218,10 @@ public class ReddconomyFrontend implements CommandListener{
 				}
 				// withdraw
 				case "withdraw":{
-					
-
+					if(!((boolean)Config.getValue("withdraw"))) {
+						player.sendMessage(Text.of(TextColors.DARK_RED,"Withdrawals are disabled."));
+						break;
+					}
 					if(args.length<2){
 						if(args.length==1){
 							if(args[0].equals("confirm")){
@@ -253,7 +256,6 @@ public class ReddconomyFrontend implements CommandListener{
 						tx.append("\nBlockchain fee: ").append(ReddconomyApi.getInfo().fees.getBlockchainFee().toString());
 						tx.append("\nYou will receive: ").append(Utils.convertToUserFriendly(wt.amount_net)).append(FrontendUtils.getCoinString());
 						player.sendMessage(Text.of(TextColors.BLUE,tx.toString()));
-
 						if(!wt.confirmed){
 							player.sendMessage(Text.of(TextColors.GRAY,"Use /$ withdraw confirm to confirm"));
 
@@ -265,14 +267,16 @@ public class ReddconomyFrontend implements CommandListener{
 									.onClick(TextActions.openUrl(new URL(trid_url))).build());
 
 						}
-						
-						
 					}else player.sendMessage(Text.of(TextColors.DARK_RED,"Error: "+resp.status()));
 					break;
 				}
 				// tip
 				case "tipsrv":
 				case "tip":{
+					if(!((boolean)Config.getValue("tips"))) {
+						player.sendMessage(Text.of(TextColors.DARK_RED,"Tips are disabled."));
+						break;
+					}
 					boolean server=command.equals("tipsrv");
 					if(args.length<2&&(!server||args.length<1)){
 						invalid=true;
@@ -351,13 +355,14 @@ public class ReddconomyFrontend implements CommandListener{
 					player.sendMessage(Text.of("Contract declined."));
 					break;
 				}
+				// Help message
 				default:
 				case "help":{
 					sendHelpText(player);
 					break;
 				}
 			}
-
+			// If the command is invalid, show this.
 			if(invalid){
 				player.sendMessage(Text.of(TextColors.DARK_RED,"Invalid Command"));
 				sendHelpText(player);

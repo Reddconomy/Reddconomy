@@ -37,7 +37,7 @@ dependencies {
 	//compile_reddconomySponge group: 'com.google.zxing', name: 'core', version: '3.3.1'
 	compile_reddconomySponge group: 'com.github.kenglxn.QRGen', name: 'javase', version: '2.3.0'
 	compile_reddconomySponge group: 'com.google.code.gson', name: 'gson', version: '2.7'
-	provided_reddconomySponge group: 'org.spongepowered', name: 'spongeapi', version: '7.1.0-20180110.070302-4'
+	provided_reddconomySponge group: 'org.spongepowered', name: 'spongeapi', version: '7.1.0-20180210.220649-14'
 
 	
 }

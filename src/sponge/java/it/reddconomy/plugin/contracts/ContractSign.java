@@ -84,7 +84,12 @@ public class ContractSign{
 		BlockTypes.PISTON_EXTENSION,
 		BlockTypes.CACTUS,
 		BlockTypes.TNT,
-		BlockTypes.AIR	
+		BlockTypes.AIR,
+		BlockTypes.GLASS,
+		BlockTypes.GLASS_PANE,
+		BlockTypes.GLOWSTONE,
+		BlockTypes.STAINED_GLASS,
+		BlockTypes.STAINED_GLASS_PANE
 	});
 	
 	public static HashMap<Player, SignInitialization> csign = new HashMap<Player, SignInitialization>();
@@ -172,7 +177,7 @@ public class ContractSign{
 
 	@Listener(order=Order.PRE)
 	public void onSignInteract(InteractItemEvent.Secondary event) throws Exception {
-		if(!((boolean)Config.getValue("csigns"))||!(event.getSource() instanceof Player)) return;
+		if(!((boolean)Config.getValue("contracts"))||!(event.getSource() instanceof Player)) return;
 
 		Optional<Vector3d> opoint=event.getInteractionPoint();
 		if(!opoint.isPresent()) return;
@@ -218,7 +223,7 @@ public class ContractSign{
 						 .onHover(TextActions.showText(Text.of("Contract ID: "+cdata.contract.id
 															  +"\nAmount: "+Utils.convertToUserFriendly(cdata.contract.amount)
 															  +"\n"+cdata.sign_lines[3])))
-						 .onClick(TextActions.runCommand("/$ confirm "))
+						 .onClick(TextActions.runCommand("/$ confirmsign"))
 						 .build();
 				// Decline Contract
 				Text declinecontract = Text.builder("[REDDCONOMY] CLICK HERE to Decline Contract.")
@@ -227,7 +232,7 @@ public class ContractSign{
 						 .onHover(TextActions.showText(Text.of("Contract ID: "+cdata.contract.id
 															  +"\nAmount: "+Utils.convertToUserFriendly(cdata.contract.amount)
 															  +"\n"+cdata.sign_lines[3])))
-						 .onClick(TextActions.runCommand("/$ decline "))
+						 .onClick(TextActions.runCommand("/$ declinesign"))
 						 .build();
 				player.sendMessage(Text.of(confirmcontract,"\n",declinecontract));
 			}
