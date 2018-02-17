@@ -23,6 +23,7 @@ import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.crypto.Mac;
@@ -31,8 +32,10 @@ import javax.crypto.spec.SecretKeySpec;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColor;
@@ -59,8 +62,7 @@ public class FrontendUtils {
     	if(val.startsWith("w:")){ // A walletid
     		return val.substring("w:".length());
     	}else if(!val.startsWith("s:")){ // a player name
-			Player pl=Sponge.getServer().getPlayer(val).get();
-			UUID uuid=pl.getUniqueId();
+			UUID uuid=FrontendUtils.getPlayerUUID(val);
 			OffchainWallet wallet=ReddconomyApi.getWallet(uuid);
 			return "s:"+wallet.short_id;			
     	}
@@ -107,5 +109,16 @@ public class FrontendUtils {
 		return (ReddconomyApi.getInfo().testnet?"test ":"")+ReddconomyApi.getInfo().coin_short;
 	}
 
+	
+	public static UUID getPlayerUUID(String player) {
+	    Optional<Player> onlinePlayer = Sponge.getServer().getPlayer(player);
+
+	    if (onlinePlayer.isPresent()) {
+	        return onlinePlayer.get().getUniqueId();
+	    }
+
+	    Optional<UserStorageService> userStorage = Sponge.getServiceManager().provide(UserStorageService.class);
+	    return userStorage.get().get(player).get().getUniqueId();
+	}
 }
 
