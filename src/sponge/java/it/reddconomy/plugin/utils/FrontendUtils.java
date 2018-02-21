@@ -120,5 +120,10 @@ public class FrontendUtils {
 	    Optional<UserStorageService> userStorage = Sponge.getServiceManager().provide(UserStorageService.class);
 	    return userStorage.get().get(player).get().getUniqueId();
 	}
+	
+	public static boolean isEnabled(String function) {
+		if(((boolean)Config.getValue(function))) return true;
+		else return false;
+	}
 }
 

@@ -62,13 +62,14 @@ public class Config extends HashMap<String,Object>{
 		load();
 
 		// Add missing config parameters
-		putIfAbsent("ConfigVersion",8);
+		putIfAbsent("ConfigVersion",9);
 		putIfAbsent("url","http://127.0.0.1:8099");
 		putIfAbsent("secretkey","changeme");
 		putIfAbsent("qr","https://reddconomy.it/#qr:text${PAYDATA}");
 		putIfAbsent("debug",false);
 		putIfAbsent("trid_viewer","https://reddconomy.it/#trid:{TRID}");
 		putIfAbsent("contracts",true);
+		putIfAbsent("stock",true);
 		putIfAbsent("tips",true);
 		putIfAbsent("deposit",true);
 		putIfAbsent("withdraw",true);

@@ -71,7 +71,9 @@ import it.reddconomy.Utils;
 import it.reddconomy.common.data.OffchainWallet;
 import it.reddconomy.plugin.Config;
 import it.reddconomy.plugin.ReddconomyApi;
+import it.reddconomy.plugin.contracts.sign.SignInitialization;
 import it.reddconomy.plugin.utils.FrontendUtils;
+import it.reddconomy.plugin.utils.SignUtils;
 
 public class ContractSign{
 
@@ -102,86 +104,49 @@ public class ContractSign{
 		Sponge.getEventManager().registerListeners(plugin, new ContractSign());
 	}
 	
-	
-	public static String getLine(TileEntity sign, int line)	{
-		Optional<SignData> data = sign.getOrCreate(SignData.class);
-		return (data.get().lines().get(line)).toPlainSingle();
-	}
-	
-	public static void setLine(TileEntity sign, int line, String text) {
-		Optional<SignData> signdata=sign.getOrCreate(SignData.class);
-		signdata.get().set(signdata.get().lines().set(line,Text.of(text)));
-		sign.offer(signdata.get());
-	}
-    public static Collection<TileEntity> getNearTileEntities(Location<World> location) {
-//		ArrayList<Sign> out = new ArrayList<Sign>();
-		TileEntity sr_entities[] = new TileEntity[] { 
-				location.getRelative(Direction.DOWN).getTileEntity().orElse(null),
-				location.getRelative(Direction.UP).getTileEntity().orElse(null),
-				location.getRelative(Direction.EAST).getTileEntity().orElse(null),
-				location.getRelative(Direction.WEST).getTileEntity().orElse(null),
-				location.getRelative(Direction.NORTH).getTileEntity().orElse(null),
-				location.getRelative(Direction.SOUTH).getTileEntity().orElse(null) 
-		};
-//		for (TileEntity te : sr_entities) {
-//			if (te!=null&&te instanceof Sign) {
-//				out.add((Sign) te);
-//			}
-//		}
-		return Arrays.asList(sr_entities);
-		
-	}
-    public static Collection<LocatableBlock> getNearBlocks(Location<World> location) {
-    	LocatableBlock sr_entities[] = new LocatableBlock[] { 
-				location.getRelative(Direction.DOWN).getLocatableBlock().orElse(null),
-				location.getRelative(Direction.UP).getLocatableBlock().orElse(null),
-				location.getRelative(Direction.EAST).getLocatableBlock().orElse(null),
-				location.getRelative(Direction.WEST).getLocatableBlock().orElse(null),
-				location.getRelative(Direction.NORTH).getLocatableBlock().orElse(null),
-				location.getRelative(Direction.SOUTH).getLocatableBlock().orElse(null)
-		};
-		return Arrays.asList(sr_entities);
-		
-	}
-    
-    public static boolean canHostWallTorch(Location<World> loc, Direction dir)
-    {
-		    	if (!(loc.getRelative(dir).getBlockType().equals(BlockTypes.AIR))&&!(ContractSign._BLOCK_BLACKLIST.contains(loc.getRelative(dir).getBlockType())))
-		    		return true;
-		    	else return false;
-    }
-    
-    public static BlockState doWallTorch(Location<World> loc, Direction dir)
-    {
-		    	return BlockTypes.REDSTONE_TORCH.getDefaultState().with(Keys.DIRECTION, dir.getOpposite()).get();
-    }
-
     public static void createContractSignFromSign(TileEntity sign) throws Exception{
-    	String contract_owner=getLine(sign,3);
-    	setLine(sign,3,FrontendUtils.getWalletIdFromPrefixedString(contract_owner));
+	    	String contract_owner=SignUtils.getLine(sign,3);
+	    	SignUtils.setLine(sign,3,FrontendUtils.getWalletIdFromPrefixedString(contract_owner));
     }
-    
+	
+	public boolean isContractSign (Player player, InteractItemEvent.Secondary event) {
+		Optional<Vector3d> opoint=event.getInteractionPoint();
+		if(!opoint.isPresent()) return false;
+		Vector3d point=opoint.get();
+		SignInitialization cdata = new SignInitialization();
+		csign.put(player, cdata);
+		cdata.sign_location=player.getWorld().getLocation(point);
+		System.out.println(cdata.sign_location);
+		if(cdata.sign_location.getTileEntity().isPresent()){
+			TileEntity tile = cdata.sign_location.getTileEntity().get();
+			if(!(tile instanceof Sign)) return false;
+			cdata.sign_lines[0]=SignUtils.getLine(tile,0);
+			if(cdata.sign_lines[0].equals("[CONTRACT]"))
+			return true;
+		} else return false;
+		return false;
+	}
 
     // Create contract signs from placed signs
 	@Listener
-	public void onSignPlace(ChangeSignEvent event) {
-		if(!((boolean)Config.getValue("csigns"))||!(event.getSource() instanceof Player)) return;
+	public void onContractSignPlace(ChangeSignEvent event) {
+		if(!(FrontendUtils.isEnabled("contracts"))||!(event.getSource() instanceof Player)) return;
 
 		Task.builder().execute(() -> {
 			TileEntity tile=event.getTargetTile();
 			Player player=(Player)event.getSource();
-			if(getLine(tile,0).equals("[CONTRACT]")){
-				if(FrontendUtils.isOp(player)&&!getLine(tile,3).isEmpty()){
+			if(SignUtils.getLine(tile,0).equals("[CONTRACT]")){
+				if(FrontendUtils.isOp(player)&&!SignUtils.getLine(tile,3).isEmpty()){
 					player.sendMessage(Text.of("You've just placed a contract sign as Admin."));
 				}else{
 					player.sendMessage(Text.of("You've just placed a contract sign."));
-					setLine(tile,3,player.getName());
+					SignUtils.setLine(tile,3,player.getName());
 				}
 				try{
 					createContractSignFromSign(tile);
 				}catch(Exception e){
 					player.sendMessage(Text.of("Unexpected error"));
-					setLine(tile,0,"[Err~CONTRACT]");
+					SignUtils.setLine(tile,0,"[Err~CONTRACT]");
 					e.printStackTrace();
 				}
 			}
@@ -190,27 +155,15 @@ public class ContractSign{
 
 	@Listener(order=Order.PRE)
 	public void onSignInteract(InteractItemEvent.Secondary event) throws Exception {
-		if(!((boolean)Config.getValue("contracts"))||!(event.getSource() instanceof Player)) return;
-
-		Optional<Vector3d> opoint=event.getInteractionPoint();
-		if(!opoint.isPresent()) return;
-		Vector3d point=opoint.get();
-
-		Player player=(Player)event.getSource();
+		if(!(FrontendUtils.isEnabled("contracts"))||!(event.getSource() instanceof Player)) return;
 		SignInitialization cdata = new SignInitialization();
-		csign.put(player, cdata);
-		cdata.sign_location=player.getWorld().getLocation(point);
-		System.out.println(cdata.sign_location);
-		if(cdata.sign_location.getTileEntity().isPresent()){
-			TileEntity tile = cdata.sign_location.getTileEntity().get();
-			if(!(tile instanceof Sign)) return;
-			cdata.sign_lines[0]=getLine(tile,0);
-			if(cdata.sign_lines[0].equals("[CONTRACT]")){
+		Player player=(Player)event.getSource();
+		if (isContractSign(player, event)) {
 				event.setCancelled(true);
-
-				cdata.sign_lines[1]=getLine(tile,1);
-				cdata.sign_lines[2]=getLine(tile,2);
-				cdata.sign_lines[3]=getLine(tile,3);
+				TileEntity tile = cdata.sign_location.getTileEntity().get();
+				cdata.sign_lines[1]=SignUtils.getLine(tile,1);
+				cdata.sign_lines[2]=SignUtils.getLine(tile,2);
+				cdata.sign_lines[3]=SignUtils.getLine(tile,3);
 
 				// Getting the original position of the block
 				cdata.sign_direction=cdata.sign_location.get(Keys.DIRECTION).get();
@@ -249,9 +202,7 @@ public class ContractSign{
 						 .build();
 				player.sendMessage(Text.of(confirmcontract,"\n",declinecontract));
 			}
-
 		}
-	}
 
 	// Protect near dispenser/dropper
 	@Listener(order=Order.FIRST)
@@ -262,13 +213,13 @@ public class ContractSign{
 			if(location.getTileEntity().isPresent()){
 				TileEntity tile=location.getTileEntity().get();
 				if(tile instanceof Dispenser||tile instanceof Dropper){
-					Collection<TileEntity> near_blocks=getNearTileEntities(location);
+					Collection<TileEntity> near_blocks=SignUtils.getNearTileEntities(location);
 					OffchainWallet player_wallet=null;
 					for(TileEntity block:near_blocks){
 						if(block==null||!(block instanceof Sign))continue;
 						Sign s=(Sign)block;
 						if(player_wallet==null) player_wallet=ReddconomyApi.getWallet(player.getUniqueId());
-						OffchainWallet sign_owner=ReddconomyApi.getWallet(getLine(s,3));
+						OffchainWallet sign_owner=ReddconomyApi.getWallet(SignUtils.getLine(s,3));
 						if(player_wallet.short_id!=sign_owner.short_id){
 							if(!FrontendUtils.isOp(player)){
 								player.sendMessage(Text.of(TextColors.DARK_RED,"[CONTRACT] Only the owner can open this container."));
@@ -307,7 +258,7 @@ public class ContractSign{
 		if(event.isCancelled()) return;
 		for(Location<World> l:event.getLocations()){
 			if(l.getBlockType()==BlockTypes.SLIME){				
-				Collection<LocatableBlock> near=getNearBlocks(l);
+				Collection<LocatableBlock> near=SignUtils.getNearBlocks(l);
 				for(LocatableBlock b:near){
 					if(b.getBlockState().getType()==BlockTypes.REDSTONE_TORCH||b.getBlockState().getType()==BlockTypes.REDSTONE_BLOCK){
 						boolean is_zone_protected=_ACTIVATED_SIGNS.contains(b.getLocation().getBlockPosition());
