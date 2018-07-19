@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with Reddconomy-sponge.  If not, see <http://www.gnu.org/licenses/>.
  */
-package it.reddconomy.plugin.contracts;
+package it.reddconomy.plugin.contracts.sign;
 
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.util.Direction;

@@ -65,8 +65,10 @@ import it.reddconomy.common.data.Withdraw;
 import it.reddconomy.plugin.commands.CommandHandler;
 import it.reddconomy.plugin.commands.CommandListener;
 import it.reddconomy.plugin.contracts.ContractSign;
-import it.reddconomy.plugin.contracts.SignInitialization;
+import it.reddconomy.plugin.contracts.Stock;
+import it.reddconomy.plugin.contracts.sign.SignInitialization;
 import it.reddconomy.plugin.utils.FrontendUtils;
+import it.reddconomy.plugin.utils.SignUtils;
 
 @Plugin(id="reddconomy-sponge", name="Reddconomy-sponge", version="0.2.1")
 public class ReddconomyFrontend implements CommandListener{
@@ -131,9 +133,9 @@ public class ReddconomyFrontend implements CommandListener{
 		ReddconomyApi.init(Config.getValue("url").toString(),Config.getValue("secretkey").toString());
 		Task.builder().execute(ReddconomyApi::updateInfo).async().interval(60,TimeUnit.SECONDS).name("Update backend info").submit(this);
 
-		//ContractGUI.init(this);
 		ContractSign.init(this);
 		AdminCommands.init(this);
+		Stock.init(this);
 		
 		
 	}
@@ -185,7 +187,7 @@ public class ReddconomyFrontend implements CommandListener{
 			switch(command.toLowerCase()){
 				// deposit
 				case "deposit":{
-					if(!((boolean)Config.getValue("deposit"))) {
+					if(!(FrontendUtils.isEnabled("deposit"))) {
 						player.sendMessage(Text.of(TextColors.DARK_RED,"Deposits are disabled."));
 						break;
 					}
@@ -221,7 +223,7 @@ public class ReddconomyFrontend implements CommandListener{
 				}
 				// withdraw
 				case "withdraw":{
-					if(!((boolean)Config.getValue("withdraw"))) {
+					if(!(FrontendUtils.isEnabled("withdraw"))) {
 						player.sendMessage(Text.of(TextColors.DARK_RED,"Withdrawals are disabled."));
 						break;
 					}
@@ -276,7 +278,7 @@ public class ReddconomyFrontend implements CommandListener{
 				// tip
 				case "tipsrv":
 				case "tip":{
-					if(!((boolean)Config.getValue("tips"))) {
+					if(!(FrontendUtils.isEnabled("tips"))) {
 						player.sendMessage(Text.of(TextColors.DARK_RED,"Tips are disabled."));
 						break;
 					}
@@ -313,7 +315,7 @@ public class ReddconomyFrontend implements CommandListener{
 					try {
 						SignInitialization cdata = ContractSign.csign.remove(player);
 						// Check if player wallet != owner wallet
-						if(cdata.player_wallet.short_id!=cdata.owner_wallet.short_id||((boolean)Config.getValue("debug"))){
+						if(cdata.player_wallet.short_id!=cdata.owner_wallet.short_id||(FrontendUtils.isEnabled("debug"))){
 							int status=ReddconomyApi.acceptContract(cdata.contract.id,cdata.player_wallet.id);
 							// This activates the redstone only if the contract replied with 200
 							if(status==200){
@@ -325,14 +327,14 @@ public class ReddconomyFrontend implements CommandListener{
 													
 								// TODO: Check if the sign can be converted to a torch, if can't, it tries to put a wall torch and if still can't, it'll put a redstone block.
 								if (ContractSign._BLOCK_BLACKLIST.contains(cdata.sign_location.getRelative(Direction.DOWN).getBlockType()))
-										if (ContractSign.canHostWallTorch(cdata.sign_location,Direction.EAST)) {
-											cdata.sign_location.setBlock(ContractSign.doWallTorch(cdata.sign_location,Direction.EAST));
-										} else if (ContractSign.canHostWallTorch(cdata.sign_location,Direction.WEST)) {
-											cdata.sign_location.setBlock(ContractSign.doWallTorch(cdata.sign_location,Direction.WEST));
-										} else if (ContractSign.canHostWallTorch(cdata.sign_location,Direction.NORTH)) {
-											cdata.sign_location.setBlock(ContractSign.doWallTorch(cdata.sign_location,Direction.NORTH));
-										} else if (ContractSign.canHostWallTorch(cdata.sign_location,Direction.SOUTH)) {
-											cdata.sign_location.setBlock(ContractSign.doWallTorch(cdata.sign_location,Direction.SOUTH));
+										if (SignUtils.canHostWallTorch(cdata.sign_location,Direction.EAST)) {
+											cdata.sign_location.setBlock(SignUtils.doWallTorch(cdata.sign_location,Direction.EAST));
+										} else if (SignUtils.canHostWallTorch(cdata.sign_location,Direction.WEST)) {
+											cdata.sign_location.setBlock(SignUtils.doWallTorch(cdata.sign_location,Direction.WEST));
+										} else if (SignUtils.canHostWallTorch(cdata.sign_location,Direction.NORTH)) {
+											cdata.sign_location.setBlock(SignUtils.doWallTorch(cdata.sign_location,Direction.NORTH));
+										} else if (SignUtils.canHostWallTorch(cdata.sign_location,Direction.SOUTH)) {
+											cdata.sign_location.setBlock(SignUtils.doWallTorch(cdata.sign_location,Direction.SOUTH));
 										} else cdata.sign_location.setBlock(BlockTypes.REDSTONE_BLOCK.getDefaultState());
 								else cdata.sign_location.setBlock(BlockTypes.REDSTONE_TORCH.getDefaultState());
 									
@@ -343,10 +345,10 @@ public class ReddconomyFrontend implements CommandListener{
 									BlockState newstate=state.with(Keys.DIRECTION,cdata.sign_direction).get();
 									cdata.sign_location.setBlock(newstate);
 									TileEntity tile2=cdata.sign_location.getTileEntity().get();
-									ContractSign.setLine(tile2,0,cdata.sign_lines[0]);
-									ContractSign.setLine(tile2,1,cdata.sign_lines[1]);
-									ContractSign.setLine(tile2,2,cdata.sign_lines[2]);
-									ContractSign.setLine(tile2,3,cdata.sign_lines[3]);
+									SignUtils.setLine(tile2,0,cdata.sign_lines[0]);
+									SignUtils.setLine(tile2,1,cdata.sign_lines[1]);
+									SignUtils.setLine(tile2,2,cdata.sign_lines[2]);
+									SignUtils.setLine(tile2,3,cdata.sign_lines[3]);
 									ContractSign._ACTIVATED_SIGNS.remove(cdata.sign_location.getBlockPosition());
 								}).delay(cdata.delay,TimeUnit.MILLISECONDS).name("Powering off Redstone.").submit(this);
 							}else{
